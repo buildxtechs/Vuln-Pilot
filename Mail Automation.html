@@ -1702,11 +1702,11 @@ function MailTemplateModal({ owner, config, onClose, onMailSent }) {
             <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>Subject</div>
             <div style={{ fontSize: 14, color: C.textPrimary, fontWeight: 600, userSelect: "all" }}>AIST Qualys Results for APMID's - {currentMonth} {currentYear}</div>
           </div>
-          <div ref={contentRef} style={{ background: "#ffffff", color: "#111827", padding: "20px", borderRadius: 8, fontSize: 13, fontFamily: "Calibri, Arial, sans-serif", lineHeight: 1.6 }}>
+          <div ref={contentRef} style={{ background: "#ffffff", color: "#111827", padding: "20px", borderRadius: 8, fontSize: 13, fontFamily: "Aptos, 'Aptos Display', Calibri, Arial, sans-serif", lineHeight: 1.6 }}>
             <p style={{ margin: "0 0 16px 0", color: "#111827" }}>Hi Team,</p>
             <p style={{ margin: "0 0 16px 0", color: "#111827" }}>Good day! Refer to the <a href={safeConfig.aistDashboard} style={{ color: "#0066cc", textDecoration: "underline", fontWeight: 600 }}>AIST Dashboard</a> to identify active vulnerabilities associated with the APM ID/IDs:</p>
             
-            <table border="1" cellPadding="10" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", marginBottom: 24, border: "1px solid #94a3b8", fontFamily: "Calibri, Arial, sans-serif" }}>
+            <table border="1" cellPadding="10" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", marginBottom: 24, border: "1px solid #94a3b8", fontFamily: "Aptos, 'Aptos Display', Calibri, Arial, sans-serif" }}>
               <thead>
                 <tr style={{ backgroundColor: headerColor }}>
                   <th style={{ border: "1px solid #94a3b8", padding: "10px 14px", textAlign: "left", backgroundColor: headerColor, color: "#ffffff", fontWeight: 700, fontSize: 13 }}>Application Name</th>
@@ -1728,7 +1728,7 @@ function MailTemplateModal({ owner, config, onClose, onMailSent }) {
             </table>
 
             <p style={{ margin: "0 0 12px 0", color: "#111827" }}>As per <strong>DOSS (DIRECTV Official Security Standards)</strong>, remediation timelines are as follows:</p>
-            <table border="1" cellPadding="8" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", marginBottom: 24, border: "1px solid #94a3b8", fontFamily: "Calibri, Arial, sans-serif", fontSize: 12.5 }}>
+            <table border="1" cellPadding="8" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", marginBottom: 24, border: "1px solid #94a3b8", fontFamily: "Aptos, 'Aptos Display', Calibri, Arial, sans-serif", fontSize: 12.5 }}>
               <thead>
                 <tr style={{ backgroundColor: "#1e293b", color: "#ffffff" }}>
                   <th colSpan="2" style={{ border: "1px solid #94a3b8", padding: "10px 12px", backgroundColor: "#1e293b", color: "#ffffff", textAlign: "center", fontWeight: 700 }}>Remediation Category</th>
@@ -1905,7 +1905,7 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
             <div style={{ fontSize: 14, color: C.textPrimary, fontWeight: 600, userSelect: "all" }}>Action Required: Remediation of Active Vulnerabilities for "{currentMonth} - {apmIdsString}"</div>
           </div>
           
-          <div ref={contentRef} style={{ background: "#ffffff", color: "#111827", padding: "24px", borderRadius: 8, fontSize: 13, fontFamily: "Calibri, Arial, sans-serif", lineHeight: 1.6 }}>
+          <div ref={contentRef} style={{ background: "#ffffff", color: "#111827", padding: "24px", borderRadius: 8, fontSize: 13, fontFamily: "Aptos, 'Aptos Display', Calibri, Arial, sans-serif", lineHeight: 1.6 }}>
             <p style={{ margin: "0 0 16px 0", color: "#111827" }}>Hello Team,</p>
             <p style={{ margin: "0 0 20px 0", color: "#111827" }}>
               The latest vulnerability scan results for <strong>{appNames}</strong> have been shared for the following APM ID(s):&nbsp;
@@ -1917,12 +1917,12 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
             </p>
 
             {/* Summary & Charts Container Table */}
-            <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", marginBottom: 24, borderCollapse: "separate" }}>
+            <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", marginBottom: 24, borderCollapse: "separate", fontFamily: "Aptos, 'Aptos Display', Calibri, Arial, sans-serif" }}>
               <tbody>
                 <tr>
                   {/* Summary Table */}
                   <td style={{ verticalAlign: "top", width: "36%", paddingRight: 16 }}>
-                    <table border="1" cellPadding="10" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", border: "1px solid #94a3b8", fontFamily: "Calibri, Arial, sans-serif" }}>
+                    <table border="1" cellPadding="10" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", border: "1px solid #94a3b8", fontFamily: "Aptos, 'Aptos Display', Calibri, Arial, sans-serif" }}>
                       <thead>
                         <tr style={{ backgroundColor: headerColor }}>
                           <th colSpan="2" style={{ border: "1px solid #94a3b8", padding: "10px 14px", textAlign: "left", backgroundColor: headerColor, color: "#ffffff", fontWeight: 700, fontSize: 13 }}>
@@ -1953,7 +1953,7 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
                   
                   {/* Two Visual Charts: Vulnerability by Scan Type & SLA Status */}
                   <td style={{ verticalAlign: "top", width: "64%" }}>
-                    <table border="1" cellPadding="12" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", border: "1px solid #94a3b8", backgroundColor: "#ffffff", fontFamily: "Calibri, Arial, sans-serif" }}>
+                    <table border="1" cellPadding="12" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", border: "1px solid #94a3b8", backgroundColor: "#ffffff", fontFamily: "Aptos, 'Aptos Display', Calibri, Arial, sans-serif" }}>
                       <thead>
                         <tr style={{ backgroundColor: "#1e293b" }}>
                           <th style={{ border: "1px solid #94a3b8", padding: "10px 14px", textAlign: "center", backgroundColor: "#1e293b", color: "#ffffff", fontWeight: 700, width: "56%", fontSize: 12.5 }}>
@@ -1970,7 +1970,7 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
                           <td style={{ border: "1px solid #cbd5e1", padding: "12px 14px", verticalAlign: "top", backgroundColor: "#ffffff" }}>
                             {scanBars.map((bar, i) => (
                               <div key={bar.name || i} style={{ marginBottom: i === scanBars.length - 1 ? 0 : 10 }}>
-                                <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", marginBottom: "4px", fontFamily: "Calibri, Arial, sans-serif" }}>
+                                <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", marginBottom: "4px", fontFamily: "Aptos, 'Aptos Display', Calibri, Arial, sans-serif" }}>
                                   <tbody>
                                     <tr>
                                       <td style={{ textAlign: "left", fontSize: "11.5px", fontWeight: 600, color: "#334155", padding: "0" }}>
@@ -2003,7 +2003,7 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
                             {/* Within SLA Bar - Only shown if not filtered exclusively to Past SLA */}
                             {(!isOnlyPastSla || withinSlaCount > 0) && (
                               <div style={{ marginBottom: isOnlyWithinSla ? 0 : 10 }}>
-                                <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", marginBottom: "4px", fontFamily: "Calibri, Arial, sans-serif" }}>
+                                <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", marginBottom: "4px", fontFamily: "Aptos, 'Aptos Display', Calibri, Arial, sans-serif" }}>
                                   <tbody>
                                     <tr>
                                       <td style={{ textAlign: "left", fontSize: "11.5px", fontWeight: 600, color: "#166534", padding: "0" }}>
@@ -2030,7 +2030,7 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
                             {/* Past SLA Bar - Only shown if not filtered exclusively to Within SLA */}
                             {(!isOnlyWithinSla || pastSlaCount > 0) && (
                               <div style={{ marginBottom: 10 }}>
-                                <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", marginBottom: "4px", fontFamily: "Calibri, Arial, sans-serif" }}>
+                                <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", marginBottom: "4px", fontFamily: "Aptos, 'Aptos Display', Calibri, Arial, sans-serif" }}>
                                   <tbody>
                                     <tr>
                                       <td style={{ textAlign: "left", fontSize: "11.5px", fontWeight: 600, color: "#991b1b", padding: "0" }}>
@@ -2086,7 +2086,7 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
             )}
 
             <p style={{ margin: "0 0 8px 0", color: "#111827" }}><strong>As per DOSS (DIRECTV Official Security Standards), remediation timelines are as follows:</strong></p>
-            <table border="1" cellPadding="8" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", marginBottom: 24, border: "1px solid #94a3b8", fontFamily: "Calibri, Arial, sans-serif", fontSize: 12.5 }}>
+            <table border="1" cellPadding="8" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", marginBottom: 24, border: "1px solid #94a3b8", fontFamily: "Aptos, 'Aptos Display', Calibri, Arial, sans-serif", fontSize: 12.5 }}>
               <thead>
                 <tr style={{ backgroundColor: "#1e293b", color: "#ffffff" }}>
                   <th colSpan="2" style={{ border: "1px solid #94a3b8", padding: "10px 12px", backgroundColor: "#1e293b", color: "#ffffff", textAlign: "center", fontWeight: 700 }}>Remediation Category</th>
@@ -3099,7 +3099,7 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
                 `).join("");
                 
                 const tableHtml = `
-                  <table border="1" cellpadding="8" cellspacing="0" style="border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:12px;width:100%;">
+                  <table border="1" cellpadding="8" cellspacing="0" style="border-collapse:collapse;font-family:Aptos,'Aptos Display',Calibri,Arial,sans-serif;font-size:12px;width:100%;">
                     <thead>
                       <tr style="background-color:#1e293b;color:#ffffff;">
                         <th style="border:1px solid #94a3b8;padding:8px 12px;text-align:left;background-color:#1e293b;color:#ffffff;">Application Name</th>
