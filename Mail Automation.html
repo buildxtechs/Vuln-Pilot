@@ -170,21 +170,22 @@ const selectStyle = {
 /* --------------------------- header canonicalization --------------------------- */
 
 const CANONICAL = [
-  ["index", "Index"], ["appName", "Application Name"], ["apmId", "APM ID"], ["scanType", "Scan Type"],
+  ["index", "Index"], ["appName", "Application Name"], ["appName", "Application"], ["apmId", "APM ID"], ["scanType", "Scan Type"],
   ["ip", "IP"], ["dns", "DNS"], ["netbios", "NetBIOS"], ["trackingMethod", "Tracking Method"],
   ["os", "OS"], ["ipStatus", "IP Status"], ["uniqueId", "Unique id"],
-  ["vulnName", "Vulnerability Name"], ["vulnStatus", "Vulnerability Status"], ["type", "Type"],
-  ["riskRating", "Risk Rating"], ["port", "Port"], ["protocol", "Protocol"], ["fqdn", "FQDN"],
-  ["ssl", "SSL"], ["firstFound", "First Found date"], ["lastDetected", "Last Detected"],
-  ["timesDetected", "Times Detected"], ["dateLastFixed", "Date Last Fixed"],
+  ["vulnName", "Vulnerability Name"], ["vulnName", "Vulnerability"], ["vulnName", "Title"],
+  ["vulnStatus", "Vulnerability Status"], ["vulnStatus", "Vuln Status"], ["vulnStatus", "Status"], ["type", "Type"],
+  ["riskRating", "Risk Rating"], ["riskRating", "Severity"], ["port", "Port"], ["protocol", "Protocol"], ["fqdn", "FQDN"],
+  ["ssl", "SSL"], ["firstFound", "First Found date"], ["firstFound", "First Found Date"], ["firstFound", "First Detected"],
+  ["lastDetected", "Last Detected"], ["timesDetected", "Times Detected"], ["dateLastFixed", "Date Last Fixed"],
   ["firstReopened", "First Reopened"], ["lastReopened", "Last Reopened"],
   ["timesReopened", "Times Reopened"], ["cveId", "CVE ID"], ["vendorRef", "Vendor Reference"],
   ["bugtraqId", "Bugtraq ID"], ["threat", "Threat"], ["impact", "Impact"],
-  ["recommendation", "Recommendation"], ["exploitability", "Exploitability"],
+  ["recommendation", "Recommendation"], ["recommendation", "Solution"], ["exploitability", "Exploitability"],
   ["results", "Results"], ["pciVuln", "PCI Vuln"], ["ticketState", "Ticket State"],
   ["instance", "Instance"], ["category", "Category"], ["qds", "QDS"], ["ars", "ARS"],
   ["acs", "ACS"], ["truRisk", "TruRisk Score"], ["ifOrPci", "IF or PCI"], ["ifPciAlt", "IF-PCI"], ["source", "Source"],
-  ["slaCol", "SLA"], ["vulnAgeCol", "Vulnerability Age"], ["appOwner", "App Owner"],
+  ["slaCol", "SLA"], ["vulnAgeCol", "Vulnerability Age"], ["vulnAgeCol", "Age"], ["appOwner", "App Owner"],
   ["organization", "Organization"], ["ifField", "IF"], ["pci", "PCI"],
   ["impactedAsset", "Impacted Asset"], ["cloudAccount", "Cloud Account Name"],
   ["environment", "Environment"], ["csp", "CSP"], ["vulnId", "Vulnerability ID"],
@@ -2754,7 +2755,7 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
     return (
       <div style={{ maxWidth: 780, margin: "40px auto", padding: "0 16px" }}>
         {/* Prominent PowerBI Data Sheet Notice Banner */}
-        <div style={{ background: "linear-gradient(135deg, rgba(234, 179, 8, 0.12), rgba(245, 158, 11, 0.05))", border: "1px solid rgba(234, 179, 8, 0.35)", borderRadius: 12, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "flex-start", gap: 14 }}>
+        <div style={{ background: "linear-gradient(135deg, rgba(234, 179, 8, 0.12), rgba(245, 158, 11, 0.05))", border: "1px solid rgba(234, 179, 8, 0.35)", borderRadius: 12, padding: "18px 20px", marginBottom: 24, display: "flex", alignItems: "flex-start", gap: 14 }}>
           <div style={{ background: "rgba(234, 179, 8, 0.2)", color: "#ca8a04", borderRadius: 8, padding: 8, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <FileText size={22} />
           </div>
@@ -2762,8 +2763,18 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
             <div style={{ fontSize: 14, fontWeight: 700, color: "#facc15", marginBottom: 4 }}>
               Required Input: PowerBI Data Sheet
             </div>
-            <div style={{ fontSize: 12.5, color: C.textSecondary, lineHeight: 1.5 }}>
-              Kindly upload the <strong>PowerBI data sheet</strong> (.csv or .xlsx) to generate, filter, and preview the automated Follow-Up mail.
+            <div style={{ fontSize: 12.5, color: C.textSecondary, lineHeight: 1.5, marginBottom: 12 }}>
+              Kindly upload the <strong>PowerBI data sheet</strong> (.csv, .xlsx, or .xls) for automated follow-up mail generation and SLA metrics.
+            </div>
+            <div style={{ fontSize: 11.5, color: C.textMuted, marginBottom: 6, fontWeight: 600 }}>
+              Recognized Header Columns:
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+              {["Index", "APM ID", "Application", "Vulnerability", "Vulnerability Age", "Risk Rating", "IF", "PCI", "IF or PCI", "IF-PCI", "Scan Type", "App Owner", "First Found Date", "Due Date", "SLA Status", "Impacted Asset", "Cloud Account Name", "CSP", "Environment", "Recommendation"].map(h => (
+                <span key={h} style={{ fontSize: 11, background: "rgba(255,255,255,0.06)", border: `1px solid ${C.borderLight}`, padding: "2px 8px", borderRadius: 4, color: C.textPrimary }}>
+                  {h}
+                </span>
+              ))}
             </div>
           </div>
         </div>
