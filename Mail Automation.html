@@ -1862,13 +1862,19 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
   }
   
   const maxScan = Math.max(...Object.values(scanCounts), 1);
-  const scanColors = ["#0284c7", "#0d9488", "#7c3aed", "#ea580c", "#db2777"];
-  const scanBars = Object.keys(scanCounts).map((k, i) => ({
-    name: k,
-    count: scanCounts[k],
-    pct: Math.max(Math.round((scanCounts[k] / maxScan) * 100), 12),
-    color: scanColors[i % scanColors.length]
-  })).sort((a,b) => b.count - a.count);
+  const scanColors = ["#0284c7", "#0d9488", "#8b5cf6", "#f97316", "#ec4899", "#10b981"];
+  const scanBars = Object.keys(scanCounts).map((k, i) => {
+    const count = scanCounts[k];
+    const pctOfTotal = total > 0 ? Math.round((count / total) * 100) : 0;
+    const barWidth = Math.max(Math.round((count / maxScan) * 100), 10);
+    return {
+      name: k,
+      count: count,
+      pctOfTotal: pctOfTotal,
+      barWidth: barWidth,
+      color: scanColors[i % scanColors.length]
+    };
+  }).sort((a,b) => b.count - a.count);
 
   const rawAppNames = Array.from(new Set(activeRows.map(a => a.appName || a.raw?.["Application Name"]).filter(Boolean)));
   const appNames = rawAppNames.length > 0 ? rawAppNames.join(", ") : "<App names>";
@@ -1902,16 +1908,18 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
             <p style={{ margin: "0 0 20px 0", color: "#111827" }}>
               The latest vulnerability scan results for <strong>{appNames}</strong> have been shared for the following APM ID(s):&nbsp;
               {apmIdsDisplay.map((id, idx) => (
-                <span key={idx} style={{ display: "inline-block", backgroundColor: "#fef3c7", color: "#92400e", padding: "2px 8px", borderRadius: 4, fontWeight: 700, border: "1px solid #fde68a", marginRight: 6, marginBottom: 4, fontFamily: "'Courier New', Courier, monospace" }}>
+                <span key={idx} style={{ display: "inline-block", backgroundColor: "#fef3c7", color: "#92400e", padding: "3px 10px", borderRadius: 4, fontWeight: 700, border: "1px solid #fde68a", marginRight: 6, marginBottom: 4, fontFamily: "'Courier New', Courier, monospace" }}>
                   {id}
                 </span>
               ))}
             </p>
 
+            {/* Summary & Charts Container Table */}
             <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", marginBottom: 24, borderCollapse: "separate" }}>
               <tbody>
                 <tr>
-                  <td style={{ verticalAlign: "top", width: "38%", paddingRight: 16 }}>
+                  {/* Summary Table */}
+                  <td style={{ verticalAlign: "top", width: "36%", paddingRight: 16 }}>
                     <table border="1" cellPadding="10" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", border: "1px solid #94a3b8", fontFamily: "Calibri, Arial, sans-serif" }}>
                       <thead>
                         <tr style={{ backgroundColor: headerColor }}>
@@ -1937,32 +1945,39 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
                     </table>
                   </td>
                   
-                  <td style={{ verticalAlign: "top", width: "62%" }}>
+                  {/* Two Visual Charts: Vulnerability by Scan Type & SLA Status */}
+                  <td style={{ verticalAlign: "top", width: "64%" }}>
                     <table border="1" cellPadding="12" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", border: "1px solid #94a3b8", backgroundColor: "#ffffff", fontFamily: "Calibri, Arial, sans-serif" }}>
                       <thead>
                         <tr style={{ backgroundColor: "#1e293b" }}>
-                          <th style={{ border: "1px solid #94a3b8", padding: "10px 14px", textAlign: "center", backgroundColor: "#1e293b", color: "#ffffff", fontWeight: 700, width: "55%", fontSize: 12.5 }}>
+                          <th style={{ border: "1px solid #94a3b8", padding: "10px 14px", textAlign: "center", backgroundColor: "#1e293b", color: "#ffffff", fontWeight: 700, width: "56%", fontSize: 12.5 }}>
                             Vulnerability by Scan Type
                           </th>
-                          <th style={{ border: "1px solid #94a3b8", padding: "10px 14px", textAlign: "center", backgroundColor: "#1e293b", color: "#ffffff", fontWeight: 700, width: "45%", fontSize: 12.5 }}>
+                          <th style={{ border: "1px solid #94a3b8", padding: "10px 14px", textAlign: "center", backgroundColor: "#1e293b", color: "#ffffff", fontWeight: 700, width: "44%", fontSize: 12.5 }}>
                             SLA Status
                           </th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <td style={{ border: "1px solid #cbd5e1", padding: "14px", verticalAlign: "middle", backgroundColor: "#ffffff" }}>
+                          {/* Scan Type Chart Bar Progress */}
+                          <td style={{ border: "1px solid #cbd5e1", padding: "14px", verticalAlign: "top", backgroundColor: "#ffffff" }}>
                             {scanBars.map((bar, i) => (
-                              <div key={bar.name || i} style={{ marginBottom: i === scanBars.length - 1 ? 0 : 10 }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, fontWeight: 600, color: "#334155", marginBottom: 3 }}>
-                                  <span>{bar.name}</span>
-                                  <span style={{ color: "#0f172a", fontWeight: 700 }}>{bar.count}</span>
+                              <div key={bar.name || i} style={{ marginBottom: i === scanBars.length - 1 ? 0 : 12 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11.5, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
+                                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                                    <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", backgroundColor: bar.color }}></span>
+                                    {bar.name}
+                                  </span>
+                                  <span style={{ color: "#0f172a", fontWeight: 700 }}>
+                                    {bar.count} <span style={{ color: "#64748b", fontWeight: 400, fontSize: 10.5 }}>({bar.pctOfTotal}%)</span>
+                                  </span>
                                 </div>
-                                <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", height: "14px", backgroundColor: "#f1f5f9", borderRadius: "3px", border: "1px solid #e2e8f0" }}>
+                                <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", height: "12px", backgroundColor: "#f1f5f9", borderRadius: "3px", border: "1px solid #e2e8f0" }}>
                                   <tbody>
                                     <tr>
-                                      <td style={{ width: `${bar.pct}%`, backgroundColor: bar.color, borderRadius: "2px", height: "12px" }}></td>
-                                      <td style={{ width: `${100 - bar.pct}%`, backgroundColor: "#f1f5f9" }}></td>
+                                      <td style={{ width: `${bar.barWidth}%`, backgroundColor: bar.color, borderRadius: "2px", height: "10px" }}></td>
+                                      <td style={{ width: `${100 - bar.barWidth}%`, backgroundColor: "#f1f5f9" }}></td>
                                     </tr>
                                   </tbody>
                                 </table>
@@ -1970,25 +1985,27 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
                             ))}
                           </td>
                           
+                          {/* SLA Status Gauge / Donut */}
                           <td style={{ border: "1px solid #cbd5e1", padding: "14px", verticalAlign: "middle", textAlign: "center", backgroundColor: "#ffffff" }}>
                             <div style={{ display: "inline-block", margin: "0 auto 10px auto" }}>
-                              <div style={{ width: 88, height: 88, borderRadius: "50%", background: `conic-gradient(#16a34a 0% ${withinPct}%, #dc2626 ${withinPct}% 100%)`, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #e2e8f0" }}>
-                                <div style={{ width: 48, height: 48, borderRadius: "50%", backgroundColor: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#0f172a" }}>
-                                  {withinPct}%
+                              <div style={{ width: 92, height: 92, borderRadius: "50%", background: `conic-gradient(#16a34a 0% ${withinPct}%, #dc2626 ${withinPct}% 100%)`, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #e2e8f0", boxShadow: "0 2px 6px rgba(0,0,0,0.06)" }}>
+                                <div style={{ width: 52, height: 52, borderRadius: "50%", backgroundColor: "#ffffff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, color: "#0f172a" }}>
+                                  <span>{withinPct}%</span>
+                                  <span style={{ fontSize: 8.5, color: "#166534", fontWeight: 600, textTransform: "uppercase" }}>Within</span>
                                 </div>
                               </div>
                             </div>
-                            <table border="0" cellPadding="2" cellSpacing="0" style={{ width: "100%", fontSize: 11, fontFamily: "Calibri, Arial, sans-serif" }}>
+                            <table border="0" cellPadding="3" cellSpacing="0" style={{ width: "100%", fontSize: 11, fontFamily: "Calibri, Arial, sans-serif" }}>
                               <tbody>
                                 <tr>
                                   <td style={{ textAlign: "left", color: "#166534", fontWeight: 700 }}>
-                                    <span style={{ color: "#16a34a", fontSize: 14 }}>●</span> Within SLA:
+                                    <span style={{ color: "#16a34a", fontSize: 13 }}>●</span> Within SLA:
                                   </td>
                                   <td style={{ textAlign: "right", fontWeight: 700, color: "#166534" }}>{withinSlaCount} ({withinPct}%)</td>
                                 </tr>
                                 <tr>
                                   <td style={{ textAlign: "left", color: "#991b1b", fontWeight: 700 }}>
-                                    <span style={{ color: "#dc2626", fontSize: 14 }}>●</span> Past SLA:
+                                    <span style={{ color: "#dc2626", fontSize: 13 }}>●</span> Past SLA:
                                   </td>
                                   <td style={{ textAlign: "right", fontWeight: 700, color: "#991b1b" }}>{pastSlaCount} ({pastPct}%)</td>
                                 </tr>
@@ -2673,16 +2690,53 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
 
   if (!rows || rows.length === 0) {
     return (
-      <div style={{ padding: 40, textAlign: "center", color: C.textSecondary, background: `linear-gradient(135deg, ${C.surface}, ${C.bgElevated})`, border: `1px solid ${C.border}`, borderRadius: 16, boxShadow: "0 10px 30px rgba(0,0,0,0.1)", maxWidth: 600, margin: "40px auto" }}>
-        <div style={{ marginBottom: 20 }}>
-          <Sparkles size={48} color={C.accent} style={{ filter: "drop-shadow(0 0 10px rgba(59, 130, 246, 0.5))" }} />
+      <div style={{ maxWidth: 780, margin: "40px auto", padding: "0 16px" }}>
+        {/* Prominent PowerBI Data Sheet Notice Banner */}
+        <div style={{ background: "linear-gradient(135deg, rgba(234, 179, 8, 0.12), rgba(245, 158, 11, 0.05))", border: "1px solid rgba(234, 179, 8, 0.35)", borderRadius: 12, padding: "16px 20px", marginBottom: 24, display: "flex", alignItems: "flex-start", gap: 14 }}>
+          <div style={{ background: "rgba(234, 179, 8, 0.2)", color: "#ca8a04", borderRadius: 8, padding: 8, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <FileText size={22} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#facc15", marginBottom: 4 }}>
+              Required Input: PowerBI Data Sheet
+            </div>
+            <div style={{ fontSize: 12.5, color: C.textSecondary, lineHeight: 1.5 }}>
+              Kindly upload the <strong>PowerBI data sheet</strong> (.csv or .xlsx) to generate, filter, and preview the automated Follow-Up mail.
+            </div>
+          </div>
         </div>
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: C.textPrimary, marginBottom: 12 }}>Upload Data for Follow Mail</h2>
-        <p style={{ fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>Please upload a CSV or XLSX file containing the dataset for generating your follow-up mail.</p>
-        <label style={{ ...btnStyle(true), padding: "12px 24px", fontSize: 15, borderRadius: 8, cursor: "pointer", display: "inline-block", background: `linear-gradient(135deg, ${C.accent}, #2563EB)`, border: "none", boxShadow: "0 4px 15px rgba(59, 130, 246, 0.4)" }}>
-          Upload Dataset
-          <input type="file" accept=".csv,.xlsx,.xls" onChange={handleUpload} style={{ display: "none" }} />
-        </label>
+
+        {/* Upload Card */}
+        <div style={{ padding: "44px 32px", textAlign: "center", color: C.textSecondary, background: `linear-gradient(135deg, ${C.surface}, ${C.bgElevated})`, border: `1px solid ${C.border}`, borderRadius: 16, boxShadow: "0 12px 36px rgba(0,0,0,0.25)" }}>
+          <div style={{ marginBottom: 20, display: "inline-flex", padding: 16, background: "rgba(59, 130, 246, 0.1)", borderRadius: "50%", border: "1px solid rgba(59, 130, 246, 0.2)" }}>
+            <Sparkles size={42} color={C.accent} style={{ filter: "drop-shadow(0 0 12px rgba(59, 130, 246, 0.5))" }} />
+          </div>
+          <h2 style={{ fontSize: 24, fontWeight: 700, color: C.textPrimary, marginBottom: 8 }}>Follow-Up Mail Intelligence Engine</h2>
+          <p style={{ fontSize: 13.5, color: C.textMuted, marginBottom: 28, maxWidth: 520, margin: "0 auto 28px auto", lineHeight: 1.6 }}>
+            Upload your weekly PowerBI export spreadsheet to automatically generate compliant Outlook follow-up emails, SLA status gauges, and scan-type breakdowns.
+          </p>
+
+          <label style={{ ...btnStyle(true), padding: "14px 28px", fontSize: 15, borderRadius: 10, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 10, background: `linear-gradient(135deg, ${C.accent}, #1d4ed8)`, border: "none", boxShadow: "0 4px 18px rgba(59, 130, 246, 0.4)", fontWeight: 600 }}>
+            <Upload size={18} />
+            <span>Upload PowerBI Data Sheet</span>
+            <input type="file" accept=".csv,.xlsx,.xls" onChange={handleUpload} style={{ display: "none" }} />
+          </label>
+
+          <div style={{ marginTop: 32, paddingTop: 24, borderTop: `1px solid ${C.borderLight}`, display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, textAlign: "left" }}>
+            <div style={{ padding: "10px 14px", background: C.surfaceHover, borderRadius: 8, border: `1px solid ${C.borderLight}` }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: C.textPrimary, marginBottom: 2 }}>1. Filter Data</div>
+              <div style={{ fontSize: 11, color: C.textMuted }}>Slice by APM ID, IF/PCI, Scan Type, or Owner</div>
+            </div>
+            <div style={{ padding: "10px 14px", background: C.surfaceHover, borderRadius: 8, border: `1px solid ${C.borderLight}` }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: C.textPrimary, marginBottom: 2 }}>2. Preview Charts</div>
+              <div style={{ fontSize: 11, color: C.textMuted }}>Visual scan distribution & SLA donut</div>
+            </div>
+            <div style={{ padding: "10px 14px", background: C.surfaceHover, borderRadius: 8, border: `1px solid ${C.borderLight}` }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: C.textPrimary, marginBottom: 2 }}>3. 1-Click Outlook</div>
+              <div style={{ fontSize: 11, color: C.textMuted }}>Copy & paste directly with zero format loss</div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -2734,6 +2788,19 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
 
   return (
     <div>
+      {/* Notice Banner when Dataset is loaded */}
+      <div style={{ background: "linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(14, 165, 233, 0.04))", border: `1px solid ${C.borderLight}`, borderRadius: 10, padding: "12px 18px", marginBottom: 18, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ fontSize: 16 }}>📊</span>
+          <span style={{ fontSize: 12.5, color: C.textSecondary }}>
+            <strong>Note:</strong> Follow Up Mail data is active. If your team receives updated weekly vulnerability metrics, <em>kindly upload the latest PowerBI data sheet</em> using <strong>"Replace PowerBI Sheet"</strong>.
+          </span>
+        </div>
+        <div style={{ fontSize: 11, color: C.accent, fontWeight: 600, background: C.accentDim, padding: "4px 8px", borderRadius: 4 }}>
+          {rows.length.toLocaleString()} records loaded
+        </div>
+      </div>
+
       <Card style={{ marginBottom: 20 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <SectionTitle icon={FilterIcon}>Advanced Filters</SectionTitle>
@@ -2743,12 +2810,12 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
             </div>
             <button
               onClick={() => setShowFollowUpModal(true)}
-              style={{ ...btnStyle(false), background: "rgba(234, 179, 8, 0.1)", color: "#ca8a04", border: `1px solid #ca8a04`, padding: "6px 12px", cursor: "pointer", fontWeight: 600 }}
+              style={{ ...btnStyle(false), background: "rgba(234, 179, 8, 0.12)", color: "#ca8a04", border: `1px solid #ca8a04`, padding: "6px 14px", cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}
             >
-              Follow Up Mail
+              <Sparkles size={14} /> Follow Up Mail
             </button>
-            <label style={{ ...btnStyle(false), padding: "6px 12px", background: C.surfaceHover, border: `1px solid ${C.borderLight}`, cursor: "pointer", fontWeight: 600 }}>
-              Replace Dataset
+            <label style={{ ...btnStyle(false), padding: "6px 12px", background: C.surfaceHover, border: `1px solid ${C.borderLight}`, cursor: "pointer", fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}>
+              <Upload size={14} /> Replace PowerBI Sheet
               <input type="file" accept=".csv,.xlsx,.xls" onChange={handleUpload} style={{ display: "none" }} />
             </label>
           </div>
