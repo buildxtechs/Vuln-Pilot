@@ -2629,15 +2629,16 @@ function CustomDashboardFilterBar({ filters, setFilters, filterOptions }) {
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
-      <MultiSelectDropdown label="IF/PCI" options={filterOptions.ifPci} selected={filters.ifPci} onChange={(v) => setFilters(f => ({...f, ifPci: v}))} />
-      <MultiSelectDropdown label="SLA Status" options={filterOptions.slaStatus} selected={filters.slaStatus} onChange={(v) => setFilters(f => ({...f, slaStatus: v}))} />
-      <MultiSelectDropdown label="Category" options={filterOptions.vulnCategory} selected={filters.vulnCategory} onChange={(v) => setFilters(f => ({...f, vulnCategory: v}))} searchable />
-      <MultiSelectDropdown label="Scan Type" options={filterOptions.scanType} selected={filters.scanType} onChange={(v) => setFilters(f => ({...f, scanType: v}))} />
-      <MultiSelectDropdown label="Risk Rating" options={filterOptions.riskRating} selected={filters.riskRating} onChange={(v) => setFilters(f => ({...f, riskRating: v}))} />
-      <MultiSelectDropdown label="Environment" options={filterOptions.environment} selected={filters.environment} onChange={(v) => setFilters(f => ({...f, environment: v}))} />
-      <MultiSelectDropdown label="CSP" options={filterOptions.csp} selected={filters.csp} onChange={(v) => setFilters(f => ({...f, csp: v}))} />
-      <MultiSelectDropdown label="App Name" options={filterOptions.appName} selected={filters.appName} onChange={(v) => setFilters(f => ({...f, appName: v}))} searchable />
-      <MultiSelectDropdown label="App Owner" options={filterOptions.appOwner} selected={filters.appOwner} onChange={(v) => setFilters(f => ({...f, appOwner: v}))} searchable />
+      <MultiSelectDropdown label="Vuln Status" options={filterOptions.vulnStatus || []} selected={filters.vulnStatus || []} onChange={(v) => setFilters(f => ({...f, vulnStatus: v}))} />
+      <MultiSelectDropdown label="IF/PCI" options={filterOptions.ifPci || []} selected={filters.ifPci || []} onChange={(v) => setFilters(f => ({...f, ifPci: v}))} />
+      <MultiSelectDropdown label="SLA Status" options={filterOptions.slaStatus || []} selected={filters.slaStatus || []} onChange={(v) => setFilters(f => ({...f, slaStatus: v}))} />
+      <MultiSelectDropdown label="Category" options={filterOptions.vulnCategory || []} selected={filters.vulnCategory || []} onChange={(v) => setFilters(f => ({...f, vulnCategory: v}))} searchable />
+      <MultiSelectDropdown label="Scan Type" options={filterOptions.scanType || []} selected={filters.scanType || []} onChange={(v) => setFilters(f => ({...f, scanType: v}))} />
+      <MultiSelectDropdown label="Risk Rating" options={filterOptions.riskRating || []} selected={filters.riskRating || []} onChange={(v) => setFilters(f => ({...f, riskRating: v}))} />
+      <MultiSelectDropdown label="Environment" options={filterOptions.environment || []} selected={filters.environment || []} onChange={(v) => setFilters(f => ({...f, environment: v}))} />
+      <MultiSelectDropdown label="CSP" options={filterOptions.csp || []} selected={filters.csp || []} onChange={(v) => setFilters(f => ({...f, csp: v}))} />
+      <MultiSelectDropdown label="App Name" options={filterOptions.appName || []} selected={filters.appName || []} onChange={(v) => setFilters(f => ({...f, appName: v}))} searchable />
+      <MultiSelectDropdown label="App Owner" options={filterOptions.appOwner || []} selected={filters.appOwner || []} onChange={(v) => setFilters(f => ({...f, appOwner: v}))} searchable />
 
       {!isClean && (
         <div onClick={clearAll} style={{ ...btnStyle(false), color: C.critical, borderColor: C.critical, padding: "6px 12px", display: "flex", alignItems: "center", gap: 4 }}>
@@ -2650,7 +2651,7 @@ function CustomDashboardFilterBar({ filters, setFilters, filterOptions }) {
 
 function CustomDashboardPage({ rows, setRows, setAllRows }) {
   const [filters, setFilters] = useState({
-    ifPci: [], slaStatus: [], vulnCategory: [], scanType: [], riskRating: [], environment: [], csp: [], appName: [], appOwner: []
+    vulnStatus: [], ifPci: [], slaStatus: [], vulnCategory: [], scanType: [], riskRating: [], environment: [], csp: [], appName: [], appOwner: []
   });
   const [showFollowUpModal, setShowFollowUpModal] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
@@ -2664,43 +2665,63 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
     localStorage.setItem("vulnOpsMailConfig", JSON.stringify(newCfg));
   };
 
-  const getOpts = (key) => Array.from(new Set(rows.map(r => r[key] || r.raw?.[key]).filter(Boolean))).sort();
+  const getVulnStatus = (r) => r.vulnStatus || r.raw?.["Vulnerability Status"] || r.raw?.["Vuln Status"] || (r.isOpen ? "Open" : "Closed");
   const getSlaStatus = (r) => r.slaStatus || r.raw?.["SLA Status"] || (r.withinSlaStatus ? r.withinSlaStatus : "Unknown");
   const getIfPci = (r) => r.ifOrPci || r.raw?.["IF or PCI"] || r.ifPciAlt || r.raw?.["IF-PCI"] || "Unknown";
   const getRiskRating = (r) => r.riskRating || r.raw?.["Risk Rating"] || "Unknown";
+  const getCategory = (r) => r.vulnCategory || r.raw?.["Vulnerability Category"] || "";
+  const getScanType = (r) => r.scanType || r.raw?.["Scan Type"] || "";
+  const getEnv = (r) => r.environment || r.raw?.["Environment"] || "";
+  const getCsp = (r) => r.csp || r.raw?.["CSP"] || "";
+  const getAppName = (r) => r.appName || r.raw?.["Application Name"] || "";
+  const getAppOwner = (r) => r.appOwner || r.raw?.["App Owner"] || "";
 
+  // Helper to test if a row matches active filters, optionally excluding one filter key
+  const rowMatchesFilters = (r, excludeKey = null) => {
+    const matchAttr = (selArr, val) => selArr.length === 0 || selArr.includes(val);
+
+    if (excludeKey !== "vulnStatus" && !matchAttr(filters.vulnStatus, getVulnStatus(r))) return false;
+    if (excludeKey !== "ifPci" && !matchAttr(filters.ifPci, getIfPci(r))) return false;
+    if (excludeKey !== "slaStatus" && !matchAttr(filters.slaStatus, getSlaStatus(r))) return false;
+    if (excludeKey !== "vulnCategory" && !matchAttr(filters.vulnCategory, getCategory(r))) return false;
+    if (excludeKey !== "scanType" && !matchAttr(filters.scanType, getScanType(r))) return false;
+    if (excludeKey !== "riskRating" && !matchAttr(filters.riskRating, getRiskRating(r))) return false;
+    if (excludeKey !== "environment" && !matchAttr(filters.environment, getEnv(r))) return false;
+    if (excludeKey !== "csp" && !matchAttr(filters.csp, getCsp(r))) return false;
+    if (excludeKey !== "appName" && !matchAttr(filters.appName, getAppName(r))) return false;
+    if (excludeKey !== "appOwner" && !matchAttr(filters.appOwner, getAppOwner(r))) return false;
+
+    return true;
+  };
+
+  // Dynamic (faceted) filter options: each dropdown shows only valid choices based on other active filters
   const filterOptions = useMemo(() => {
-    if (!rows) return {};
-    return {
-      ifPci: Array.from(new Set(rows.map(getIfPci))).filter(x => x !== "Unknown").sort(),
-      slaStatus: Array.from(new Set(rows.map(getSlaStatus))).filter(x => x !== "Unknown").sort(),
-      vulnCategory: getOpts("vulnCategory"),
-      scanType: getOpts("scanType"),
-      riskRating: Array.from(new Set(rows.map(getRiskRating))).filter(x => x !== "Unknown").sort(),
-      environment: getOpts("environment"),
-      csp: getOpts("csp"),
-      appName: getOpts("appName"),
-      appOwner: getOpts("appOwner")
+    if (!rows || rows.length === 0) return {};
+
+    const getFacetOpts = (key, getter) => {
+      const matchingRows = rows.filter(r => rowMatchesFilters(r, key));
+      const vals = Array.from(new Set(matchingRows.map(getter).filter(Boolean))).filter(x => x !== "Unknown");
+      return vals.sort();
     };
-  }, [rows]);
+
+    return {
+      vulnStatus: getFacetOpts("vulnStatus", getVulnStatus),
+      ifPci: getFacetOpts("ifPci", getIfPci),
+      slaStatus: getFacetOpts("slaStatus", getSlaStatus),
+      vulnCategory: getFacetOpts("vulnCategory", getCategory),
+      scanType: getFacetOpts("scanType", getScanType),
+      riskRating: getFacetOpts("riskRating", getRiskRating),
+      environment: getFacetOpts("environment", getEnv),
+      csp: getFacetOpts("csp", getCsp),
+      appName: getFacetOpts("appName", getAppName),
+      appOwner: getFacetOpts("appOwner", getAppOwner)
+    };
+  }, [rows, filters]);
 
   const filteredRows = useMemo(() => {
     if (!rows) return [];
-    return rows.filter(r => {
-      const matchAttr = (selArr, val) => selArr.length === 0 || selArr.includes(val);
-      
-      return matchAttr(filters.ifPci, getIfPci(r)) &&
-             matchAttr(filters.slaStatus, getSlaStatus(r)) &&
-             matchAttr(filters.vulnCategory, r.vulnCategory || r.raw?.["Vulnerability Category"]) &&
-             matchAttr(filters.scanType, r.scanType || r.raw?.["Scan Type"]) &&
-             matchAttr(filters.riskRating, getRiskRating(r)) &&
-             matchAttr(filters.environment, r.environment || r.raw?.["Environment"]) &&
-             matchAttr(filters.csp, r.csp || r.raw?.["CSP"]) &&
-             matchAttr(filters.appName, r.appName || r.raw?.["Application Name"]) &&
-             matchAttr(filters.appOwner, r.appOwner || r.raw?.["App Owner"]);
-    });
+    return rows.filter(r => rowMatchesFilters(r));
   }, [rows, filters]);
-
   // Handle new file upload to replace dataset
   const handleUpload = (e) => {
     const f = e.target.files[0];
