@@ -1961,18 +1961,22 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
                       <tbody>
                         <tr>
                           {/* Scan Type Chart Bar Progress */}
-                          <td style={{ border: "1px solid #cbd5e1", padding: "14px", verticalAlign: "top", backgroundColor: "#ffffff" }}>
+                          <td style={{ border: "1px solid #cbd5e1", padding: "12px 14px", verticalAlign: "top", backgroundColor: "#ffffff" }}>
                             {scanBars.map((bar, i) => (
-                              <div key={bar.name || i} style={{ marginBottom: i === scanBars.length - 1 ? 0 : 12 }}>
-                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11.5, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
-                                  <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-                                    <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", backgroundColor: bar.color }}></span>
-                                    {bar.name}
-                                  </span>
-                                  <span style={{ color: "#0f172a", fontWeight: 700 }}>
-                                    {bar.count} <span style={{ color: "#64748b", fontWeight: 400, fontSize: 10.5 }}>({bar.pctOfTotal}%)</span>
-                                  </span>
-                                </div>
+                              <div key={bar.name || i} style={{ marginBottom: i === scanBars.length - 1 ? 0 : 10 }}>
+                                <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", marginBottom: "4px", fontFamily: "Calibri, Arial, sans-serif" }}>
+                                  <tbody>
+                                    <tr>
+                                      <td style={{ textAlign: "left", fontSize: "11.5px", fontWeight: 600, color: "#334155", padding: "0" }}>
+                                        <span style={{ color: bar.color, fontSize: "13px", lineHeight: "1", verticalAlign: "middle", marginRight: "4px" }}>■</span>
+                                        <span style={{ verticalAlign: "middle" }}>{bar.name}</span>
+                                      </td>
+                                      <td style={{ textAlign: "right", fontSize: "11.5px", color: "#0f172a", fontWeight: 700, padding: "0", whiteSpace: "nowrap" }}>
+                                        {bar.count}&nbsp;&nbsp;<span style={{ color: "#64748b", fontWeight: 400, fontSize: "10.5px" }}>({bar.pctOfTotal}%)</span>
+                                      </td>
+                                    </tr>
+                                  </tbody>
+                                </table>
                                 <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", height: "12px", backgroundColor: "#f1f5f9", borderRadius: "3px", border: "1px solid #e2e8f0" }}>
                                   <tbody>
                                     <tr>
@@ -1986,18 +1990,22 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
                           </td>
                           
                           {/* SLA Status Bar Chart & Metrics */}
-                          <td style={{ border: "1px solid #cbd5e1", padding: "14px", verticalAlign: "top", backgroundColor: "#ffffff" }}>
+                          <td style={{ border: "1px solid #cbd5e1", padding: "12px 14px", verticalAlign: "top", backgroundColor: "#ffffff" }}>
                             {/* Within SLA Bar */}
-                            <div style={{ marginBottom: 12 }}>
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11.5, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
-                                <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-                                  <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", backgroundColor: "#16a34a" }}></span>
-                                  Within SLA
-                                </span>
-                                <span style={{ color: "#166534", fontWeight: 700 }}>
-                                  {withinSlaCount} <span style={{ color: "#64748b", fontWeight: 400, fontSize: 10.5 }}>({withinPct}%)</span>
-                                </span>
-                              </div>
+                            <div style={{ marginBottom: 10 }}>
+                              <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", marginBottom: "4px", fontFamily: "Calibri, Arial, sans-serif" }}>
+                                <tbody>
+                                  <tr>
+                                    <td style={{ textAlign: "left", fontSize: "11.5px", fontWeight: 600, color: "#166534", padding: "0" }}>
+                                      <span style={{ color: "#16a34a", fontSize: "13px", lineHeight: "1", verticalAlign: "middle", marginRight: "4px" }}>■</span>
+                                      <span style={{ verticalAlign: "middle" }}>Within SLA</span>
+                                    </td>
+                                    <td style={{ textAlign: "right", fontSize: "11.5px", color: "#166534", fontWeight: 700, padding: "0", whiteSpace: "nowrap" }}>
+                                      {withinSlaCount}&nbsp;&nbsp;<span style={{ color: "#64748b", fontWeight: 400, fontSize: "10.5px" }}>({withinPct}%)</span>
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
                               <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", height: "12px", backgroundColor: "#f1f5f9", borderRadius: "3px", border: "1px solid #e2e8f0" }}>
                                 <tbody>
                                   <tr>
@@ -2009,16 +2017,20 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
                             </div>
 
                             {/* Past SLA Bar */}
-                            <div style={{ marginBottom: 12 }}>
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 11.5, fontWeight: 600, color: "#334155", marginBottom: 4 }}>
-                                <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
-                                  <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", backgroundColor: "#dc2626" }}></span>
-                                  Past SLA
-                                </span>
-                                <span style={{ color: "#991b1b", fontWeight: 700 }}>
-                                  {pastSlaCount} <span style={{ color: "#64748b", fontWeight: 400, fontSize: 10.5 }}>({pastPct}%)</span>
-                                </span>
-                              </div>
+                            <div style={{ marginBottom: 10 }}>
+                              <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", marginBottom: "4px", fontFamily: "Calibri, Arial, sans-serif" }}>
+                                <tbody>
+                                  <tr>
+                                    <td style={{ textAlign: "left", fontSize: "11.5px", fontWeight: 600, color: "#991b1b", padding: "0" }}>
+                                      <span style={{ color: "#dc2626", fontSize: "13px", lineHeight: "1", verticalAlign: "middle", marginRight: "4px" }}>■</span>
+                                      <span style={{ verticalAlign: "middle" }}>Past SLA</span>
+                                    </td>
+                                    <td style={{ textAlign: "right", fontSize: "11.5px", color: "#991b1b", fontWeight: 700, padding: "0", whiteSpace: "nowrap" }}>
+                                      {pastSlaCount}&nbsp;&nbsp;<span style={{ color: "#64748b", fontWeight: 400, fontSize: "10.5px" }}>({pastPct}%)</span>
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
                               <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", height: "12px", backgroundColor: "#f1f5f9", borderRadius: "3px", border: "1px solid #e2e8f0" }}>
                                 <tbody>
                                   <tr>
