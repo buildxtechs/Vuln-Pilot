@@ -1843,12 +1843,17 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
   };
 
   const activeRows = filteredRows ? filteredRows.filter(r => r.isOpen) : [];
-  const total = activeRows.length || 923;
-  const pastSlaCount = filteredRows ? activeRows.filter(r => r.withinSlaStatus === "Past due SLA").length : 54;
-  const withinSlaCount = filteredRows ? activeRows.filter(r => r.withinSlaStatus === "Within SLA").length : 869;
+  const total = activeRows.length;
+  const pastSlaCount = filteredRows ? activeRows.filter(r => r.withinSlaStatus === "Past due SLA").length : 0;
+  const withinSlaCount = filteredRows ? activeRows.filter(r => r.withinSlaStatus === "Within SLA").length : 0;
   const slaApplicableTotal = pastSlaCount + withinSlaCount;
-  const withinPct = slaApplicableTotal > 0 ? Math.round((withinSlaCount / slaApplicableTotal) * 100) : 94;
-  const pastPct = slaApplicableTotal > 0 ? (100 - withinPct) : 6;
+  
+  // Check if a specific SLA filter is active (or if only one status is present in the dataset)
+  const isOnlyWithinSla = withinSlaCount > 0 && pastSlaCount === 0;
+  const isOnlyPastSla = pastSlaCount > 0 && withinSlaCount === 0;
+  
+  const withinPct = slaApplicableTotal > 0 ? Math.round((withinSlaCount / slaApplicableTotal) * 100) : (isOnlyWithinSla ? 100 : 0);
+  const pastPct = slaApplicableTotal > 0 ? (100 - withinPct) : (isOnlyPastSla ? 100 : 0);
 
   const scanCounts = {};
   if (activeRows.length > 0) {
@@ -1856,10 +1861,6 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
       const st = r.scanType || r.category || "General Scan";
       scanCounts[st] = (scanCounts[st] || 0) + 1;
     });
-  } else {
-    scanCounts["VM / Host"] = 512;
-    scanCounts["Web App"] = 284;
-    scanCounts["Cloud / Container"] = 127;
   }
   
   const maxScan = Math.max(...Object.values(scanCounts), 1);
@@ -1867,7 +1868,7 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
   const scanBars = Object.keys(scanCounts).map((k, i) => {
     const count = scanCounts[k];
     const pctOfTotal = total > 0 ? Math.round((count / total) * 100) : 0;
-    const barWidth = Math.max(Math.round((count / maxScan) * 100), 10);
+    const barWidth = Math.max(Math.round((count / maxScan) * 100), 1);
     return {
       name: k,
       count: count,
@@ -1934,14 +1935,18 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
                           <td style={{ border: "1px solid #cbd5e1", padding: "10px 12px", color: "#334155", fontWeight: 600, backgroundColor: "#ffffff" }}>Total vulnerabilities</td>
                           <td style={{ border: "1px solid #cbd5e1", padding: "10px 12px", textAlign: "right", fontWeight: 700, color: "#0f172a", backgroundColor: "#ffffff", fontSize: 14 }}>{total}</td>
                         </tr>
-                        <tr style={{ backgroundColor: "#f0fdf4" }}>
-                          <td style={{ border: "1px solid #cbd5e1", padding: "10px 12px", color: "#166534", fontWeight: 600, backgroundColor: "#f0fdf4" }}>Within SLA</td>
-                          <td style={{ border: "1px solid #cbd5e1", padding: "10px 12px", textAlign: "right", fontWeight: 700, color: "#15803d", backgroundColor: "#f0fdf4", fontSize: 14 }}>{withinSlaCount}</td>
-                        </tr>
-                        <tr style={{ backgroundColor: "#fef2f2" }}>
-                          <td style={{ border: "1px solid #cbd5e1", padding: "10px 12px", color: "#991b1b", fontWeight: 600, backgroundColor: "#fef2f2" }}>Past SLA</td>
-                          <td style={{ border: "1px solid #cbd5e1", padding: "10px 12px", textAlign: "right", fontWeight: 700, color: "#b91c1c", backgroundColor: "#fef2f2", fontSize: 14 }}>{pastSlaCount}</td>
-                        </tr>
+                        {(!isOnlyPastSla || withinSlaCount > 0) && (
+                          <tr style={{ backgroundColor: "#f0fdf4" }}>
+                            <td style={{ border: "1px solid #cbd5e1", padding: "10px 12px", color: "#166534", fontWeight: 600, backgroundColor: "#f0fdf4" }}>Within SLA</td>
+                            <td style={{ border: "1px solid #cbd5e1", padding: "10px 12px", textAlign: "right", fontWeight: 700, color: "#15803d", backgroundColor: "#f0fdf4", fontSize: 14 }}>{withinSlaCount}</td>
+                          </tr>
+                        )}
+                        {(!isOnlyWithinSla || pastSlaCount > 0) && (
+                          <tr style={{ backgroundColor: "#fef2f2" }}>
+                            <td style={{ border: "1px solid #cbd5e1", padding: "10px 12px", color: "#991b1b", fontWeight: 600, backgroundColor: "#fef2f2" }}>Past SLA</td>
+                            <td style={{ border: "1px solid #cbd5e1", padding: "10px 12px", textAlign: "right", fontWeight: 700, color: "#b91c1c", backgroundColor: "#fef2f2", fontSize: 14 }}>{pastSlaCount}</td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </td>
@@ -1988,71 +1993,80 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
                                 </table>
                               </div>
                             ))}
+                            {scanBars.length === 0 && (
+                              <div style={{ fontSize: "12px", color: "#64748b", textAlign: "center", padding: "12px" }}>No scan types available</div>
+                            )}
                           </td>
                           
                           {/* SLA Status Bar Chart & Metrics */}
                           <td style={{ border: "1px solid #cbd5e1", padding: "12px 14px", verticalAlign: "top", backgroundColor: "#ffffff" }}>
-                            {/* Within SLA Bar */}
-                            <div style={{ marginBottom: 10 }}>
-                              <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", marginBottom: "4px", fontFamily: "Calibri, Arial, sans-serif" }}>
-                                <tbody>
-                                  <tr>
-                                    <td style={{ textAlign: "left", fontSize: "11.5px", fontWeight: 600, color: "#166534", padding: "0" }}>
-                                      <span style={{ color: "#16a34a", fontSize: "13px", lineHeight: "1", verticalAlign: "middle", marginRight: "4px" }}>■</span>
-                                      <span style={{ verticalAlign: "middle" }}>Within SLA</span>
-                                    </td>
-                                    <td style={{ textAlign: "right", fontSize: "11.5px", color: "#166534", fontWeight: 700, padding: "0", whiteSpace: "nowrap" }}>
-                                      {withinSlaCount}&nbsp;&nbsp;<span style={{ color: "#64748b", fontWeight: 400, fontSize: "10.5px" }}>({withinPct}%)</span>
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                              <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", height: "12px", backgroundColor: "#f1f5f9", borderRadius: "3px", border: "1px solid #e2e8f0" }}>
-                                <tbody>
-                                  <tr>
-                                    <td style={{ width: `${withinPct}%`, backgroundColor: "#16a34a", borderRadius: "2px", height: "10px" }}></td>
-                                    <td style={{ width: `${100 - withinPct}%`, backgroundColor: "#f1f5f9" }}></td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
+                            {/* Within SLA Bar - Only shown if not filtered exclusively to Past SLA */}
+                            {(!isOnlyPastSla || withinSlaCount > 0) && (
+                              <div style={{ marginBottom: isOnlyWithinSla ? 0 : 10 }}>
+                                <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", marginBottom: "4px", fontFamily: "Calibri, Arial, sans-serif" }}>
+                                  <tbody>
+                                    <tr>
+                                      <td style={{ textAlign: "left", fontSize: "11.5px", fontWeight: 600, color: "#166534", padding: "0" }}>
+                                        <span style={{ color: "#16a34a", fontSize: "13px", lineHeight: "1", verticalAlign: "middle", marginRight: "4px" }}>■</span>
+                                        <span style={{ verticalAlign: "middle" }}>Within SLA</span>
+                                      </td>
+                                      <td style={{ textAlign: "right", fontSize: "11.5px", color: "#166534", fontWeight: 700, padding: "0", whiteSpace: "nowrap" }}>
+                                        {withinSlaCount}&nbsp;&nbsp;<span style={{ color: "#64748b", fontWeight: 400, fontSize: "10.5px" }}>({withinPct}%)</span>
+                                      </td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                                <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", height: "12px", backgroundColor: "#f1f5f9", borderRadius: "3px", border: "1px solid #e2e8f0" }}>
+                                  <tbody>
+                                    <tr>
+                                      <td style={{ width: `${withinPct}%`, backgroundColor: "#16a34a", borderRadius: "2px", height: "10px" }}></td>
+                                      <td style={{ width: `${100 - withinPct}%`, backgroundColor: "#f1f5f9" }}></td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
 
-                            {/* Past SLA Bar */}
-                            <div style={{ marginBottom: 10 }}>
-                              <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", marginBottom: "4px", fontFamily: "Calibri, Arial, sans-serif" }}>
-                                <tbody>
-                                  <tr>
-                                    <td style={{ textAlign: "left", fontSize: "11.5px", fontWeight: 600, color: "#991b1b", padding: "0" }}>
-                                      <span style={{ color: "#dc2626", fontSize: "13px", lineHeight: "1", verticalAlign: "middle", marginRight: "4px" }}>■</span>
-                                      <span style={{ verticalAlign: "middle" }}>Past SLA</span>
-                                    </td>
-                                    <td style={{ textAlign: "right", fontSize: "11.5px", color: "#991b1b", fontWeight: 700, padding: "0", whiteSpace: "nowrap" }}>
-                                      {pastSlaCount}&nbsp;&nbsp;<span style={{ color: "#64748b", fontWeight: 400, fontSize: "10.5px" }}>({pastPct}%)</span>
-                                    </td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                              <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", height: "12px", backgroundColor: "#f1f5f9", borderRadius: "3px", border: "1px solid #e2e8f0" }}>
-                                <tbody>
-                                  <tr>
-                                    <td style={{ width: `${Math.max(pastPct, 4)}%`, backgroundColor: "#dc2626", borderRadius: "2px", height: "10px" }}></td>
-                                    <td style={{ width: `${100 - Math.max(pastPct, 4)}%`, backgroundColor: "#f1f5f9" }}></td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
+                            {/* Past SLA Bar - Only shown if not filtered exclusively to Within SLA */}
+                            {(!isOnlyWithinSla || pastSlaCount > 0) && (
+                              <div style={{ marginBottom: 10 }}>
+                                <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", marginBottom: "4px", fontFamily: "Calibri, Arial, sans-serif" }}>
+                                  <tbody>
+                                    <tr>
+                                      <td style={{ textAlign: "left", fontSize: "11.5px", fontWeight: 600, color: "#991b1b", padding: "0" }}>
+                                        <span style={{ color: "#dc2626", fontSize: "13px", lineHeight: "1", verticalAlign: "middle", marginRight: "4px" }}>■</span>
+                                        <span style={{ verticalAlign: "middle" }}>Past SLA</span>
+                                      </td>
+                                      <td style={{ textAlign: "right", fontSize: "11.5px", color: "#991b1b", fontWeight: 700, padding: "0", whiteSpace: "nowrap" }}>
+                                        {pastSlaCount}&nbsp;&nbsp;<span style={{ color: "#64748b", fontWeight: 400, fontSize: "10.5px" }}>({pastPct}%)</span>
+                                      </td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                                <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", height: "12px", backgroundColor: "#f1f5f9", borderRadius: "3px", border: "1px solid #e2e8f0" }}>
+                                  <tbody>
+                                    <tr>
+                                      <td style={{ width: `${Math.max(pastPct, 4)}%`, backgroundColor: "#dc2626", borderRadius: "2px", height: "10px" }}></td>
+                                      <td style={{ width: `${100 - Math.max(pastPct, 4)}%`, backgroundColor: "#f1f5f9" }}></td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
 
-                            {/* SLA Split Distribution Bar */}
-                            <div style={{ marginTop: 8, borderTop: "1px dashed #e2e8f0", paddingTop: 8 }}>
-                              <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", height: "8px", borderRadius: "2px", overflow: "hidden", border: "1px solid #cbd5e1" }}>
-                                <tbody>
-                                  <tr>
-                                    <td style={{ width: `${withinPct}%`, backgroundColor: "#16a34a", height: "8px" }} title="Within SLA"></td>
-                                    <td style={{ width: `${pastPct}%`, backgroundColor: "#dc2626", height: "8px" }} title="Past SLA"></td>
-                                  </tr>
-                                </tbody>
-                              </table>
-                            </div>
+                            {/* SLA Split Distribution Bar - Only shown when both are present */}
+                            {!isOnlyWithinSla && !isOnlyPastSla && (
+                              <div style={{ marginTop: 8, borderTop: "1px dashed #e2e8f0", paddingTop: 8 }}>
+                                <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", height: "8px", borderRadius: "2px", overflow: "hidden", border: "1px solid #cbd5e1" }}>
+                                  <tbody>
+                                    <tr>
+                                      <td style={{ width: `${withinPct}%`, backgroundColor: "#16a34a", height: "8px" }} title="Within SLA"></td>
+                                      <td style={{ width: `${pastPct}%`, backgroundColor: "#dc2626", height: "8px" }} title="Past SLA"></td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       </tbody>
@@ -2063,7 +2077,13 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
             </table>
 
             <p style={{ margin: "0 0 12px 0", color: "#111827" }}>Detailed findings and severity breakdowns are available in the <a href={safeConfig.aistDashboard} style={{ color: "#0066cc", textDecoration: "underline", fontWeight: 600 }}>AIST Dashboard</a>.</p>
-            <p style={{ margin: "0 0 20px 0", color: "#111827" }}>Please prioritize remediation of all past-due items and address remaining vulnerabilities within the applicable SLA. If remediation cannot be completed within the required timeline, submit a <a href={safeConfig.rem} style={{ color: "#0066cc", textDecoration: "underline", fontWeight: 600 }}>REM (Risk Exception Management)</a> request.</p>
+            {isOnlyPastSla ? (
+              <p style={{ margin: "0 0 20px 0", color: "#111827" }}>Please prioritize immediate remediation of all <strong>past-due</strong> items. If remediation cannot be completed within the required timeline, submit a <a href={safeConfig.rem} style={{ color: "#0066cc", textDecoration: "underline", fontWeight: 600 }}>REM (Risk Exception Management)</a> request.</p>
+            ) : isOnlyWithinSla ? (
+              <p style={{ margin: "0 0 20px 0", color: "#111827" }}>Please continue remediation of all active vulnerabilities to ensure completion within the applicable SLA timelines. If remediation cannot be completed within the required timeline, submit a <a href={safeConfig.rem} style={{ color: "#0066cc", textDecoration: "underline", fontWeight: 600 }}>REM (Risk Exception Management)</a> request.</p>
+            ) : (
+              <p style={{ margin: "0 0 20px 0", color: "#111827" }}>Please prioritize remediation of all past-due items and address remaining vulnerabilities within the applicable SLA. If remediation cannot be completed within the required timeline, submit a <a href={safeConfig.rem} style={{ color: "#0066cc", textDecoration: "underline", fontWeight: 600 }}>REM (Risk Exception Management)</a> request.</p>
+            )}
 
             <p style={{ margin: "0 0 8px 0", color: "#111827" }}><strong>As per DOSS (DIRECTV Official Security Standards), remediation timelines are as follows:</strong></p>
             <table border="1" cellPadding="8" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", marginBottom: 24, border: "1px solid #94a3b8", fontFamily: "Calibri, Arial, sans-serif", fontSize: 12.5 }}>
