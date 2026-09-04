@@ -1727,38 +1727,38 @@ function MailTemplateModal({ owner, config, onClose, onMailSent }) {
               </tbody>
             </table>
 
-            <p style={{ margin: "0 0 12px 0", color: "#111827" }}>As per <strong>DOSS (DIRECTV Official Security Standards)</strong>, remediation timelines are as follows:</p>
-            <table border="1" cellPadding="8" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", marginBottom: 24, border: "1px solid #94a3b8", fontFamily: "Aptos, 'Aptos Display', Calibri, Arial, sans-serif", fontSize: 12.5 }}>
+            <p style={{ margin: "0 0 8px 0", color: "#111827", fontSize: 12 }}>As per <strong>DOSS (DIRECTV Official Security Standards)</strong>, remediation timelines are as follows:</p>
+            <table border="1" cellPadding="4" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", maxWidth: "580px", marginBottom: 16, border: "1px solid #94a3b8", fontFamily: "Aptos, 'Aptos Display', Calibri, Arial, sans-serif", fontSize: 11 }}>
               <thead>
                 <tr style={{ backgroundColor: "#1e293b", color: "#ffffff" }}>
-                  <th colSpan="2" style={{ border: "1px solid #94a3b8", padding: "10px 12px", backgroundColor: "#1e293b", color: "#ffffff", textAlign: "center", fontWeight: 700 }}>Remediation Category</th>
-                  <th style={{ border: "1px solid #94a3b8", padding: "10px 12px", backgroundColor: "#1e293b", color: "#ffffff", textAlign: "center", fontWeight: 700 }}>Critical-Internet-Facing and PCI</th>
-                  <th style={{ border: "1px solid #94a3b8", padding: "10px 12px", backgroundColor: "#1e293b", color: "#ffffff", textAlign: "center", fontWeight: 700 }}>Non-critical (Others)</th>
+                  <th colSpan="2" style={{ border: "1px solid #94a3b8", padding: "5px 8px", backgroundColor: "#1e293b", color: "#ffffff", textAlign: "center", fontWeight: 700, fontSize: 11 }}>Remediation Category</th>
+                  <th style={{ border: "1px solid #94a3b8", padding: "5px 8px", backgroundColor: "#1e293b", color: "#ffffff", textAlign: "center", fontWeight: 700, fontSize: 11 }}>Critical-Internet-Facing &amp; PCI</th>
+                  <th style={{ border: "1px solid #94a3b8", padding: "5px 8px", backgroundColor: "#1e293b", color: "#ffffff", textAlign: "center", fontWeight: 700, fontSize: 11 }}>Non-critical (Others)</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td rowSpan="5" style={{ border: "1px solid #cbd5e1", padding: "10px 12px", textAlign: "center", verticalAlign: "middle", fontWeight: 700, backgroundColor: "#f8fafc", color: "#334155" }}>Vulnerability Type</td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", fontWeight: 600, color: "#dc2626", backgroundColor: "#ffffff" }}>Critical</td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=30 days</td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=30 days</td>
+                  <td rowSpan="5" style={{ border: "1px solid #cbd5e1", padding: "4px 8px", textAlign: "center", verticalAlign: "middle", fontWeight: 700, backgroundColor: "#f8fafc", color: "#334155", fontSize: 10.5 }}>Vulnerability Type</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", fontWeight: 600, color: "#dc2626", backgroundColor: "#ffffff" }}>Critical</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&le; 30 days</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&le; 30 days</td>
                 </tr>
                 <tr>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", fontWeight: 600, color: "#ea580c", backgroundColor: "#ffffff" }}>High</td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=90 days</td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=120 days</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", fontWeight: 600, color: "#ea580c", backgroundColor: "#ffffff" }}>High</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&le; 90 days</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&le; 120 days</td>
                 </tr>
                 <tr>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", fontWeight: 600, color: "#ca8a04", backgroundColor: "#ffffff" }}>Medium</td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=180 days</td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=180 days</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", fontWeight: 600, color: "#ca8a04", backgroundColor: "#ffffff" }}>Medium</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&le; 180 days</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&le; 180 days</td>
                 </tr>
                 <tr>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", fontWeight: 600, color: "#2563eb", backgroundColor: "#ffffff" }}>Low</td>
-                  <td colSpan="2" rowSpan="2" style={{ border: "1px solid #cbd5e1", padding: "10px 12px", textAlign: "center", verticalAlign: "middle", backgroundColor: "#ffffff", color: "#475569", fontWeight: 500 }}>Remediation as per applicability</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", fontWeight: 600, color: "#2563eb", backgroundColor: "#ffffff" }}>Low</td>
+                  <td colSpan="2" rowSpan="2" style={{ border: "1px solid #cbd5e1", padding: "4px 8px", textAlign: "center", verticalAlign: "middle", backgroundColor: "#ffffff", color: "#475569", fontWeight: 500, fontSize: 10.5 }}>Remediation as per applicability</td>
                 </tr>
                 <tr>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", fontWeight: 600, color: "#64748b", backgroundColor: "#ffffff" }}>Informational</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", fontWeight: 600, color: "#64748b", backgroundColor: "#ffffff" }}>Informational</td>
                 </tr>
               </tbody>
             </table>
@@ -2085,38 +2085,38 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
               <p style={{ margin: "0 0 20px 0", color: "#111827" }}>Please prioritize remediation of all past-due items and address remaining vulnerabilities within the applicable SLA. If remediation cannot be completed within the required timeline, submit a <a href={safeConfig.rem} style={{ color: "#0066cc", textDecoration: "underline", fontWeight: 600 }}>REM (Risk Exception Management)</a> request.</p>
             )}
 
-            <p style={{ margin: "0 0 8px 0", color: "#111827" }}><strong>As per DOSS (DIRECTV Official Security Standards), remediation timelines are as follows:</strong></p>
-            <table border="1" cellPadding="8" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", marginBottom: 24, border: "1px solid #94a3b8", fontFamily: "Aptos, 'Aptos Display', Calibri, Arial, sans-serif", fontSize: 12.5 }}>
+            <p style={{ margin: "0 0 8px 0", color: "#111827", fontSize: 12 }}><strong>As per DOSS (DIRECTV Official Security Standards), remediation timelines are as follows:</strong></p>
+            <table border="1" cellPadding="4" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", maxWidth: "580px", marginBottom: 16, border: "1px solid #94a3b8", fontFamily: "Aptos, 'Aptos Display', Calibri, Arial, sans-serif", fontSize: 11 }}>
               <thead>
                 <tr style={{ backgroundColor: "#1e293b", color: "#ffffff" }}>
-                  <th colSpan="2" style={{ border: "1px solid #94a3b8", padding: "10px 12px", backgroundColor: "#1e293b", color: "#ffffff", textAlign: "center", fontWeight: 700 }}>Remediation Category</th>
-                  <th style={{ border: "1px solid #94a3b8", padding: "10px 12px", backgroundColor: "#1e293b", color: "#ffffff", textAlign: "center", fontWeight: 700 }}>Critical-Internet-Facing and PCI</th>
-                  <th style={{ border: "1px solid #94a3b8", padding: "10px 12px", backgroundColor: "#1e293b", color: "#ffffff", textAlign: "center", fontWeight: 700 }}>Non-critical (Others)</th>
+                  <th colSpan="2" style={{ border: "1px solid #94a3b8", padding: "5px 8px", backgroundColor: "#1e293b", color: "#ffffff", textAlign: "center", fontWeight: 700, fontSize: 11 }}>Remediation Category</th>
+                  <th style={{ border: "1px solid #94a3b8", padding: "5px 8px", backgroundColor: "#1e293b", color: "#ffffff", textAlign: "center", fontWeight: 700, fontSize: 11 }}>Critical-Internet-Facing &amp; PCI</th>
+                  <th style={{ border: "1px solid #94a3b8", padding: "5px 8px", backgroundColor: "#1e293b", color: "#ffffff", textAlign: "center", fontWeight: 700, fontSize: 11 }}>Non-critical (Others)</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td rowSpan="5" style={{ border: "1px solid #cbd5e1", padding: "10px 12px", textAlign: "center", verticalAlign: "middle", fontWeight: 700, backgroundColor: "#f8fafc", color: "#334155" }}>Vulnerability Type</td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", fontWeight: 600, color: "#dc2626", backgroundColor: "#ffffff" }}>Critical</td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=30 days</td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=30 days</td>
+                  <td rowSpan="5" style={{ border: "1px solid #cbd5e1", padding: "4px 8px", textAlign: "center", verticalAlign: "middle", fontWeight: 700, backgroundColor: "#f8fafc", color: "#334155", fontSize: 10.5 }}>Vulnerability Type</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", fontWeight: 600, color: "#dc2626", backgroundColor: "#ffffff" }}>Critical</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&le; 30 days</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&le; 30 days</td>
                 </tr>
                 <tr>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", fontWeight: 600, color: "#ea580c", backgroundColor: "#ffffff" }}>High</td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=90 days</td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=120 days</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", fontWeight: 600, color: "#ea580c", backgroundColor: "#ffffff" }}>High</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&le; 90 days</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&le; 120 days</td>
                 </tr>
                 <tr>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", fontWeight: 600, color: "#ca8a04", backgroundColor: "#ffffff" }}>Medium</td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=180 days</td>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=180 days</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", fontWeight: 600, color: "#ca8a04", backgroundColor: "#ffffff" }}>Medium</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&le; 180 days</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&le; 180 days</td>
                 </tr>
                 <tr>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", fontWeight: 600, color: "#2563eb", backgroundColor: "#ffffff" }}>Low</td>
-                  <td colSpan="2" rowSpan="2" style={{ border: "1px solid #cbd5e1", padding: "10px 12px", textAlign: "center", verticalAlign: "middle", backgroundColor: "#ffffff", color: "#475569", fontWeight: 500 }}>Remediation as per applicability</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", fontWeight: 600, color: "#2563eb", backgroundColor: "#ffffff" }}>Low</td>
+                  <td colSpan="2" rowSpan="2" style={{ border: "1px solid #cbd5e1", padding: "4px 8px", textAlign: "center", verticalAlign: "middle", backgroundColor: "#ffffff", color: "#475569", fontWeight: 500, fontSize: 10.5 }}>Remediation as per applicability</td>
                 </tr>
                 <tr>
-                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", fontWeight: 600, color: "#64748b", backgroundColor: "#ffffff" }}>Informational</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "3px 8px", textAlign: "center", fontWeight: 600, color: "#64748b", backgroundColor: "#ffffff" }}>Informational</td>
                 </tr>
               </tbody>
             </table>
