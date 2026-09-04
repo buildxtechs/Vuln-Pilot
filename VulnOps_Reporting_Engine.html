@@ -2062,77 +2062,10 @@ function UploadView({
   const hasAnyFile = !!(files.qualys || files.aws || files.azure || files.cmdb || files.previous || files.generic);
   const currentToolObj = SECURITY_TOOLS.find(t => t.id === selectedTool) || SECURITY_TOOLS[0];
 
-  return /*#__PURE__*/React.createElement("div", null,
-    /*#__PURE__*/React.createElement("div", { className: "pagehead" },
-      /*#__PURE__*/React.createElement("div", null,
-        /*#__PURE__*/React.createElement("span", { className: "eyebrow" }, "Stage 01 — Ingestion & Scope Configuration"),
-        /*#__PURE__*/React.createElement("h1", null, "VulnOps Source Data Pipeline"),
-        /*#__PURE__*/React.createElement("p", null, "Select report objective, choose security assessment tool, and upload source files. Files are parsed 100% locally in your browser.")
-      ),
-      hasAnyFile && /*#__PURE__*/React.createElement("button", {
-        className: "btn btn-danger btn-sm",
-        onClick: onReset,
-        title: "Clear all uploaded files and start over"
-      }, /*#__PURE__*/React.createElement(Icon, { d: ICONS.trash, size: 14 }), " Reset all")
-    ),
-
-    /* 1. Report Mode Selection */
-    /*#__PURE__*/React.createElement("div", { className: "mode-selector-container" },
-      /*#__PURE__*/React.createElement("div", { className: "mode-selector-title" },
-        /*#__PURE__*/React.createElement(Icon, { d: ICONS.cog, size: 15 }),
-        "Step 1: Choose Reporting Objective / Output Format"
-      ),
-      /*#__PURE__*/React.createElement("div", { className: "mode-tabs" },
-        /*#__PURE__*/React.createElement("div", {
-          className: "mode-card" + (reportMode === "iasp" ? " active" : ""),
-          onClick: () => setReportMode("iasp")
-        },
-          /*#__PURE__*/React.createElement("div", { className: "mode-card-icon" },
-            /*#__PURE__*/React.createElement(Icon, { d: ICONS.upload, size: 18 })
-          ),
-          /*#__PURE__*/React.createElement("div", null,
-            /*#__PURE__*/React.createElement("div", { className: "mode-card-title" }, "IASP Upload Report Preparation"),
-            /*#__PURE__*/React.createElement("div", { className: "mode-card-desc" }, "Generates standard IASP compliant outcome sheets with enriched asset classification, correlation codes, and remediation tracking.")
-          )
-        ),
-        /*#__PURE__*/React.createElement("div", {
-          className: "mode-card" + (reportMode === "powerbi" ? " active" : ""),
-          onClick: () => setReportMode("powerbi")
-        },
-          /*#__PURE__*/React.createElement("div", { className: "mode-card-icon" },
-            /*#__PURE__*/React.createElement(Icon, { d: ICONS.chart, size: 18 })
-          ),
-          /*#__PURE__*/React.createElement("div", null,
-            /*#__PURE__*/React.createElement("div", { className: "mode-card-title" }, "PowerBI Reporting Engine"),
-            /*#__PURE__*/React.createElement("div", { className: "mode-card-desc" }, "Prepares sanitized PowerBI data model matrices with SLA calculations, weekly deltas, and multi-scanner breakdown analytics.")
-          )
-        )
-      )
-    ),
-
-    /* 2. Tool Name Selection */
-    /*#__PURE__*/React.createElement("div", { className: "tool-selector-container" },
-      /*#__PURE__*/React.createElement("div", { className: "mode-selector-title" },
-        /*#__PURE__*/React.createElement(Icon, { d: ICONS.spark, size: 15 }),
-        "Step 2: Choose Security Assessment Tool / Scanner"
-      ),
-      /*#__PURE__*/React.createElement("div", { className: "tool-grid" },
-        SECURITY_TOOLS.map(t => /*#__PURE__*/React.createElement("div", {
-          key: t.id,
-          className: "tool-card" + (selectedTool === t.id ? " active" : ""),
-          onClick: () => setSelectedTool(t.id)
-        },
-          /*#__PURE__*/React.createElement("span", {
-            className: "tool-status-tag " + (t.active ? "tool-status-active" : "tool-status-planned")
-          }, t.active ? "Active Pipeline" : "Future Integration"),
-          /*#__PURE__*/React.createElement("span", { className: "tool-name" }, t.label)
-        }))
-      )
-    ),
-
-    /* 3. Ingestion Area based on Tool */
-    selectedTool === "Qualys" ? /*#__PURE__*/React.createElement(React.Fragment, null,
-      /*#__PURE__*/React.createElement("div", {
+  let ingestionSection = null;
+  if (selectedTool === "Qualys") {
+    ingestionSection = React.createElement(React.Fragment, null,
+      React.createElement("div", {
         style: {
           display: "flex",
           alignItems: "center",
@@ -2140,13 +2073,13 @@ function UploadView({
           marginBottom: "12px"
         }
       },
-        /*#__PURE__*/React.createElement("div", { style: { fontWeight: "700", fontSize: "14px", fontFamily: "var(--disp)" } },
+        React.createElement("div", { style: { fontWeight: "700", fontSize: "14px", fontFamily: "var(--disp)" } },
           `Step 3: Upload ${reportMode === "iasp" ? "IASP" : "PowerBI"} Ingestion Files for Qualys VM Pipeline`
         ),
-        /*#__PURE__*/React.createElement("span", { className: "badge badge-ok" }, "5-Stage Pipeline Active")
+        React.createElement("span", { className: "badge badge-ok" }, "5-Stage Pipeline Active")
       ),
-      /*#__PURE__*/React.createElement("div", { className: "upload-grid" },
-        /*#__PURE__*/React.createElement(UploadCard, {
+      React.createElement("div", { className: "upload-grid" },
+        React.createElement(UploadCard, {
           stageNo: "1",
           title: "Qualys Raw Report",
           requirement: "Full vulnerability export, all severities",
@@ -2156,7 +2089,7 @@ function UploadView({
           requiredFields: QUALYS_REQUIRED,
           aliasDict: QUALYS_ALIASES
         }),
-        /*#__PURE__*/React.createElement(UploadCard, {
+        React.createElement(UploadCard, {
           stageNo: "2",
           title: "AWS Inventory Report",
           requirement: "EC2 instance inventory export",
@@ -2166,7 +2099,7 @@ function UploadView({
           requiredFields: AWS_REQUIRED,
           aliasDict: AWS_ALIASES
         }),
-        /*#__PURE__*/React.createElement(UploadCard, {
+        React.createElement(UploadCard, {
           stageNo: "3",
           title: "Azure Inventory Report",
           requirement: "VM inventory export",
@@ -2176,7 +2109,7 @@ function UploadView({
           requiredFields: AZURE_REQUIRED,
           aliasDict: AZURE_ALIASES
         }),
-        /*#__PURE__*/React.createElement(UploadCard, {
+        React.createElement(UploadCard, {
           stageNo: "4",
           title: "CMDB Report",
           requirement: "Application ownership & classification data",
@@ -2184,7 +2117,7 @@ function UploadView({
           fileData: files.cmdb,
           onFile: d => setFile("cmdb", d)
         }),
-        /*#__PURE__*/React.createElement(UploadCard, {
+        React.createElement(UploadCard, {
           stageNo: "5",
           title: "Previous Week Final Outcome",
           requirement: "Enables week-over-week New/Existing/Reopened comparison",
@@ -2194,28 +2127,30 @@ function UploadView({
           optional: true
         })
       ),
-      /*#__PURE__*/React.createElement("div", {
+      React.createElement("div", {
         className: "note-box",
         style: { marginTop: "16px" }
       },
         "CMDB column names vary week to week, so mapping happens on the ",
-        /*#__PURE__*/React.createElement("b", null, "Configure"),
+        React.createElement("b", null, "Configure"),
         " tab once the CMDB file is uploaded — the system auto-guesses the mapping and you can override it. Qualys, AWS and Azure use fixed column names, matched automatically regardless of case or spacing. CMDB enrichment tries ",
-        /*#__PURE__*/React.createElement("b", null, "IP"),
+        React.createElement("b", null, "IP"),
         " first, then the ",
-        /*#__PURE__*/React.createElement("b", null, "5-digit correlation code"),
+        React.createElement("b", null, "5-digit correlation code"),
         " shared between the AWS Account Name / Azure Subscription and the CMDB's correlation field, then hostname as a last resort."
       )
-    ) : /*#__PURE__*/React.createElement(React.Fragment, null,
-      /*#__PURE__*/React.createElement("div", { className: "tool-banner-note" },
-        /*#__PURE__*/React.createElement(Icon, { d: ICONS.alert, size: 22 }),
-        /*#__PURE__*/React.createElement("div", null,
-          /*#__PURE__*/React.createElement("h4", null, `${currentToolObj.label} Dedicated Pipeline — Future Release`),
-          /*#__PURE__*/React.createElement("p", null,
+    );
+  } else {
+    ingestionSection = React.createElement(React.Fragment, null,
+      React.createElement("div", { className: "tool-banner-note" },
+        React.createElement(Icon, { d: ICONS.alert, size: 22 }),
+        React.createElement("div", null,
+          React.createElement("h4", null, `${currentToolObj.label} Dedicated Pipeline — Future Release`),
+          React.createElement("p", null,
             `The custom ingestion and normalization pipeline for `,
-            /*#__PURE__*/React.createElement("strong", null, currentToolObj.label),
+            React.createElement("strong", null, currentToolObj.label),
             ` (${currentToolObj.desc}) for ${reportMode === "iasp" ? "IASP Upload" : "PowerBI"} reports is pre-architected and scheduled for upcoming integration. You can switch to `,
-            /*#__PURE__*/React.createElement("a", {
+            React.createElement("a", {
               href: "#",
               style: { color: "var(--accent)", textDecoration: "underline" },
               onClick: (e) => { e.preventDefault(); setSelectedTool("Qualys"); }
@@ -2224,8 +2159,8 @@ function UploadView({
           )
         )
       ),
-      /*#__PURE__*/React.createElement("div", { className: "upload-grid" },
-        /*#__PURE__*/React.createElement(UploadCard, {
+      React.createElement("div", { className: "upload-grid" },
+        React.createElement(UploadCard, {
           stageNo: "1",
           title: `${currentToolObj.label} Raw Scan Finding Export`,
           requirement: `Scanner report (${currentToolObj.format}) containing tool findings`,
@@ -2233,7 +2168,7 @@ function UploadView({
           fileData: files.generic,
           onFile: d => setFile("generic", d)
         }),
-        /*#__PURE__*/React.createElement(UploadCard, {
+        React.createElement(UploadCard, {
           stageNo: "2",
           title: "CMDB & Asset Inventory",
           requirement: "Application correlation & ownership cross-reference",
@@ -2243,7 +2178,78 @@ function UploadView({
           optional: true
         })
       )
-    )
+    );
+  }
+
+  const toolElements = SECURITY_TOOLS.map(function(t) {
+    return React.createElement("div", {
+      key: t.id,
+      className: "tool-card" + (selectedTool === t.id ? " active" : ""),
+      onClick: function() { setSelectedTool(t.id); }
+    },
+      React.createElement("span", {
+        className: "tool-status-tag " + (t.active ? "tool-status-active" : "tool-status-planned")
+      }, t.active ? "Active Pipeline" : "Future Integration"),
+      React.createElement("span", { className: "tool-name" }, t.label)
+    );
+  });
+
+  return React.createElement("div", null,
+    React.createElement("div", { className: "pagehead" },
+      React.createElement("div", null,
+        React.createElement("span", { className: "eyebrow" }, "Stage 01 — Ingestion & Scope Configuration"),
+        React.createElement("h1", null, "VulnOps Source Data Pipeline"),
+        React.createElement("p", null, "Select report objective, choose security assessment tool, and upload source files. Files are parsed 100% locally in your browser.")
+      ),
+      hasAnyFile && React.createElement("button", {
+        className: "btn btn-danger btn-sm",
+        onClick: onReset,
+        title: "Clear all uploaded files and start over"
+      }, React.createElement(Icon, { d: ICONS.trash, size: 14 }), " Reset all")
+    ),
+
+    React.createElement("div", { className: "mode-selector-container" },
+      React.createElement("div", { className: "mode-selector-title" },
+        React.createElement(Icon, { d: ICONS.cog, size: 15 }),
+        "Step 1: Choose Reporting Objective / Output Format"
+      ),
+      React.createElement("div", { className: "mode-tabs" },
+        React.createElement("div", {
+          className: "mode-card" + (reportMode === "iasp" ? " active" : ""),
+          onClick: function() { setReportMode("iasp"); }
+        },
+          React.createElement("div", { className: "mode-card-icon" },
+            React.createElement(Icon, { d: ICONS.upload, size: 18 })
+          ),
+          React.createElement("div", null,
+            React.createElement("div", { className: "mode-card-title" }, "IASP Upload Report Preparation"),
+            React.createElement("div", { className: "mode-card-desc" }, "Generates standard IASP compliant outcome sheets with enriched asset classification, correlation codes, and remediation tracking.")
+          )
+        ),
+        React.createElement("div", {
+          className: "mode-card" + (reportMode === "powerbi" ? " active" : ""),
+          onClick: function() { setReportMode("powerbi"); }
+        },
+          React.createElement("div", { className: "mode-card-icon" },
+            React.createElement(Icon, { d: ICONS.chart, size: 18 })
+          ),
+          React.createElement("div", null,
+            React.createElement("div", { className: "mode-card-title" }, "PowerBI Reporting Engine"),
+            React.createElement("div", { className: "mode-card-desc" }, "Prepares sanitized PowerBI data model matrices with SLA calculations, weekly deltas, and multi-scanner breakdown analytics.")
+          )
+        )
+      )
+    ),
+
+    React.createElement("div", { className: "tool-selector-container" },
+      React.createElement("div", { className: "mode-selector-title" },
+        React.createElement(Icon, { d: ICONS.spark, size: 15 }),
+        "Step 2: Choose Security Assessment Tool / Scanner"
+      ),
+      React.createElement("div", { className: "tool-grid" }, toolElements)
+    ),
+
+    ingestionSection
   );
 }
 
