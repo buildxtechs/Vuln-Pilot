@@ -248,6 +248,171 @@ table.data tbody tr:last-child td{ border-bottom:none; }
 
 .config-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
 .config-table th{ text-align:left; font-size:10.5px; text-transform:uppercase; color:var(--text-faint); padding:6px 8px; letter-spacing:0.5px; border-bottom:1px solid var(--border-strong); }
+
+/* Mode and Tool Selectors */
+.mode-selector-container {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.mode-selector-title {
+  font-family: var(--disp);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mode-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+@media (max-width: 650px) {
+  .mode-tabs { grid-template-columns: 1fr; }
+}
+.mode-card {
+  border: 1.5px solid var(--border);
+  background: var(--surface-2);
+  border-radius: 9px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: all .18s ease;
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.mode-card:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-3);
+  transform: translateY(-1px);
+}
+.mode-card.active {
+  border-color: var(--accent);
+  background: linear-gradient(145deg, rgba(225,18,44,0.12), var(--surface-2));
+  box-shadow: 0 0 16px -4px rgba(225,18,44,0.3);
+}
+.mode-card-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.mode-card.active .mode-card-icon {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.mode-card-title {
+  font-family: var(--disp);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 3px;
+}
+.mode-card-desc {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+/* Tool Selector Grid */
+.tool-selector-container {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 22px;
+}
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+}
+.tool-card {
+  border: 1.5px solid var(--border);
+  background: var(--surface-2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all .15s ease;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+.tool-card:hover {
+  border-color: var(--border-strong);
+  background: var(--surface-3);
+  transform: translateY(-2px);
+}
+.tool-card.active {
+  border-color: var(--accent);
+  background: linear-gradient(160deg, rgba(225,18,44,0.16), var(--surface-2));
+  box-shadow: 0 4px 12px -2px rgba(225,18,44,0.35);
+}
+.tool-name {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+.tool-card.active .tool-name {
+  color: #FF4D6A;
+}
+.tool-status-tag {
+  font-family: var(--mono);
+  font-size: 9px;
+  padding: 1px 6px;
+  border-radius: 12px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.tool-status-active {
+  background: rgba(34,199,102,0.15);
+  border: 1px solid rgba(34,199,102,0.4);
+  color: var(--ok);
+}
+.tool-status-planned {
+  background: rgba(245,168,0,0.12);
+  border: 1px solid rgba(245,168,0,0.3);
+  color: var(--med);
+}
+.tool-banner-note {
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  background: linear-gradient(145deg, rgba(245,168,0,0.08), var(--surface-2));
+  border: 1px solid rgba(245,168,0,0.3);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.tool-banner-note h4 {
+  font-family: var(--disp);
+  font-size: 13.5px;
+  margin: 0 0 4px 0;
+  color: var(--med);
+}
+.tool-banner-note p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-dim);
+}
 .config-table td{ padding:5px 8px; border-bottom:1px solid var(--border); }
 .config-table input, .config-table select{ width:100%; background:var(--surface-2); border:1px solid var(--border); border-radius:5px; padding:5px 7px; color:var(--text); font-family:var(--mono); font-size:12px; }
 
@@ -1873,73 +2038,213 @@ function UploadCard({
     }
   }, "missing: ", m)))));
 }
+const SECURITY_TOOLS = [
+  { id: "Qualys", label: "Qualys", desc: "VM / Host Infrastructure Vulnerability Scanning", active: true, format: "XLSX / CSV" },
+  { id: "SCA", label: "SCA", desc: "Software Composition Analysis & Dependency Vulnerabilities", active: false, format: "JSON / CSV" },
+  { id: "CSPM", label: "CSPM", desc: "Cloud Security Posture Management & Misconfigurations", active: false, format: "CSV / JSON" },
+  { id: "DXC IVM", label: "DXC IVM", desc: "Infrastructure Vulnerability Management Feed", active: false, format: "XLSX / CSV" },
+  { id: "SAST", label: "SAST", desc: "Static Application Security Testing Source Flaws", active: false, format: "SARIF / CSV" },
+  { id: "DAST", label: "DAST", desc: "Dynamic Application Security Testing (Web & API)", active: false, format: "XML / CSV" },
+  { id: "SAAS-Config", label: "SAAS-Config", desc: "SaaS Security & Configuration Compliance Checks", active: false, format: "JSON / XLSX" },
+  { id: "SAAS Manual", label: "SAAS Manual", desc: "Manual SaaS Assessment & Pentest Findings", active: false, format: "XLSX" },
+  { id: "MPEN", label: "MPEN", desc: "Mobile & Perimeter Penetration Testing Reports", active: false, format: "PDF / XLSX" }
+];
+
 function UploadView({
   files,
   setFile,
-  onReset
+  onReset,
+  reportMode,
+  setReportMode,
+  selectedTool,
+  setSelectedTool
 }) {
-  const hasAnyFile = !!(files.qualys || files.aws || files.azure || files.cmdb || files.previous);
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "pagehead"
-  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
-    className: "eyebrow"
-  }, "Stage 01 — Ingest"), /*#__PURE__*/React.createElement("h1", null, "Upload weekly source files"), /*#__PURE__*/React.createElement("p", null, "Provide the four weekly exports. Files are parsed entirely in your browser — nothing is uploaded to a server. Original files are never modified.")), hasAnyFile && /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-danger btn-sm",
-    onClick: onReset,
-    title: "Clear all uploaded files and start over"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    d: ICONS.trash,
-    size: 14
-  }), " Reset all")), /*#__PURE__*/React.createElement("div", {
-    className: "upload-grid"
-  }, /*#__PURE__*/React.createElement(UploadCard, {
-    stageNo: "1",
-    title: "Qualys Raw Report",
-    requirement: "Full vulnerability export, all severities",
-    accept: ".xlsx,.csv",
-    fileData: files.qualys,
-    onFile: d => setFile("qualys", d),
-    requiredFields: QUALYS_REQUIRED,
-    aliasDict: QUALYS_ALIASES
-  }), /*#__PURE__*/React.createElement(UploadCard, {
-    stageNo: "2",
-    title: "AWS Inventory Report",
-    requirement: "EC2 instance inventory export",
-    accept: ".xlsx,.csv",
-    fileData: files.aws,
-    onFile: d => setFile("aws", d),
-    requiredFields: AWS_REQUIRED,
-    aliasDict: AWS_ALIASES
-  }), /*#__PURE__*/React.createElement(UploadCard, {
-    stageNo: "3",
-    title: "Azure Inventory Report",
-    requirement: "VM inventory export",
-    accept: ".xlsx,.csv",
-    fileData: files.azure,
-    onFile: d => setFile("azure", d),
-    requiredFields: AZURE_REQUIRED,
-    aliasDict: AZURE_ALIASES
-  }), /*#__PURE__*/React.createElement(UploadCard, {
-    stageNo: "4",
-    title: "CMDB Report",
-    requirement: "Application ownership & classification data",
-    accept: ".xlsx,.csv",
-    fileData: files.cmdb,
-    onFile: d => setFile("cmdb", d)
-  }), /*#__PURE__*/React.createElement(UploadCard, {
-    stageNo: "5",
-    title: "Previous Week Final Outcome",
-    requirement: "Enables week-over-week New/Existing/Reopened comparison",
-    accept: ".xlsx,.csv",
-    fileData: files.previous,
-    onFile: d => setFile("previous", d),
-    optional: true
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "note-box",
-    style: {
-      marginTop: "16px"
-    }
-  }, "CMDB column names vary week to week, so mapping happens on the ", /*#__PURE__*/React.createElement("b", null, "Configure"), " tab once the CMDB file is uploaded — the system auto-guesses the mapping and you can override it. Qualys, AWS and Azure use fixed column names, matched automatically regardless of case or spacing. CMDB enrichment tries ", /*#__PURE__*/React.createElement("b", null, "IP"), " first, then the ", /*#__PURE__*/React.createElement("b", null, "5-digit correlation code"), " shared between the AWS Account Name / Azure Subscription and the CMDB's correlation field, then hostname as a last resort."));
+  const hasAnyFile = !!(files.qualys || files.aws || files.azure || files.cmdb || files.previous || files.generic);
+  const currentToolObj = SECURITY_TOOLS.find(t => t.id === selectedTool) || SECURITY_TOOLS[0];
+
+  return /*#__PURE__*/React.createElement("div", null,
+    /*#__PURE__*/React.createElement("div", { className: "pagehead" },
+      /*#__PURE__*/React.createElement("div", null,
+        /*#__PURE__*/React.createElement("span", { className: "eyebrow" }, "Stage 01 — Ingestion & Scope Configuration"),
+        /*#__PURE__*/React.createElement("h1", null, "VulnOps Source Data Pipeline"),
+        /*#__PURE__*/React.createElement("p", null, "Select report objective, choose security assessment tool, and upload source files. Files are parsed 100% locally in your browser.")
+      ),
+      hasAnyFile && /*#__PURE__*/React.createElement("button", {
+        className: "btn btn-danger btn-sm",
+        onClick: onReset,
+        title: "Clear all uploaded files and start over"
+      }, /*#__PURE__*/React.createElement(Icon, { d: ICONS.trash, size: 14 }), " Reset all")
+    ),
+
+    /* 1. Report Mode Selection */
+    /*#__PURE__*/React.createElement("div", { className: "mode-selector-container" },
+      /*#__PURE__*/React.createElement("div", { className: "mode-selector-title" },
+        /*#__PURE__*/React.createElement(Icon, { d: ICONS.cog, size: 15 }),
+        "Step 1: Choose Reporting Objective / Output Format"
+      ),
+      /*#__PURE__*/React.createElement("div", { className: "mode-tabs" },
+        /*#__PURE__*/React.createElement("div", {
+          className: "mode-card" + (reportMode === "iasp" ? " active" : ""),
+          onClick: () => setReportMode("iasp")
+        },
+          /*#__PURE__*/React.createElement("div", { className: "mode-card-icon" },
+            /*#__PURE__*/React.createElement(Icon, { d: ICONS.upload, size: 18 })
+          ),
+          /*#__PURE__*/React.createElement("div", null,
+            /*#__PURE__*/React.createElement("div", { className: "mode-card-title" }, "IASP Upload Report Preparation"),
+            /*#__PURE__*/React.createElement("div", { className: "mode-card-desc" }, "Generates standard IASP compliant outcome sheets with enriched asset classification, correlation codes, and remediation tracking.")
+          )
+        ),
+        /*#__PURE__*/React.createElement("div", {
+          className: "mode-card" + (reportMode === "powerbi" ? " active" : ""),
+          onClick: () => setReportMode("powerbi")
+        },
+          /*#__PURE__*/React.createElement("div", { className: "mode-card-icon" },
+            /*#__PURE__*/React.createElement(Icon, { d: ICONS.chart, size: 18 })
+          ),
+          /*#__PURE__*/React.createElement("div", null,
+            /*#__PURE__*/React.createElement("div", { className: "mode-card-title" }, "PowerBI Reporting Engine"),
+            /*#__PURE__*/React.createElement("div", { className: "mode-card-desc" }, "Prepares sanitized PowerBI data model matrices with SLA calculations, weekly deltas, and multi-scanner breakdown analytics.")
+          )
+        )
+      )
+    ),
+
+    /* 2. Tool Name Selection */
+    /*#__PURE__*/React.createElement("div", { className: "tool-selector-container" },
+      /*#__PURE__*/React.createElement("div", { className: "mode-selector-title" },
+        /*#__PURE__*/React.createElement(Icon, { d: ICONS.spark, size: 15 }),
+        "Step 2: Choose Security Assessment Tool / Scanner"
+      ),
+      /*#__PURE__*/React.createElement("div", { className: "tool-grid" },
+        SECURITY_TOOLS.map(t => /*#__PURE__*/React.createElement("div", {
+          key: t.id,
+          className: "tool-card" + (selectedTool === t.id ? " active" : ""),
+          onClick: () => setSelectedTool(t.id)
+        },
+          /*#__PURE__*/React.createElement("span", {
+            className: "tool-status-tag " + (t.active ? "tool-status-active" : "tool-status-planned")
+          }, t.active ? "Active Pipeline" : "Future Integration"),
+          /*#__PURE__*/React.createElement("span", { className: "tool-name" }, t.label)
+        }))
+      )
+    ),
+
+    /* 3. Ingestion Area based on Tool */
+    selectedTool === "Qualys" ? /*#__PURE__*/React.createElement(React.Fragment, null,
+      /*#__PURE__*/React.createElement("div", {
+        style: {
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          marginBottom: "12px"
+        }
+      },
+        /*#__PURE__*/React.createElement("div", { style: { fontWeight: "700", fontSize: "14px", fontFamily: "var(--disp)" } },
+          `Step 3: Upload ${reportMode === "iasp" ? "IASP" : "PowerBI"} Ingestion Files for Qualys VM Pipeline`
+        ),
+        /*#__PURE__*/React.createElement("span", { className: "badge badge-ok" }, "5-Stage Pipeline Active")
+      ),
+      /*#__PURE__*/React.createElement("div", { className: "upload-grid" },
+        /*#__PURE__*/React.createElement(UploadCard, {
+          stageNo: "1",
+          title: "Qualys Raw Report",
+          requirement: "Full vulnerability export, all severities",
+          accept: ".xlsx,.csv",
+          fileData: files.qualys,
+          onFile: d => setFile("qualys", d),
+          requiredFields: QUALYS_REQUIRED,
+          aliasDict: QUALYS_ALIASES
+        }),
+        /*#__PURE__*/React.createElement(UploadCard, {
+          stageNo: "2",
+          title: "AWS Inventory Report",
+          requirement: "EC2 instance inventory export",
+          accept: ".xlsx,.csv",
+          fileData: files.aws,
+          onFile: d => setFile("aws", d),
+          requiredFields: AWS_REQUIRED,
+          aliasDict: AWS_ALIASES
+        }),
+        /*#__PURE__*/React.createElement(UploadCard, {
+          stageNo: "3",
+          title: "Azure Inventory Report",
+          requirement: "VM inventory export",
+          accept: ".xlsx,.csv",
+          fileData: files.azure,
+          onFile: d => setFile("azure", d),
+          requiredFields: AZURE_REQUIRED,
+          aliasDict: AZURE_ALIASES
+        }),
+        /*#__PURE__*/React.createElement(UploadCard, {
+          stageNo: "4",
+          title: "CMDB Report",
+          requirement: "Application ownership & classification data",
+          accept: ".xlsx,.csv",
+          fileData: files.cmdb,
+          onFile: d => setFile("cmdb", d)
+        }),
+        /*#__PURE__*/React.createElement(UploadCard, {
+          stageNo: "5",
+          title: "Previous Week Final Outcome",
+          requirement: "Enables week-over-week New/Existing/Reopened comparison",
+          accept: ".xlsx,.csv",
+          fileData: files.previous,
+          onFile: d => setFile("previous", d),
+          optional: true
+        })
+      ),
+      /*#__PURE__*/React.createElement("div", {
+        className: "note-box",
+        style: { marginTop: "16px" }
+      },
+        "CMDB column names vary week to week, so mapping happens on the ",
+        /*#__PURE__*/React.createElement("b", null, "Configure"),
+        " tab once the CMDB file is uploaded — the system auto-guesses the mapping and you can override it. Qualys, AWS and Azure use fixed column names, matched automatically regardless of case or spacing. CMDB enrichment tries ",
+        /*#__PURE__*/React.createElement("b", null, "IP"),
+        " first, then the ",
+        /*#__PURE__*/React.createElement("b", null, "5-digit correlation code"),
+        " shared between the AWS Account Name / Azure Subscription and the CMDB's correlation field, then hostname as a last resort."
+      )
+    ) : /*#__PURE__*/React.createElement(React.Fragment, null,
+      /*#__PURE__*/React.createElement("div", { className: "tool-banner-note" },
+        /*#__PURE__*/React.createElement(Icon, { d: ICONS.alert, size: 22 }),
+        /*#__PURE__*/React.createElement("div", null,
+          /*#__PURE__*/React.createElement("h4", null, `${currentToolObj.label} Dedicated Pipeline — Future Release`),
+          /*#__PURE__*/React.createElement("p", null,
+            `The custom ingestion and normalization pipeline for `,
+            /*#__PURE__*/React.createElement("strong", null, currentToolObj.label),
+            ` (${currentToolObj.desc}) for ${reportMode === "iasp" ? "IASP Upload" : "PowerBI"} reports is pre-architected and scheduled for upcoming integration. You can switch to `,
+            /*#__PURE__*/React.createElement("a", {
+              href: "#",
+              style: { color: "var(--accent)", textDecoration: "underline" },
+              onClick: (e) => { e.preventDefault(); setSelectedTool("Qualys"); }
+            }, "Qualys"),
+            " to run live processing right now, or upload test batches below."
+          )
+        )
+      ),
+      /*#__PURE__*/React.createElement("div", { className: "upload-grid" },
+        /*#__PURE__*/React.createElement(UploadCard, {
+          stageNo: "1",
+          title: `${currentToolObj.label} Raw Scan Finding Export`,
+          requirement: `Scanner report (${currentToolObj.format}) containing tool findings`,
+          accept: ".xlsx,.csv,.json",
+          fileData: files.generic,
+          onFile: d => setFile("generic", d)
+        }),
+        /*#__PURE__*/React.createElement(UploadCard, {
+          stageNo: "2",
+          title: "CMDB & Asset Inventory",
+          requirement: "Application correlation & ownership cross-reference",
+          accept: ".xlsx,.csv",
+          fileData: files.cmdb,
+          onFile: d => setFile("cmdb", d),
+          optional: true
+        })
+      )
+    )
+  );
 }
 
 /* ============================================================
@@ -4309,12 +4614,15 @@ function FixedVulnerabilitiesView({
 }
 function App() {
   const [activeTab, setActiveTab] = useState("upload");
+  const [reportMode, setReportMode] = useState("iasp"); // "iasp" or "powerbi"
+  const [selectedTool, setSelectedTool] = useState("Qualys"); // "Qualys", "SCA", "CSPM", "DXC IVM", "SAST", "DAST", "SAAS-Config", "SAAS Manual", "MPEN"
   const [files, setFiles] = useState({
     qualys: null,
     aws: null,
     azure: null,
     cmdb: null,
-    previous: null
+    previous: null,
+    generic: null
   });
   const [cmdbMapping, setCmdbMapping] = useState({});
   const [config, setConfig] = useState({
@@ -4348,6 +4656,8 @@ function App() {
             reportDate: todayISO()
           }));
           if (parsed.cmdbMapping) setCmdbMapping(parsed.cmdbMapping);
+          if (parsed.reportMode) setReportMode(parsed.reportMode);
+          if (parsed.selectedTool) setSelectedTool(parsed.selectedTool);
         }
       } catch (e) {/* no saved config yet */}
     })();
@@ -4375,13 +4685,18 @@ function App() {
       aws: null,
       azure: null,
       cmdb: null,
-      previous: null
+      previous: null,
+      generic: null
     });
     setCmdbMapping({});
     setResult(null);
     showToast("All uploaded files cleared.");
   };
   const runPipelineNow = () => {
+    if (selectedTool !== "Qualys") {
+      showToast(`The automated processing pipeline for ${selectedTool} is currently scheduled for future release. Qualys pipeline is active.`, "err");
+      return;
+    }
     if (!files.qualys) {
       showToast("Upload the Qualys report first.", "err");
       return;
@@ -4409,16 +4724,20 @@ function App() {
           qualysFile: files.qualys.fileName,
           finalCount: res.finalRows.length,
           exceptionCount: res.exceptions.length,
-          durationMs
+          durationMs,
+          reportMode: reportMode,
+          toolName: selectedTool
         };
         const newTrail = [...auditTrail, run];
         setAuditTrail(newTrail);
         window.storage.set("vulnops-audit-trail", JSON.stringify(newTrail), false).catch(() => {});
         window.storage.set("vulnops-config", JSON.stringify({
           config,
-          cmdbMapping
+          cmdbMapping,
+          reportMode,
+          selectedTool
         }), false).catch(() => {});
-        showToast(`Report generated: ${res.finalRows.length.toLocaleString()} final records.`);
+        showToast(`Report generated: ${res.finalRows.length.toLocaleString()} final records (${reportMode === "iasp" ? "IASP Format" : "PowerBI Format"}).`);
       } catch (e) {
         console.error(e);
         showToast("Processing failed: " + e.message, "err");
@@ -4426,7 +4745,7 @@ function App() {
       setRunning(false);
     }, 40);
   };
-  const canRun = !!files.qualys;
+  const canRun = selectedTool === "Qualys" && !!files.qualys;
   const navItems = [{
     key: "upload",
     label: "Upload",
@@ -4490,7 +4809,7 @@ function App() {
     className: "t1"
   }, "VulnOps"), /*#__PURE__*/React.createElement("div", {
     className: "t2"
-  }, "Reporting Engine"))), /*#__PURE__*/React.createElement("div", {
+  }, `${reportMode === "iasp" ? "IASP" : "PowerBI"} · ${selectedTool}`))), /*#__PURE__*/React.createElement("div", {
     className: "nav-section-label"
   }, "Pipeline"), /*#__PURE__*/React.createElement("div", {
     className: "nav"
@@ -4523,7 +4842,11 @@ function App() {
   }, activeTab === "upload" && /*#__PURE__*/React.createElement(UploadView, {
     files: files,
     setFile: setFile,
-    onReset: resetAll
+    onReset: resetAll,
+    reportMode: reportMode,
+    setReportMode: setReportMode,
+    selectedTool: selectedTool,
+    setSelectedTool: setSelectedTool
   }), activeTab === "configure" && /*#__PURE__*/React.createElement(ConfigureView, {
     config: config,
     setConfig: setConfig,
