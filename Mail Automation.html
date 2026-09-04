@@ -2525,6 +2525,8 @@ const PieChartIcon = makeIcon(<><path d="M21.21 15.89A10 10 0 118 2.83" /><path 
 const FilterIcon = makeIcon(<><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></>);
 const ChevronDown = makeIcon(<polyline points="6 9 12 15 18 9" />);
 const Check = makeIcon(<polyline points="20 6 9 17 4 12" />);
+const DownloadIcon = makeIcon(<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></>);
+const CopyIcon = makeIcon(<><rect x="9" y="9" width="13" height="13" rx="2" ry="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></>);
 
 /* --------------------------------- Custom Dashboard Feature --------------------------------- */
 
@@ -2850,14 +2852,25 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
 
   const appStats = {};
   activeRows.forEach(r => {
-    const app = r.appName || r.raw?.["Application Name"] || "Unknown App";
-    if (!appStats[app]) appStats[app] = { total: 0, pastDue: 0, withinSla: 0, criticalHigh: 0 };
+    const app = r.appName || r.raw?.["Application Name"] || r.raw?.["Application"] || "Unknown App";
+    const st = r.scanType || r.category || r.raw?.["Scan Type"] || "General Scan";
+    if (!appStats[app]) appStats[app] = { total: 0, pastDue: 0, withinSla: 0, criticalHigh: 0, scanTypes: {} };
     appStats[app].total++;
     if (r.withinSlaStatus === "Past due SLA") appStats[app].pastDue++;
     else if (r.withinSlaStatus === "Within SLA") appStats[app].withinSla++;
     if (r.sevNum === 5 || r.sevNum === 4) appStats[app].criticalHigh++;
+    appStats[app].scanTypes[st] = (appStats[app].scanTypes[st] || 0) + 1;
   });
-  const appTableRows = Object.keys(appStats).map(app => ({ app, ...appStats[app] })).sort((a,b) => b.total - a.total);
+  const appTableRows = Object.keys(appStats).map(app => {
+    const stEntries = Object.entries(appStats[app].scanTypes).sort((a,b) => b[1] - a[1]);
+    const scanTypesSummary = stEntries.map(([st, cnt]) => `${st}: ${cnt}`).join(", ");
+    return {
+      app,
+      ...appStats[app],
+      stEntries,
+      scanTypesSummary
+    };
+  }).sort((a,b) => b.total - a.total);
 
   return (
     <div>
@@ -2998,37 +3011,183 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
       </div>
 
       <Card style={{ marginBottom: 20 }}>
-        <SectionTitle icon={Briefcase}>Application & SLA Breakdown</SectionTitle>
-        <div style={{ overflowX: "auto", overflowY: "auto", maxHeight: 600 }}>
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
-                <tr style={{ background: C.bgElevated, color: C.textMuted, fontSize: 12, textTransform: "uppercase" }}>
-                  <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: 600, borderBottom: `1px solid ${C.border}` }}>Application Name</th>
-                  <th style={{ padding: "12px 16px", textAlign: "center", fontWeight: 600, borderBottom: `1px solid ${C.border}` }}>Total Active</th>
-                  <th style={{ padding: "12px 16px", textAlign: "center", fontWeight: 600, borderBottom: `1px solid ${C.border}` }}>Critical / High</th>
-                  <th style={{ padding: "12px 16px", textAlign: "center", fontWeight: 600, borderBottom: `1px solid ${C.border}` }}>Within SLA</th>
-                  <th style={{ padding: "12px 16px", textAlign: "center", fontWeight: 600, borderBottom: `1px solid ${C.border}` }}>Past Due SLA</th>
-                </tr>
-              </thead>
-              <tbody>
-                {appTableRows.map((r, i) => (
-                  <tr key={i} style={{ borderBottom: `1px solid ${C.borderLight}`, transition: "background 0.2s" }} onMouseOver={e => e.currentTarget.style.background = C.surfaceHover} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
-                    <td style={{ padding: "12px 16px", fontSize: 13, color: C.textPrimary, fontWeight: 500 }}>{r.app}</td>
-                    <td style={{ padding: "12px 16px", fontSize: 13, color: C.textPrimary, textAlign: "center" }}>{r.total}</td>
-                    <td style={{ padding: "12px 16px", fontSize: 13, color: r.criticalHigh > 0 ? C.high : C.textSecondary, textAlign: "center", fontWeight: r.criticalHigh > 0 ? "bold" : "normal" }}>{r.criticalHigh}</td>
-                    <td style={{ padding: "12px 16px", fontSize: 13, color: r.withinSla > 0 ? C.safe : C.textSecondary, textAlign: "center" }}>{r.withinSla}</td>
-                    <td style={{ padding: "12px 16px", fontSize: 13, color: r.pastDue > 0 ? C.critical : C.textSecondary, textAlign: "center", fontWeight: r.pastDue > 0 ? "bold" : "normal" }}>{r.pastDue}</td>
-                  </tr>
-                ))}
-                {appTableRows.length === 0 && (
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+          <SectionTitle icon={Briefcase}>Application &amp; SLA Breakdown</SectionTitle>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <button
+              onClick={() => {
+                if (appTableRows.length === 0) {
+                  alert("No application data to export.");
+                  return;
+                }
+                try {
+                  const exportData = appTableRows.map(r => ({
+                    "Application Name": r.app,
+                    "Scan Types": r.scanTypesSummary || "N/A",
+                    "Total Active": r.total,
+                    "Critical / High": r.criticalHigh,
+                    "Within SLA": r.withinSla,
+                    "Past Due SLA": r.pastDue
+                  }));
+                  const ws = XLSX.utils.json_to_sheet(exportData);
+                  const wb = XLSX.utils.book_new();
+                  XLSX.utils.book_append_sheet(wb, ws, "App_SLA_Breakdown");
+                  XLSX.writeFile(wb, `Application_SLA_Breakdown_${new Date().toISOString().slice(0, 10)}.xlsx`);
+                } catch (err) {
+                  alert("Failed to export Excel: " + err.message);
+                }
+              }}
+              style={{
+                ...btnStyle(false),
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "7px 13px",
+                fontSize: 12.5,
+                background: C.bgElevated,
+                borderColor: C.borderLight,
+                color: C.accent,
+                fontWeight: 600,
+                cursor: "pointer",
+                borderRadius: 6
+              }}
+              title="Export table directly to Excel (.xlsx)"
+            >
+              <DownloadIcon size={14} /> Export to Excel
+            </button>
+            <button
+              onClick={() => {
+                if (appTableRows.length === 0) {
+                  alert("No data available to copy.");
+                  return;
+                }
+                const headerText = "Application Name\tScan Types\tTotal Active\tCritical / High\tWithin SLA\tPast Due SLA";
+                const tsvRows = appTableRows.map(r => 
+                  `${r.app}\t${r.scanTypesSummary || "N/A"}\t${r.total}\t${r.criticalHigh}\t${r.withinSla}\t${r.pastDue}`
+                ).join("\n");
+                const tsvData = `${headerText}\n${tsvRows}`;
+
+                const htmlRows = appTableRows.map(r => `
                   <tr>
-                    <td colSpan={5} style={{ padding: "24px 16px", textAlign: "center", color: C.textMuted, fontSize: 13 }}>No applications found matching the current filters.</td>
+                    <td style="border:1px solid #cbd5e1;padding:8px 12px;text-align:left;">${r.app}</td>
+                    <td style="border:1px solid #cbd5e1;padding:8px 12px;text-align:left;">${r.scanTypesSummary || "N/A"}</td>
+                    <td style="border:1px solid #cbd5e1;padding:8px 12px;text-align:center;">${r.total}</td>
+                    <td style="border:1px solid #cbd5e1;padding:8px 12px;text-align:center;color:${r.criticalHigh > 0 ? '#b91c1c' : '#334155'};font-weight:${r.criticalHigh > 0 ? 'bold' : 'normal'};">${r.criticalHigh}</td>
+                    <td style="border:1px solid #cbd5e1;padding:8px 12px;text-align:center;color:${r.withinSla > 0 ? '#15803d' : '#334155'};">${r.withinSla}</td>
+                    <td style="border:1px solid #cbd5e1;padding:8px 12px;text-align:center;color:${r.pastDue > 0 ? '#b91c1c' : '#334155'};font-weight:${r.pastDue > 0 ? 'bold' : 'normal'};">${r.pastDue}</td>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                `).join("");
+                
+                const tableHtml = `
+                  <table border="1" cellpadding="8" cellspacing="0" style="border-collapse:collapse;font-family:Calibri,Arial,sans-serif;font-size:12px;width:100%;">
+                    <thead>
+                      <tr style="background-color:#1e293b;color:#ffffff;">
+                        <th style="border:1px solid #94a3b8;padding:8px 12px;text-align:left;background-color:#1e293b;color:#ffffff;">Application Name</th>
+                        <th style="border:1px solid #94a3b8;padding:8px 12px;text-align:left;background-color:#1e293b;color:#ffffff;">Scan Types</th>
+                        <th style="border:1px solid #94a3b8;padding:8px 12px;text-align:center;background-color:#1e293b;color:#ffffff;">Total Active</th>
+                        <th style="border:1px solid #94a3b8;padding:8px 12px;text-align:center;background-color:#1e293b;color:#ffffff;">Critical / High</th>
+                        <th style="border:1px solid #94a3b8;padding:8px 12px;text-align:center;background-color:#1e293b;color:#ffffff;">Within SLA</th>
+                        <th style="border:1px solid #94a3b8;padding:8px 12px;text-align:center;background-color:#1e293b;color:#ffffff;">Past Due SLA</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${htmlRows}
+                    </tbody>
+                  </table>
+                `;
+
+                if (navigator.clipboard && window.ClipboardItem) {
+                  const blobHtml = new Blob([tableHtml], { type: "text/html" });
+                  const blobText = new Blob([tsvData], { type: "text/plain" });
+                  navigator.clipboard.write([new ClipboardItem({ "text/html": blobHtml, "text/plain": blobText })]).then(() => {
+                    alert("Application breakdown table copied! You can now paste directly into Excel or Outlook.");
+                  }).catch(() => {
+                    navigator.clipboard.writeText(tsvData).then(() => {
+                      alert("Application table copied as spreadsheet data!");
+                    });
+                  });
+                } else if (navigator.clipboard) {
+                  navigator.clipboard.writeText(tsvData).then(() => {
+                    alert("Application table copied to clipboard for Excel!");
+                  });
+                }
+              }}
+              style={{
+                ...btnStyle(false),
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "7px 13px",
+                fontSize: 12.5,
+                background: C.bgElevated,
+                borderColor: C.borderLight,
+                color: C.textPrimary,
+                cursor: "pointer",
+                borderRadius: 6
+              }}
+              title="Copy table for pasting directly into Excel or Outlook"
+            >
+              <CopyIcon size={14} /> Copy Table
+            </button>
           </div>
-        </Card>
+        </div>
+
+        <div style={{ overflowX: "auto", overflowY: "auto", maxHeight: 600 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
+              <tr style={{ background: C.bgElevated, color: C.textMuted, fontSize: 12, textTransform: "uppercase" }}>
+                <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: 600, borderBottom: `1px solid ${C.border}` }}>Application Name</th>
+                <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: 600, borderBottom: `1px solid ${C.border}`, minWidth: 220 }}>Scan Types</th>
+                <th style={{ padding: "12px 16px", textAlign: "center", fontWeight: 600, borderBottom: `1px solid ${C.border}` }}>Total Active</th>
+                <th style={{ padding: "12px 16px", textAlign: "center", fontWeight: 600, borderBottom: `1px solid ${C.border}` }}>Critical / High</th>
+                <th style={{ padding: "12px 16px", textAlign: "center", fontWeight: 600, borderBottom: `1px solid ${C.border}` }}>Within SLA</th>
+                <th style={{ padding: "12px 16px", textAlign: "center", fontWeight: 600, borderBottom: `1px solid ${C.border}` }}>Past Due SLA</th>
+              </tr>
+            </thead>
+            <tbody>
+              {appTableRows.map((r, i) => (
+                <tr key={i} style={{ borderBottom: `1px solid ${C.borderLight}`, transition: "background 0.2s" }} onMouseOver={e => e.currentTarget.style.background = C.surfaceHover} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                  <td style={{ padding: "12px 16px", fontSize: 13, color: C.textPrimary, fontWeight: 500 }}>{r.app}</td>
+                  <td style={{ padding: "12px 16px", fontSize: 12, color: C.textSecondary }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5, alignItems: "center" }}>
+                      {r.stEntries.map(([st, cnt]) => (
+                        <span
+                          key={st}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 4,
+                            background: C.bgElevated,
+                            border: `1px solid ${C.borderLight}`,
+                            borderRadius: 4,
+                            padding: "2px 7px",
+                            fontSize: 11.5,
+                            color: C.textPrimary,
+                            whiteSpace: "nowrap"
+                          }}
+                        >
+                          <span style={{ fontWeight: 500 }}>{st}</span>
+                          <span style={{ fontWeight: 700, color: C.accent, background: C.accentDim, padding: "1px 5px", borderRadius: 3, fontSize: 10.5 }}>{cnt}</span>
+                        </span>
+                      ))}
+                      {r.stEntries.length === 0 && <span style={{ color: C.textMuted }}>-</span>}
+                    </div>
+                  </td>
+                  <td style={{ padding: "12px 16px", fontSize: 13, color: C.textPrimary, textAlign: "center", fontWeight: 600 }}>{r.total}</td>
+                  <td style={{ padding: "12px 16px", fontSize: 13, color: r.criticalHigh > 0 ? C.high : C.textSecondary, textAlign: "center", fontWeight: r.criticalHigh > 0 ? "bold" : "normal" }}>{r.criticalHigh}</td>
+                  <td style={{ padding: "12px 16px", fontSize: 13, color: r.withinSla > 0 ? C.safe : C.textSecondary, textAlign: "center" }}>{r.withinSla}</td>
+                  <td style={{ padding: "12px 16px", fontSize: 13, color: r.pastDue > 0 ? C.critical : C.textSecondary, textAlign: "center", fontWeight: r.pastDue > 0 ? "bold" : "normal" }}>{r.pastDue}</td>
+                </tr>
+              ))}
+              {appTableRows.length === 0 && (
+                <tr>
+                  <td colSpan={6} style={{ padding: "24px 16px", textAlign: "center", color: C.textMuted, fontSize: 13 }}>No applications found matching the current filters.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
       
       {showFollowUpModal && (
         <FollowUpMailTemplateModal
