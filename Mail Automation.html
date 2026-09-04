@@ -1,0 +1,3146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>VulnOps Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #09090b; height: 100%; color: #f4f4f5; }
+  body { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  #root { min-height: 100vh; }
+
+  #boot-loader {
+    display: none;
+    position: fixed; inset: 0; z-index: 999;
+    flex-direction: column; align-items: center; justify-content: center;
+    gap: 16px; background: #09090b;
+  }
+  #boot-loader.vd-show { display: flex; }
+  .boot-title { font-size: 14px; font-weight: 600; color: #f4f4f5; letter-spacing: 0.2px; }
+  .boot-sub { font-size: 12px; color: #a1a1aa; }
+
+  #boot-error {
+    display: none; max-width: 640px; margin-top: 4px; padding: 16px 18px; border-radius: 10px;
+    background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #fca5a5; font-size: 12.5px; line-height: 1.6; white-space: pre-wrap;
+    font-family: "JetBrains Mono", ui-monospace, monospace; text-align: left; max-height: 240px; overflow: auto;
+  }
+  #boot-retry {
+    display: none; margin-top: 4px; padding: 9px 16px; border-radius: 7px; cursor: pointer;
+    background: rgba(99, 102, 241, 0.15); border: 1px solid #6366f1; color: #818cf8;
+    font-size: 12.5px; font-weight: 600; font-family: "Inter", sans-serif;
+  }
+
+  .vd-spin { animation: vd-spin-anim 0.8s linear infinite; }
+  @keyframes vd-spin-anim { to { transform: rotate(360deg); } }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: #09090b; }
+  ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+
+  .vd-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+  .vd-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+  
+  .vd-btn { transition: all 0.2s ease; cursor: pointer; }
+  .vd-btn:hover { opacity: 0.85; transform: scale(0.98); }
+
+  .vd-row { transition: background 0.15s ease; }
+  .vd-row:hover { background: #3f3f4625 !important; }
+</style>
+</head>
+<body>
+
+<div id="boot-loader">
+  <div class="boot-title" id="boot-title">Failed to load the dashboard</div>
+  <div class="boot-sub" id="boot-sub">Something went wrong while starting the dashboard.</div>
+  <div id="boot-error"></div>
+  <div id="boot-retry" onclick="location.reload()">Retry</div>
+</div>
+
+<div id="root"></div>
+
+<script type="text/plain" id="app-source">
+/* Standalone build: React/ReactDOM/Recharts/XLSX are loaded as browser globals via <script> tags. */
+const { useState, useMemo, useCallback, useRef, useEffect, Fragment } = React;
+const {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend
+} = Recharts;
+const XLSX = window.XLSX;
+
+/* ------------------------------ minimal icon set ------------------------------ */
+/* Hand-rolled lucide-style line icons (no external icon package needed offline) */
+function makeIcon(children) {
+  return function IconCmp({ size = 16, color = "currentColor", style }) {
+    return (
+      <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color}
+        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+        {children}
+      </svg>
+    );
+  };
+}
+
+const Upload = makeIcon(<><path d="M12 16V4" /><path d="M6 10l6-6 6 6" /><path d="M4 20h16" /></>);
+const AlertTriangle = makeIcon(<><path d="M12 3l10 18H2L12 3z" /><path d="M12 10v4" /><path d="M12 17h.01" /></>);
+const ShieldCheck = makeIcon(<><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z" /><path d="M9 12l2 2 4-4" /></>);
+const ShieldAlert = makeIcon(<><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z" /><path d="M12 8v5" /><path d="M12 16h.01" /></>);
+const TrendingUp = makeIcon(<><path d="M3 17l6-6 4 4 8-8" /><path d="M15 7h6v6" /></>);
+const TrendingDown = makeIcon(<><path d="M3 7l6 6 4-4 8 8" /><path d="M15 17h6v-6" /></>);
+const Search = makeIcon(<><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></>);
+const X = makeIcon(<><path d="M18 6L6 18" /><path d="M6 6l12 12" /></>);
+const Server = makeIcon(<><rect x="3" y="4" width="18" height="7" rx="1.5" /><rect x="3" y="13" width="18" height="7" rx="1.5" /><path d="M7 7.5h.01" /><path d="M7 16.5h.01" /></>);
+const Cloud = makeIcon(<path d="M7 18a4.5 4.5 0 010-9 5.5 5.5 0 0110.6 1.8A3.8 3.8 0 0117.5 18H7z" />);
+const Database = makeIcon(<><ellipse cx="12" cy="5" rx="8" ry="3" /><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5" /><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3" /></>);
+const Clock = makeIcon(<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3.5 2" /></>);
+const CheckCircle2 = makeIcon(<><circle cx="12" cy="12" r="9" /><path d="M8.5 12.5l2.3 2.3L16 10" /></>);
+const LayoutDashboard = makeIcon(<><rect x="3" y="3" width="8" height="8" rx="1.2" /><rect x="13" y="3" width="8" height="5" rx="1.2" /><rect x="13" y="10" width="8" height="11" rx="1.2" /><rect x="3" y="13" width="8" height="8" rx="1.2" /></>);
+const Building2 = makeIcon(<><rect x="4" y="3" width="10" height="18" rx="1" /><rect x="14" y="9" width="6" height="12" rx="1" /><path d="M7 7h.01M11 7h.01M7 11h.01M11 11h.01M7 15h.01M11 15h.01" /></>);
+const RefreshCw = makeIcon(<><path d="M21 12a9 9 0 10-3.2 6.9" /><path d="M21 5v6h-6" /></>);
+const Info = makeIcon(<><circle cx="12" cy="12" r="9" /><path d="M12 11v6" /><path d="M12 7.5h.01" /></>);
+const FileSpreadsheet = makeIcon(<><path d="M6 2h9l4 4v16H6z" /><path d="M15 2v4h4" /><path d="M8 13h8M8 17h8M8 13v6" /></>);
+const GitCompare = makeIcon(<><circle cx="6" cy="6" r="2.5" /><circle cx="18" cy="18" r="2.5" /><path d="M8.5 6h4.5a4 4 0 014 4v0" /><path d="M15.5 18H11a4 4 0 01-4-4v0" /></>);
+const ListChecks = makeIcon(<><path d="M4 6l1.5 1.5L8.5 4.5" /><path d="M4 13l1.5 1.5L8.5 11.5" /><path d="M4 20l1.5 1.5L8.5 18.5" /><path d="M12 6h9M12 13h9M12 20h9" /></>);
+const GaugeIcon = makeIcon(<><path d="M4 15a8 8 0 1116 0" /><path d="M12 15l4-5" /><path d="M12 15h.01" /></>);
+const Briefcase = makeIcon(<><rect x="3" y="7" width="18" height="13" rx="1.5" /><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" /><path d="M3 12h18" /></>);
+const Table2 = makeIcon(<><rect x="3" y="4" width="18" height="16" rx="1.5" /><path d="M3 9h18M3 15h18M9 4v16" /></>);
+const Sparkles = makeIcon(<><path d="M12 3l1.4 4.6L18 9l-4.6 1.4L12 15l-1.4-4.6L6 9l4.6-1.4L12 3z" /><path d="M19 15l.7 2.3L22 18l-2.3.7L19 21l-.7-2.3L16 18l2.3-.7L19 15z" /></>);
+const IdCard = makeIcon(<><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="12" r="2" /><path d="M14 10h4M14 14h4M6.5 16.5c.5-1.4 1.6-2 2.5-2s2 .6 2.5 2" /></>);
+const FileWarning = makeIcon(<><path d="M6 2h9l4 4v16H6z" /><path d="M15 2v4h4" /><path d="M12 10v5" /><path d="M12 18h.01" /></>);
+const CheckSquare = makeIcon(<><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M8 12l2.5 2.5L16 9" /></>);
+
+/* ---------------------------------- tokens ---------------------------------- */
+
+const C = {
+  bg: "#09090b",
+  bgElevated: "#18181b",
+  surface: "#27272a",
+  surfaceHover: "#3f3f46",
+  border: "#3f3f46",
+  borderLight: "#52525b",
+  textPrimary: "#f4f4f5",
+  textSecondary: "#a1a1aa",
+  textMuted: "#71717a",
+  accent: "#6366f1",
+  accentDim: "rgba(99, 102, 241, 0.15)",
+  critical: "#ef4444",
+  criticalDim: "rgba(239, 68, 68, 0.15)",
+  high: "#f97316",
+  highDim: "rgba(249, 115, 22, 0.15)",
+  medium: "#eab308",
+  mediumDim: "rgba(234, 179, 8, 0.15)",
+  low: "#3b82f6",
+  lowDim: "rgba(59, 130, 246, 0.15)",
+  info: "#a1a1aa",
+  infoDim: "rgba(161, 161, 170, 0.15)",
+  success: "#22c55e",
+  successDim: "rgba(34, 197, 94, 0.15)",
+};
+
+const SEV_META = {
+  5: { label: "Critical", color: C.critical, dim: C.criticalDim },
+  4: { label: "High", color: C.high, dim: C.highDim },
+  3: { label: "Medium", color: C.medium, dim: C.mediumDim },
+  2: { label: "Low", color: C.low, dim: C.lowDim },
+  1: { label: "Info", color: C.info, dim: C.infoDim },
+};
+
+const SLA_DAYS = { 5: 30, 4: 120, 3: 180, 2: 365, 1: 365 };
+
+const AGE_BUCKETS = [
+  { label: "0-30", min: 0, max: 30 },
+  { label: "31-60", min: 31, max: 60 },
+  { label: "61-90", min: 61, max: 90 },
+  { label: "91-180", min: 91, max: 180 },
+  { label: "181-365", min: 181, max: 365 },
+  { label: "365+", min: 366, max: Infinity },
+];
+
+const selectStyle = {
+  background: C.bgElevated, border: `1px solid ${C.borderLight}`, borderRadius: 8,
+  padding: "8px 12px", fontSize: 13, color: C.textPrimary, outline: "none", cursor: "pointer",
+  transition: "border-color 0.2s, box-shadow 0.2s",
+};
+
+/* --------------------------- header canonicalization --------------------------- */
+
+const CANONICAL = [
+  ["index", "Index"], ["appName", "Application Name"], ["apmId", "APM ID"], ["scanType", "Scan Type"],
+  ["ip", "IP"], ["dns", "DNS"], ["netbios", "NetBIOS"], ["trackingMethod", "Tracking Method"],
+  ["os", "OS"], ["ipStatus", "IP Status"], ["uniqueId", "Unique id"],
+  ["vulnName", "Vulnerability Name"], ["vulnStatus", "Vulnerability Status"], ["type", "Type"],
+  ["riskRating", "Risk Rating"], ["port", "Port"], ["protocol", "Protocol"], ["fqdn", "FQDN"],
+  ["ssl", "SSL"], ["firstFound", "First Found date"], ["lastDetected", "Last Detected"],
+  ["timesDetected", "Times Detected"], ["dateLastFixed", "Date Last Fixed"],
+  ["firstReopened", "First Reopened"], ["lastReopened", "Last Reopened"],
+  ["timesReopened", "Times Reopened"], ["cveId", "CVE ID"], ["vendorRef", "Vendor Reference"],
+  ["bugtraqId", "Bugtraq ID"], ["threat", "Threat"], ["impact", "Impact"],
+  ["recommendation", "Recommendation"], ["exploitability", "Exploitability"],
+  ["results", "Results"], ["pciVuln", "PCI Vuln"], ["ticketState", "Ticket State"],
+  ["instance", "Instance"], ["category", "Category"], ["qds", "QDS"], ["ars", "ARS"],
+  ["acs", "ACS"], ["truRisk", "TruRisk Score"], ["ifOrPci", "IF or PCI"], ["ifPciAlt", "IF-PCI"], ["source", "Source"],
+  ["slaCol", "SLA"], ["vulnAgeCol", "Vulnerability Age"], ["appOwner", "App Owner"],
+  ["organization", "Organization"], ["ifField", "IF"], ["pci", "PCI"],
+  ["impactedAsset", "Impacted Asset"], ["cloudAccount", "Cloud Account Name"],
+  ["environment", "Environment"], ["csp", "CSP"], ["vulnId", "Vulnerability ID"],
+  ["vulnCategory", "Vulnerability Category"], ["withinSla", "Within SLA/Past due SLA"],
+  ["dueDate", "Due Date"], ["slaStatus", "SLA Status"],
+  ["weeklyMetrics", "Weekly Metrics"],
+];
+
+const RAW_CANONICAL = [
+  ["ip", "IP"], ["dns", "DNS"], ["netbios", "NetBIOS"], ["trackingMethod", "Tracking Method"],
+  ["os", "OS"], ["ipStatus", "IP Status"], ["qid", "QID"], ["title", "Title"],
+  ["vulnStatus", "Vuln Status"], ["type", "Type"], ["riskRating", "Severity"], ["port", "Port"],
+  ["protocol", "Protocol"], ["fqdn", "FQDN"], ["ssl", "SSL"], ["firstFound", "First Detected"],
+  ["lastDetected", "Last Detected"], ["timesDetected", "Times Detected"],
+  ["dateLastFixed", "Date Last Fixed"], ["firstReopened", "First Reopened"],
+  ["lastReopened", "Last Reopened"], ["timesReopened", "Times Reopened"], ["cveId", "CVE ID"],
+  ["vendorRef", "Vendor Reference"], ["bugtraqId", "Bugtraq ID"], ["threat", "Threat"],
+  ["impact", "Impact"], ["recommendation", "Solution"], ["exploitability", "Exploitability"],
+  ["results", "Results"], ["pciVuln", "PCI Vuln"], ["ticketState", "Ticket State"],
+  ["instance", "Instance"], ["category", "Category"], ["associatedTags", "Associated Tags"],
+  ["qds", "QDS"], ["ars", "ARS"], ["acs", "ACS"], ["truRisk", "TruRisk Score"],
+];
+
+const norm = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+
+function buildHeaderMap(sampleKeys, canonicalList) {
+  const list = canonicalList || CANONICAL;
+  const map = {};
+  const canonNorm = list.map(([k, h]) => [k, norm(h)]);
+  sampleKeys.forEach((rawKey) => {
+    const nk = norm(rawKey);
+    const hit = canonNorm.find(([, nh]) => nh === nk);
+    if (hit) map[rawKey] = hit[0];
+  });
+  return map;
+}
+
+function convertRow(raw, headerMap) {
+  const out = {};
+  Object.keys(raw).forEach((k) => {
+    const canon = headerMap[k];
+    if (canon) out[canon] = raw[k];
+  });
+  return out;
+}
+
+/* Extract the QID component from a "IP/QID" formatted Vulnerability ID (or Unique id) string. */
+function extractQid(idStr) {
+  const s = String(idStr || "").trim();
+  if (!s) return "";
+  const parts = s.split("/");
+  return parts.length > 1 ? parts[parts.length - 1].trim() : "";
+}
+
+const rawMatchKey = (ip, qid) => `${String(ip || "").trim().toLowerCase()}|${String(qid || "").trim()}`;
+
+/* --------------------------------- parsing helpers --------------------------------- */
+
+function parseDateVal(v) {
+  if (v === null || v === undefined || v === "") return null;
+  if (v instanceof Date && !isNaN(v)) return v;
+  if (typeof v === "number") {
+    const d = new Date(Math.round((v - 25569) * 86400 * 1000));
+    return isNaN(d) ? null : d;
+  }
+  const d = new Date(v);
+  return isNaN(d) ? null : d;
+}
+
+function safeNum(v) {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(String(v).replace(/[^0-9.\-]/g, ""));
+  return isNaN(n) ? null : n;
+}
+
+function classifySeverity(raw) {
+  const r = String(raw || "").trim().toLowerCase();
+  if (/critical|^5$/.test(r)) return 5;
+  if (/high|^4$/.test(r)) return 4;
+  if (/medium|moderate|^3$/.test(r)) return 3;
+  if (/low|^2$/.test(r)) return 2;
+  if (/info|^1$/.test(r)) return 1;
+  return 3;
+}
+
+function classifyInfra(row) {
+  const os = String(row.os || "").toLowerCase();
+  if (/cisco|ios[\s-]?xe|nx-os|junos|fortios|panos|catalyst/.test(os)) return "Network / On-Prem";
+  const csp = String(row.csp || "").toLowerCase();
+  if (/aws|amazon/.test(csp)) return "AWS";
+  if (/azure|microsoft/.test(csp)) return "Azure";
+  if (/gcp|google/.test(csp)) return "GCP";
+  if (csp.trim()) return "Other Cloud";
+  if (row.cloudAccount) return "Other Cloud";
+  if (row.environment || row.ip) return "Network / On-Prem";
+  return "Unknown";
+}
+
+function computeRow(raw, today) {
+  const row = { ...raw };
+  const sevNum = classifySeverity(row.riskRating);
+  const statusRaw = String(row.vulnStatus || "").toLowerCase();
+  const isOpen = !/fixed|closed/.test(statusRaw);
+  const isReopened = /reopen/.test(statusRaw);
+
+  const firstFound = parseDateVal(row.firstFound);
+  const lastDetected = parseDateVal(row.lastDetected);
+  const dateFixed = parseDateVal(row.dateLastFixed);
+
+  let ageDays = null;
+  const refStart = firstFound || lastDetected;
+  if (refStart) {
+    const refEnd = !isOpen && dateFixed ? dateFixed : today;
+    ageDays = Math.max(0, Math.round((refEnd - refStart) / 86400000));
+  } else {
+    const colAge = safeNum(row.vulnAgeCol);
+    if (colAge !== null) ageDays = colAge;
+  }
+
+  const slaDays = SLA_DAYS[sevNum];
+  const breached = ageDays !== null ? ageDays > slaDays : false;
+  const slaDelta = ageDays !== null ? slaDays - ageDays : null;
+
+  const infra = classifyInfra(row);
+  const assetKey = row.impactedAsset || row.ip || row.fqdn || row.dns || "Unknown Asset";
+
+  const truRiskNum = safeNum(row.truRisk);
+  const truRiskNorm = truRiskNum !== null ? Math.min(truRiskNum, 1000) / 1000 * 10 : 0;
+  const rowRiskScore =
+    sevNum * 8 +
+    Math.min(ageDays || 0, 365) / 365 * 12 +
+    (isOpen && breached ? 15 : 0) +
+    truRiskNorm;
+
+  const rawWithinSla = String(row.withinSla || row.slaStatus || row.slaCol || "").trim();
+  let withinSlaStatus;
+  if (rawWithinSla) {
+    withinSlaStatus = /past ?due/i.test(rawWithinSla) ? "Past due SLA" : (/within/i.test(rawWithinSla) ? "Within SLA" : rawWithinSla);
+  } else {
+    withinSlaStatus = isOpen ? (breached ? "Past due SLA" : "Within SLA") : "Closed";
+  }
+
+  return {
+    ...row,
+    sevNum,
+    sevLabel: SEV_META[sevNum].label,
+    isOpen,
+    isReopened,
+    ageDays,
+    slaDays,
+    breached: isOpen && breached,
+    slaDelta,
+    infra,
+    assetKey,
+    rowRiskScore,
+    hasSeverityData: !!row.riskRating,
+    hasDateData: !!refStart,
+    withinSlaStatus,
+    vulnCategoryVal: String(row.vulnCategory || row.category || "").trim() || "Uncategorized",
+    ifOrPciVal: String(row.ifOrPci || "").trim() || "Not specified",
+    environmentVal: String(row.environment || "").trim() || "Not specified",
+    appNameVal: String(row.appName || "").trim() || "Unknown application",
+    cspVal: String(row.csp || "").trim() || "Not specified",
+  };
+}
+
+const uniqueVals = (rows, key) => Array.from(new Set(rows.map((r) => r[key]).filter(Boolean))).sort();
+
+/* --------------------------------- aggregations --------------------------------- */
+
+function buildAssetAgg(rows) {
+  const map = new Map();
+  rows.filter((r) => r.isOpen).forEach((r) => {
+    if (!map.has(r.assetKey)) {
+      map.set(r.assetKey, {
+        assetKey: r.assetKey, ip: r.ip, dns: r.dns, infra: r.infra,
+        environment: r.environment, appOwner: r.appOwner,
+        total: 0, sev5: 0, sev4: 0, sev3: 0,
+        breached: 0, maxAge: 0, riskScore: 0,
+      });
+    }
+    const a = map.get(r.assetKey);
+    a.total += 1;
+    a[`sev${r.sevNum}`] += 1;
+    if (r.breached) a.breached += 1;
+    if ((r.ageDays || 0) > a.maxAge) a.maxAge = r.ageDays || 0;
+    a.riskScore += r.rowRiskScore;
+  });
+  const assets = Array.from(map.values());
+  const maxScore = Math.max(1, ...assets.map((a) => a.riskScore));
+  assets.forEach((a) => (a.riskScoreNorm = Math.round((a.riskScore / maxScore) * 100)));
+  return assets.sort((a, b) => b.riskScore - a.riskScore);
+}
+
+function buildInfraAgg(rows) {
+  const infras = ["AWS", "Azure", "GCP", "Other Cloud", "Network / On-Prem", "Unknown"];
+  return infras.map((infra) => {
+    const subset = rows.filter((r) => r.infra === infra);
+    const open = subset.filter((r) => r.isOpen);
+    const assetSet = new Set(open.map((r) => r.assetKey));
+    const withAge = open.filter((r) => r.ageDays !== null);
+    const avgAge = withAge.length ? Math.round(withAge.reduce((s, r) => s + r.ageDays, 0) / withAge.length) : 0;
+    const maxAge = withAge.length ? Math.max(...withAge.map((r) => r.ageDays)) : 0;
+    const breached = open.filter((r) => r.breached).length;
+    return {
+      infra,
+      assets: assetSet.size,
+      openVulns: open.length,
+      sev5: open.filter((r) => r.sevNum === 5).length,
+      sev4: open.filter((r) => r.sevNum === 4).length,
+      sev3: open.filter((r) => r.sevNum === 3).length,
+      breached,
+      avgAge, maxAge,
+      compliance: open.length ? Math.round(((open.length - breached) / open.length) * 100) : 100,
+    };
+  }).filter((r) => r.openVulns > 0 || r.assets > 0);
+}
+
+function buildAgeingData(rows) {
+  const open = rows.filter((r) => r.isOpen && r.ageDays !== null && [5, 4, 3].includes(r.sevNum));
+  return AGE_BUCKETS.map((b) => {
+    const inBucket = open.filter((r) => r.ageDays >= b.min && r.ageDays <= b.max);
+    return {
+      bucket: b.label,
+      Critical: inBucket.filter((r) => r.sevNum === 5).length,
+      High: inBucket.filter((r) => r.sevNum === 4).length,
+      Medium: inBucket.filter((r) => r.sevNum === 3).length,
+    };
+  });
+}
+
+function buildAppAgg(rows) {
+  const map = new Map();
+  rows.filter((r) => r.isOpen).forEach((r) => {
+    const key = r.appNameVal;
+    if (!map.has(key)) {
+      map.set(key, {
+        appName: key, appOwner: r.appOwner || "-", apmId: r.apmId || "-", organization: r.organization || "-",
+        assetsSet: new Set(), total: 0, sev5: 0, sev4: 0, sev3: 0, breached: 0, ageSum: 0, ageCount: 0,
+      });
+    }
+    const a = map.get(key);
+    a.assetsSet.add(r.assetKey);
+    a.total += 1;
+    a[`sev${r.sevNum}`] += 1;
+    if (r.breached) a.breached += 1;
+    if (r.ageDays !== null) { a.ageSum += r.ageDays; a.ageCount += 1; }
+  });
+  return Array.from(map.values()).map((a) => ({
+    ...a, assets: a.assetsSet.size,
+    avgAge: a.ageCount ? Math.round(a.ageSum / a.ageCount) : 0,
+    compliance: a.total ? Math.round(((a.total - a.breached) / a.total) * 100) : 100,
+  })).sort((a, b) => b.breached - a.breached || b.total - a.total);
+}
+
+/* Ownership directory: grouped by App Owner, containing multiple APM IDs */
+function buildOwnershipAgg(rows) {
+  const map = new Map();
+  rows.forEach((r) => {
+    const ownerKey = String(r.appOwner || "").trim() || "Unassigned";
+    if (!map.has(ownerKey)) {
+      map.set(ownerKey, {
+        appOwner: ownerKey,
+        organization: r.organization || "-",
+        assetsSet: new Set(),
+        total: 0, sev5: 0, sev4: 0, sev3: 0, breached: 0,
+        apps: new Map(),
+      });
+    }
+    const o = map.get(ownerKey);
+    const apmId = String(r.apmId || "").trim() || "Unspecified APM ID";
+    
+    if (!o.apps.has(apmId)) {
+      o.apps.set(apmId, {
+        apmId,
+        appNames: new Set(),
+        withinSla: 0,
+        pastDue: 0,
+        fixedCount: 0,
+        openVulns: 0,
+        vulnStatus: "Open", // Will be Closed if openVulns == 0
+      });
+    }
+    const a = o.apps.get(apmId);
+    if (r.appNameVal) a.appNames.add(r.appNameVal);
+
+    if (r.isOpen) {
+      o.assetsSet.add(r.assetKey);
+      o.total += 1;
+      o[`sev${r.sevNum}`] += 1;
+      if (r.breached) o.breached += 1;
+      
+      a.openVulns += 1;
+      if (r.breached) a.pastDue += 1;
+      else a.withinSla += 1;
+    } else {
+      a.fixedCount += 1;
+    }
+  });
+
+  return Array.from(map.values()).map((o) => {
+    const appsList = Array.from(o.apps.values()).map(a => ({
+      ...a,
+      appName: Array.from(a.appNames).join(", ") || "-",
+      vulnStatus: a.openVulns > 0 ? "Open" : "Closed"
+    })).sort((a, b) => b.openVulns - a.openVulns);
+    
+    return {
+      ...o,
+      apps: appsList,
+      assets: o.assetsSet.size,
+      compliance: o.total ? Math.round(((o.total - o.breached) / o.total) * 100) : 100,
+    };
+  }).sort((a, b) => a.appOwner.localeCompare(b.appOwner));
+}
+
+function buildWeeklyAgg(rows) {
+  const map = new Map();
+  rows.filter((r) => r.isOpen).forEach((r) => {
+    const key = String(r.weeklyMetrics || "").trim() || "Unspecified";
+    if (!map.has(key)) map.set(key, { week: key, total: 0, sev5: 0, sev4: 0, sev3: 0, breached: 0, ageSum: 0, ageCount: 0 });
+    const w = map.get(key);
+    w.total += 1;
+    w[`sev${r.sevNum}`] += 1;
+    if (r.breached) w.breached += 1;
+    if (r.ageDays !== null) { w.ageSum += r.ageDays; w.ageCount += 1; }
+  });
+  return Array.from(map.values()).map((w) => ({ ...w, avgAge: w.ageCount ? Math.round(w.ageSum / w.ageCount) : 0 }))
+    .sort((a, b) => a.week.localeCompare(b.week));
+}
+
+function computePosture(kpi) {
+  const compliance = kpi.slaCompliance / 100;
+  const sev5Exposure = kpi.totalOpen ? kpi.sev5 / kpi.totalOpen : 0;
+  const avgAgeNorm = Math.min(kpi.avgAge || 0, 365) / 365;
+  const score = Math.round(100 * (0.4 * compliance + 0.3 * (1 - sev5Exposure) + 0.3 * (1 - avgAgeNorm)));
+  return Math.max(0, Math.min(100, score));
+}
+
+/* --------------------------- AI remediation assistant --------------------------- */
+
+async function fetchRemediation(vuln, setResp, setLoadingFn, setErrFn) {
+  setLoadingFn(true);
+  setErrFn(null);
+  try {
+    const prompt = `You are a security remediation assistant helping a vulnerability management team. Give a clear, actionable remediation plan for this finding.
+
+Vulnerability: ${vuln.vulnName || "Unknown"}
+CVE: ${vuln.cveId || "N/A"}
+Severity: ${vuln.sevLabel}
+Category: ${vuln.vulnCategoryVal}
+Asset: ${vuln.ip || vuln.assetKey} (${vuln.dns || vuln.fqdn || "no hostname"})
+OS: ${vuln.os || "Unknown"}
+Port/Protocol: ${vuln.port || "-"} / ${vuln.protocol || "-"}
+Days open: ${vuln.ageDays ?? "unknown"}
+Threat: ${vuln.threat || "Not provided by scanner"}
+Impact: ${vuln.impact || "Not provided by scanner"}
+Scanner recommendation: ${vuln.recommendation || "None provided"}
+
+Respond in under 180 words: 3-5 short numbered remediation steps, plus one line on how to validate the fix. Be specific to this vulnerability and OS/platform where possible.`;
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+    const data = await response.json();
+    const text = (data.content || []).filter((b) => b.type === "text").map((b) => b.text).join("\n");
+    setResp(text || "No guidance returned.");
+  } catch (err) {
+    setErrFn("Couldn't reach the remediation assistant. Try again.");
+  } finally {
+    setLoadingFn(false);
+  }
+}
+
+/* ----------------------------------- UI atoms ----------------------------------- */
+
+function Card({ children, style, ...rest }) {
+  return (
+    <div
+      className="vd-card"
+      style={{ 
+        background: `linear-gradient(145deg, ${C.surface}, #1e1e24)`, 
+        border: `1px solid ${C.borderLight}`, 
+        borderRadius: 16, 
+        padding: 24, 
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+        ...style 
+      }}
+      {...rest}
+    >
+      {children}
+    </div>
+  );
+}
+
+function SectionTitle({ icon: Icon, children, right }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        {Icon && <Icon size={18} color={C.accent} />}
+        <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", color: C.textPrimary }}>
+          {children}
+        </h3>
+      </div>
+      {right}
+    </div>
+  );
+}
+
+function KpiCard({ label, value, sub, accentColor, icon: Icon }) {
+  return (
+    <Card style={{
+      display: "flex", flexDirection: "column", gap: 8, minWidth: 0, padding: 20,
+      borderTop: accentColor ? `4px solid ${accentColor}` : `1px solid ${C.borderLight}`,
+    }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.8, color: C.textSecondary, fontWeight: 700 }}>{label}</span>
+        {Icon && <div style={{ background: accentColor ? `${accentColor}25` : C.surfaceHover, padding: 6, borderRadius: 8 }}><Icon size={16} color={accentColor || C.textMuted} /></div>}
+      </div>
+      <div style={{ fontSize: 32, fontWeight: 800, color: accentColor || C.textPrimary, fontFamily: "'JetBrains Mono', ui-monospace, monospace", marginTop: 4 }}>
+        {value}
+      </div>
+      {sub && <div style={{ fontSize: 12, color: C.textMuted, marginTop: 4, fontWeight: 500 }}>{sub}</div>}
+    </Card>
+  );
+}
+
+function Badge({ color, dim, children }) {
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700,
+      padding: "3px 8px", borderRadius: 5, background: dim, color, letterSpacing: 0.3,
+      fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+    }}>
+      {children}
+    </span>
+  );
+}
+
+function ProgressBar({ pct, color }) {
+  return (
+    <div style={{ height: 6, borderRadius: 3, background: C.bgElevated, overflow: "hidden" }}>
+      <div style={{ width: `${Math.max(0, Math.min(100, pct))}%`, height: "100%", background: color, borderRadius: 3 }} />
+    </div>
+  );
+}
+
+function Gauge({ score }) {
+  const color = score >= 75 ? C.success : score >= 50 ? C.medium : C.critical;
+  const r = 62, circ = 2 * Math.PI * r, offset = circ * (1 - score / 100);
+  return (
+    <svg width="160" height="160" viewBox="0 0 160 160">
+      <circle cx="80" cy="80" r={r} fill="none" stroke={C.bgElevated} strokeWidth="12" />
+      <circle
+        cx="80" cy="80" r={r} fill="none" stroke={color} strokeWidth="12"
+        strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+        transform="rotate(-90 80 80)"
+      />
+      <text x="80" y="76" textAnchor="middle" fontSize="30" fontWeight="700" fill={C.textPrimary} fontFamily="ui-monospace, monospace">{score}</text>
+      <text x="80" y="96" textAnchor="middle" fontSize="11" fill={C.textMuted}>/ 100</text>
+    </svg>
+  );
+}
+
+function HeatMap({ data }) {
+  const sevs = [5, 4, 3];
+  const max = Math.max(1, ...sevs.flatMap((s) => AGE_BUCKETS.map((b) => data[s]?.[b.label] || 0)));
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: `90px repeat(${AGE_BUCKETS.length}, 1fr)`, gap: 4 }}>
+      <div />
+      {AGE_BUCKETS.map((b) => (
+        <div key={b.label} style={{ fontSize: 10, color: C.textMuted, textAlign: "center", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{b.label}</div>
+      ))}
+      {sevs.map((s) => (
+        <React.Fragment key={s}>
+          <div style={{ fontSize: 11.5, color: SEV_META[s].color, fontWeight: 700, display: "flex", alignItems: "center" }}>{SEV_META[s].label}</div>
+          {AGE_BUCKETS.map((b) => {
+            const v = data[s]?.[b.label] || 0;
+            const intensity = v / max;
+            return (
+              <div
+                key={b.label}
+                title={`${SEV_META[s].label} - ${b.label} days - ${v}`}
+                style={{
+                  height: 40, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center",
+                  background: v === 0 ? C.bgElevated : SEV_META[s].color,
+                  opacity: v === 0 ? 1 : 0.25 + intensity * 0.75,
+                  fontSize: 12, fontWeight: 700, color: v === 0 ? C.textMuted : "#0A0E14",
+                  fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+                }}
+              >
+                {v > 0 ? v : "-"}
+              </div>
+            );
+          })}
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+const btnStyle = (active) => ({
+  padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: active ? 600 : 500, cursor: "pointer",
+  border: `1px solid ${active ? C.accent : C.borderLight}`,
+  background: active ? C.accentDim : C.bgElevated,
+  color: active ? C.accent : C.textPrimary,
+  display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap",
+  transition: "all 0.2s ease",
+});
+
+/* ----------------------------------- Upload ----------------------------------- */
+
+function UploadPanel({ onData, label, compact, canonicalList }) {
+  const inputRef = useRef(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [error, setError] = useState(null);
+  const [parsing, setParsing] = useState(false);
+  const list = canonicalList || CANONICAL;
+
+  const handleFile = useCallback((file) => {
+    if (!file) return;
+    setError(null);
+    setParsing(true);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      // Deferred so the loading spinner paints before the (potentially heavy) parse/compute work runs.
+      setTimeout(() => {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const wb = XLSX.read(data, { type: "array", cellDates: true });
+          const sheet = wb.Sheets[wb.SheetNames[0]];
+          const json = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+          if (!json.length) { setError("No rows found in the file."); setParsing(false); return; }
+          const headerMap = buildHeaderMap(Object.keys(json[0]), list);
+          const matchedCount = Object.keys(headerMap).length;
+          if (matchedCount < 4) {
+            setError("Couldn't recognize the expected column headers in this file. Check the header row matches the expected schema.");
+            setParsing(false);
+            return;
+          }
+          const today = new Date();
+          const computed = json.map((r) => computeRow(convertRow(r, headerMap), today));
+          onData(computed, file.name, matchedCount, list.length);
+          setParsing(false);
+        } catch (err) {
+          setError("Couldn't read this file: " + err.message);
+          setParsing(false);
+        }
+      }, 40);
+    };
+    reader.readAsArrayBuffer(file);
+  }, [onData]);
+
+  return (
+    <div
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]); }}
+      onClick={() => !parsing && inputRef.current?.click()}
+      style={{
+        position: "relative", overflow: "hidden",
+        border: `1.5px dashed ${dragOver ? C.accent : C.borderLight}`,
+        borderRadius: 12, padding: compact ? 20 : 44, textAlign: "center", cursor: parsing ? "default" : "pointer",
+        background: dragOver ? C.accentDim : C.bgElevated, transition: "all .15s",
+      }}
+    >
+      <input
+        ref={inputRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }}
+        onChange={(e) => handleFile(e.target.files[0])}
+      />
+      {parsing && (
+        <div style={{ position: "absolute", inset: 0, background: C.bgElevated, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 10, zIndex: 2 }}>
+          <div className="vd-spin" style={{ width: 26, height: 26, borderRadius: "50%", border: `3px solid ${C.border}`, borderTopColor: C.accent }} />
+          <div style={{ fontSize: 12.5, color: C.textSecondary }}>Parsing and analyzing export...</div>
+        </div>
+      )}
+      <Upload size={compact ? 22 : 30} color={C.accent} style={{ marginBottom: 10 }} />
+      <div style={{ fontSize: compact ? 13 : 15, fontWeight: 600, color: C.textPrimary, marginBottom: 4 }}>
+        {label || "Drop your Qualys export here, or click to browse"}
+      </div>
+      <div style={{ fontSize: 12, color: C.textMuted }}>Accepts .xlsx, .xls, or .csv</div>
+      {!compact && <div style={{ fontSize: 10, color: C.textMuted, marginTop: 18, letterSpacing: 0.3 }}>Built by Barathraj V</div>}
+      {error && (
+        <div style={{ marginTop: 12, fontSize: 12, color: C.critical, background: C.criticalDim, padding: "8px 12px", borderRadius: 7, textAlign: "left" }}>
+          {error}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ----------------------------------- Sidebar ----------------------------------- */
+
+const NAV_GROUPS = [
+  {
+    title: "Dashboards",
+    items: [
+      { id: "overview", label: "Overview", icon: LayoutDashboard },
+    ]
+  },
+  {
+    title: "Vulnerability Analysis",
+    items: [
+      { id: "severity", label: "Severity analysis", icon: ShieldAlert },
+      { id: "ageing", label: "Ageing analysis", icon: Clock },
+      { id: "sla", label: "SLA breaches", icon: AlertTriangle },
+    ]
+  },
+  {
+    title: "Asset Intelligence",
+    items: [
+      { id: "topRisk", label: "Top risk assets", icon: Gauge },
+      { id: "applications", label: "Applications", icon: Briefcase },
+      { id: "ownership", label: "Ownership directory", icon: IdCard },
+      { id: "infra", label: "Infrastructure", icon: Cloud },
+    ]
+  },
+  {
+    title: "Data & Tools",
+    items: [
+      { id: "keyTables", label: "Key tables", icon: Table2 },
+      { id: "customDashboard", label: "Follow mail", icon: Sparkles },
+      { id: "all", label: "All vulnerabilities", icon: ListChecks },
+      { id: "compare", label: "Compare snapshots", icon: GitCompare },
+      { id: "rawVerify", label: "Raw scan verification", icon: FileWarning },
+    ]
+  }
+];
+
+function Sidebar({ page, setPage, fileName, rowCount, onReset }) {
+  return (
+    <div style={{
+      width: 240, flexShrink: 0, background: C.bgElevated, borderRight: `1px solid ${C.border}`,
+      padding: "20px 12px", display: "flex", flexDirection: "column", gap: 4, minHeight: "100%",
+    }}>
+      <div style={{ padding: "0 10px 24px", display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ background: `linear-gradient(135deg, ${C.accent}, #8b5cf6)`, padding: 6, borderRadius: 8 }}>
+          <ShieldCheck size={20} color="#fff" />
+        </div>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: C.textPrimary, letterSpacing: 0.3 }}>VulnOps</div>
+          <div style={{ fontSize: 10, color: C.textMuted, fontWeight: 500 }}>Intelligence Platform</div>
+        </div>
+      </div>
+      
+      <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", paddingRight: 4, display: "flex", flexDirection: "column", gap: 20 }}>
+        {NAV_GROUPS.map((group, idx) => (
+          <div key={idx}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8, paddingLeft: 10 }}>
+              {group.title}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {group.items.map((n) => {
+                const Icon = n.icon === Gauge ? GaugeIcon : n.icon;
+                const active = page === n.id;
+                return (
+                  <div
+                    key={n.id}
+                    className="vd-nav"
+                    onClick={() => setPage(n.id)}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 8,
+                      cursor: "pointer", fontSize: 12.5, fontWeight: active ? 600 : 500,
+                      color: active ? C.textPrimary : C.textSecondary,
+                      background: active ? C.surfaceHover : "transparent",
+                      borderLeft: `3px solid ${active ? C.accent : "transparent"}`,
+                      transition: "all 0.2s ease"
+                    }}
+                  >
+                    <Icon size={16} color={active ? C.accent : C.textMuted} />
+                    {n.label}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div style={{ marginTop: "auto", paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
+        <div style={{ padding: "0 10px", fontSize: 11, color: C.textMuted, marginBottom: 8, lineHeight: 1.5 }}>
+          <FileSpreadsheet size={12} style={{ verticalAlign: -2, marginRight: 4 }} />
+          {fileName}
+          <br />
+          {rowCount.toLocaleString()} rows loaded
+        </div>
+        <div className="vd-nav" onClick={onReset} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 10px", borderRadius: 7, cursor: "pointer", fontSize: 12.5, color: C.textSecondary }}>
+          <RefreshCw size={13} /> Load new file
+        </div>
+        <div style={{ padding: "14px 10px 0", fontSize: 10, color: C.textMuted, letterSpacing: 0.3 }}>
+          Built by <span style={{ color: C.textSecondary, fontWeight: 600 }}>Barathraj V</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ----------------------------------- Top bar ----------------------------------- */
+
+function TopBar({ fileName, kpi, posture }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18, paddingBottom: 16, borderBottom: `1px solid ${C.border}`, flexWrap: "wrap", gap: 12 }}>
+      <div>
+        <h1 style={{ fontSize: 17, fontWeight: 700, color: C.textPrimary, margin: 0 }}>VulnOps Intelligence</h1>
+        <div style={{ fontSize: 11.5, color: C.textMuted, marginTop: 3, display: "flex", alignItems: "center" }}>
+          <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: 3, background: C.success, marginRight: 6 }} />
+          Analyzing {fileName}
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 24 }}>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: C.textPrimary }}>{kpi.totalOpen.toLocaleString()}</div>
+          <div style={{ fontSize: 10.5, color: C.textMuted }}>open findings</div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: kpi.slaCompliance >= 80 ? C.success : C.medium }}>{kpi.slaCompliance}%</div>
+          <div style={{ fontSize: 10.5, color: C.textMuted }}>SLA compliance</div>
+        </div>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: posture >= 75 ? C.success : posture >= 50 ? C.medium : C.critical }}>{posture}</div>
+          <div style={{ fontSize: 10.5, color: C.textMuted }}>posture score</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* --------------------------------- filter bar --------------------------------- */
+
+function FilterBar({ filters, setFilters, infraOptions, cspOptions, ifPciOptions, appNameOptions }) {
+  const chip = (key, value, label) => (
+    <div key={String(value)} onClick={() => setFilters((f) => ({ ...f, [key]: value }))} style={btnStyle(filters[key] === value)}>
+      {label}
+    </div>
+  );
+  const isClean = filters.severity === "all" && filters.infra === "all" && filters.slaStatus === "all" &&
+    !filters.search && filters.csp === "all" && filters.ifPci === "all" && !filters.appName;
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
+      <div style={{ position: "relative" }}>
+        <Search size={14} color={C.textMuted} style={{ position: "absolute", left: 10, top: 9 }} />
+        <input
+          value={filters.search}
+          onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
+          placeholder="Search IP, host, CVE, vulnerability..."
+          style={{
+            background: C.bgElevated, border: `1px solid ${C.borderLight}`, borderRadius: 8,
+            padding: "8px 12px 8px 32px", fontSize: 13, color: C.textPrimary, width: 220, outline: "none",
+            transition: "border-color 0.2s"
+          }}
+        />
+      </div>
+
+      <div style={{ position: "relative" }}>
+        <input
+          list="vd-app-list"
+          value={filters.appName}
+          onChange={(e) => setFilters((f) => ({ ...f, appName: e.target.value }))}
+          placeholder="Filter by app name"
+          style={{
+            background: C.bgElevated, border: `1px solid ${C.borderLight}`, borderRadius: 8,
+            padding: "8px 12px", fontSize: 13, color: C.textPrimary, width: 170, outline: "none",
+            transition: "border-color 0.2s"
+          }}
+        />
+        <datalist id="vd-app-list">
+          {appNameOptions.map((o) => <option key={o} value={o} />)}
+        </datalist>
+      </div>
+
+      <div style={{ display: "flex", gap: 6 }}>
+        {chip("severity", "all", "All severity")}
+        {[5, 4, 3].map((s) => chip("severity", s, SEV_META[s].label))}
+      </div>
+
+      <div style={{ display: "flex", gap: 6 }}>
+        {chip("infra", "all", "All infra")}
+        {infraOptions.map((i) => chip("infra", i, i))}
+      </div>
+
+      <div style={{ display: "flex", gap: 6 }}>
+        {chip("slaStatus", "all", "All SLA")}
+        {chip("slaStatus", "breached", "Breached")}
+        {chip("slaStatus", "within", "Within SLA")}
+      </div>
+
+      <select value={filters.csp} onChange={(e) => setFilters((f) => ({ ...f, csp: e.target.value }))} style={selectStyle}>
+        <option value="all">All CSP</option>
+        {cspOptions.map((o) => <option key={o} value={o}>{o}</option>)}
+      </select>
+
+      <select value={filters.ifPci} onChange={(e) => setFilters((f) => ({ ...f, ifPci: e.target.value }))} style={selectStyle}>
+        <option value="all">All IF / PCI</option>
+        {ifPciOptions.map((o) => <option key={o} value={o}>{o}</option>)}
+      </select>
+
+      {!isClean && (
+        <div
+          onClick={() => setFilters({ severity: "all", infra: "all", slaStatus: "all", search: "", csp: "all", ifPci: "all", appName: "" })}
+          style={{ ...btnStyle(false), color: C.critical, borderColor: C.critical }}
+        >
+          <X size={12} /> Clear
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* --------------------------------- chart helpers --------------------------------- */
+
+const tooltipStyle = { background: C.surface, border: `1px solid ${C.border}`, borderRadius: 8, fontSize: 12, color: C.textPrimary };
+const axisStyle = { fontSize: 11, fill: C.textMuted };
+
+/* --------------------------------- detail panel --------------------------------- */
+
+function VulnDetailPanel({ vuln, onClose }) {
+  const [resp, setResp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState(null);
+
+  if (!vuln) return null;
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(4,6,10,0.6)", backdropFilter: "blur(3px)", WebkitBackdropFilter: "blur(3px)", zIndex: 50, display: "flex", justifyContent: "flex-end" }} onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} style={{ width: 440, maxWidth: "90%", background: C.surface, borderLeft: `1px solid ${C.border}`, height: "100%", overflowY: "auto", padding: 24 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+          <div>
+            <Badge color={SEV_META[vuln.sevNum].color} dim={SEV_META[vuln.sevNum].dim}>{vuln.sevLabel}</Badge>
+            <h2 style={{ fontSize: 15.5, fontWeight: 700, color: C.textPrimary, margin: "10px 0 4px", lineHeight: 1.4 }}>{vuln.vulnName || "Unnamed vulnerability"}</h2>
+            <div style={{ fontSize: 12, color: C.textMuted, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{vuln.ip || vuln.assetKey} &middot; {vuln.dns || vuln.fqdn || "no hostname"}</div>
+          </div>
+          <div onClick={onClose} style={{ cursor: "pointer", padding: 4 }}><X size={18} color={C.textMuted} /></div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 16 }}>
+          {[["CVE", vuln.cveId], ["Category", vuln.vulnCategoryVal], ["Port / Protocol", `${vuln.port || "-"}/${vuln.protocol || "-"}`], ["Days open", vuln.ageDays ?? "-"], ["OS", vuln.os], ["Status", vuln.vulnStatus], ["Within SLA", vuln.withinSlaStatus], ["IF or PCI", vuln.ifOrPciVal]].map(([l, v]) => (
+            <div key={l}>
+              <div style={{ fontSize: 10, color: C.textMuted, textTransform: "uppercase", fontWeight: 600 }}>{l}</div>
+              <div style={{ fontSize: 12.5, color: C.textPrimary, marginTop: 2 }}>{v || "-"}</div>
+            </div>
+          ))}
+        </div>
+
+        {["threat", "impact", "recommendation"].map((f) => vuln[f] && (
+          <div key={f} style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 11, color: C.textMuted, textTransform: "uppercase", fontWeight: 600, marginBottom: 4 }}>{f}</div>
+            <div style={{ fontSize: 12.5, color: C.textSecondary, lineHeight: 1.6 }}>{vuln[f]}</div>
+          </div>
+        ))}
+
+        <div
+          onClick={() => fetchRemediation(vuln, setResp, setLoading, setErr)}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "11px", borderRadius: 8, border: `1px solid ${C.accent}`, color: C.accent, background: C.accentDim, cursor: "pointer", fontSize: 13, fontWeight: 600, marginTop: 8, marginBottom: 16 }}
+        >
+          <Sparkles size={15} /> {loading ? "Thinking..." : "Get AI remediation guidance"}
+        </div>
+
+        {err && <div style={{ fontSize: 12, color: C.critical, marginBottom: 12 }}>{err}</div>}
+        {resp && (
+          <div style={{ background: C.bgElevated, border: `1px solid ${C.border}`, borderRadius: 8, padding: 14, fontSize: 12.5, color: C.textPrimary, lineHeight: 1.7, whiteSpace: "pre-wrap" }}>
+            {resp}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ===================================================================== */
+/*  PAGES                                                                 */
+/* ===================================================================== */
+
+function OverviewPage({ rows, kpi, posture, infraAgg, ageingHeat, dataQuality }) {
+  const donutData = [5, 4, 3].map((s) => ({ name: SEV_META[s].label, value: rows.filter((r) => r.isOpen && r.sevNum === s).length, color: SEV_META[s].color }));
+  const approaching = rows.filter((r) => r.isOpen && !r.breached && r.slaDelta !== null && r.slaDelta <= 15 && r.slaDelta >= 0).length;
+
+  return (
+    <div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 16, marginBottom: 24 }}>
+        <KpiCard label="Assets" value={kpi.totalAssets.toLocaleString()} icon={Server} />
+        <KpiCard label="Open vulns" value={kpi.totalOpen.toLocaleString()} icon={Database} />
+        <KpiCard label="Critical" value={kpi.sev5} accentColor={C.critical} icon={ShieldAlert} />
+        <KpiCard label="High" value={kpi.sev4} accentColor={C.high} icon={AlertTriangle} />
+        <KpiCard label="SLA compliance" value={`${kpi.slaCompliance}%`} accentColor={kpi.slaCompliance >= 80 ? C.success : C.medium} icon={CheckCircle2} />
+        <KpiCard label="SLA breached" value={kpi.slaBreached} accentColor={C.critical} sub={`Avg age ${kpi.avgAge}d`} icon={Clock} />
+      </div>
+
+      <SectionTitle icon={AlertTriangle}>What needs attention</SectionTitle>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 32 }}>
+        <Card style={{ borderLeft: `3px solid ${C.critical}` }}>
+          <div style={{ fontSize: 11, color: C.critical, fontWeight: 700, marginBottom: 6 }}>IMMEDIATE ATTENTION</div>
+          <div style={{ fontSize: 13.5, color: C.textPrimary, lineHeight: 1.5 }}>
+            <b style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{rows.filter((r) => r.isOpen && r.breached && r.sevNum === 5).length}</b> critical vulnerabilities breached SLA
+          </div>
+        </Card>
+        <Card style={{ borderLeft: `3px solid ${C.high}` }}>
+          <div style={{ fontSize: 11, color: C.high, fontWeight: 700, marginBottom: 6 }}>HIGH PRIORITY</div>
+          <div style={{ fontSize: 13.5, color: C.textPrimary, lineHeight: 1.5 }}>
+            <b style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{rows.filter((r) => r.isOpen && r.breached && r.sevNum === 4).length}</b> high severity vulnerabilities are overdue
+          </div>
+        </Card>
+        <Card style={{ borderLeft: `3px solid ${C.medium}` }}>
+          <div style={{ fontSize: 11, color: C.medium, fontWeight: 700, marginBottom: 6 }}>APPROACHING SLA</div>
+          <div style={{ fontSize: 13.5, color: C.textPrimary, lineHeight: 1.5 }}>
+            <b style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{approaching}</b> vulnerabilities breach SLA within 15 days
+          </div>
+        </Card>
+        <Card style={{ borderLeft: `3px solid ${C.success}` }}>
+          <div style={{ fontSize: 11, color: C.success, fontWeight: 700, marginBottom: 6 }}>REOPENED</div>
+          <div style={{ fontSize: 13.5, color: C.textPrimary, lineHeight: 1.5 }}>
+            <b style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{rows.filter((r) => r.isOpen && r.isReopened).length}</b> vulnerabilities have been reopened
+          </div>
+        </Card>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "260px 1fr 1fr", gap: 16, marginBottom: 32 }}>
+        <Card style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <SectionTitle>Security posture</SectionTitle>
+          <Gauge score={posture} />
+          <div style={{ fontSize: 11, color: C.textMuted, textAlign: "center", marginTop: 10, lineHeight: 1.5 }}>
+            Weighted blend of SLA compliance, critical exposure, and average vulnerability age
+          </div>
+        </Card>
+
+        <Card>
+          <SectionTitle>Open vulnerabilities by severity</SectionTitle>
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie data={donutData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={2}>
+                {donutData.map((d, i) => <Cell key={i} fill={d.color} stroke={C.surface} strokeWidth={2} />)}
+              </Pie>
+              <Tooltip contentStyle={tooltipStyle} />
+              <Legend wrapperStyle={{ fontSize: 11, color: C.textSecondary }} />
+            </PieChart>
+          </ResponsiveContainer>
+        </Card>
+
+        <Card>
+          <SectionTitle>Infrastructure comparison</SectionTitle>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={infraAgg}>
+              <CartesianGrid stroke={C.border} vertical={false} />
+              <XAxis dataKey="infra" tick={axisStyle} interval={0} angle={-15} textAnchor="end" height={50} />
+              <YAxis tick={axisStyle} />
+              <Tooltip contentStyle={tooltipStyle} />
+              <Bar dataKey="sev5" stackId="a" fill={C.critical} name="Critical" />
+              <Bar dataKey="sev4" stackId="a" fill={C.high} name="High" />
+              <Bar dataKey="sev3" stackId="a" fill={C.medium} name="Medium" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Card>
+      </div>
+
+      <Card style={{ marginBottom: 20 }}>
+        <SectionTitle icon={Clock}>Risk pulse &mdash; age &times; severity</SectionTitle>
+        <HeatMap data={ageingHeat} />
+      </Card>
+
+      <Card>
+        <SectionTitle icon={Info}>Data quality</SectionTitle>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
+          <div><div style={{ fontSize: 20, fontWeight: 700, color: C.textPrimary, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{dataQuality.total}</div><div style={{ fontSize: 11.5, color: C.textMuted }}>Total rows parsed</div></div>
+          <div><div style={{ fontSize: 20, fontWeight: 700, color: dataQuality.missingSeverity ? C.medium : C.textPrimary, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{dataQuality.missingSeverity}</div><div style={{ fontSize: 11.5, color: C.textMuted }}>Missing risk rating</div></div>
+          <div><div style={{ fontSize: 20, fontWeight: 700, color: dataQuality.missingDates ? C.medium : C.textPrimary, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{dataQuality.missingDates}</div><div style={{ fontSize: 11.5, color: C.textMuted }}>Missing detection dates</div></div>
+          <div><div style={{ fontSize: 20, fontWeight: 700, color: dataQuality.duplicates ? C.medium : C.textPrimary, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{dataQuality.duplicates}</div><div style={{ fontSize: 11.5, color: C.textMuted }}>Duplicate unique IDs</div></div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function SeverityPage({ rows }) {
+  const stats = [5, 4, 3].map((s) => {
+    const open = rows.filter((r) => r.isOpen && r.sevNum === s);
+    const assets = new Set(open.map((r) => r.assetKey)).size;
+    const withAge = open.filter((r) => r.ageDays !== null);
+    const avgAge = withAge.length ? Math.round(withAge.reduce((a, r) => a + r.ageDays, 0) / withAge.length) : 0;
+    const withinCount = open.filter((r) => r.withinSlaStatus === "Within SLA").length;
+    const pastDueCount = open.filter((r) => r.withinSlaStatus === "Past due SLA").length;
+    const compliance = open.length ? Math.round((withinCount / open.length) * 100) : 100;
+    return { s, count: open.length, assets, avgAge, withinCount, pastDueCount, compliance };
+  });
+  const chartData = stats.map((st) => ({ name: SEV_META[st.s].label, count: st.count, fill: SEV_META[st.s].color }));
+
+  return (
+    <div>
+      <Card style={{ marginBottom: 20 }}>
+        <SectionTitle icon={ShieldAlert}>Vulnerabilities by severity</SectionTitle>
+        <ResponsiveContainer width="100%" height={240}>
+          <BarChart data={chartData}>
+            <CartesianGrid stroke={C.border} vertical={false} />
+            <XAxis dataKey="name" tick={axisStyle} />
+            <YAxis tick={axisStyle} />
+            <Tooltip contentStyle={tooltipStyle} />
+            <Bar dataKey="count" radius={[6, 6, 0, 0]}>
+              {chartData.map((d, i) => <Cell key={i} fill={d.fill} />)}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </Card>
+
+      <Card>
+        <SectionTitle>Severity breakdown</SectionTitle>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+              {["Severity", "Open vulns", "Affected assets", "Avg age", "Within SLA", "Past due SLA", "Compliance"].map((h) => (
+                <th key={h} style={{ textAlign: "left", padding: "8px 10px", color: C.textMuted, fontWeight: 600, fontSize: 11, textTransform: "uppercase" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {stats.map((st) => (
+              <tr key={st.s} className="vd-row" style={{ borderBottom: `1px solid ${C.border}` }}>
+                <td style={{ padding: "10px" }}><Badge color={SEV_META[st.s].color} dim={SEV_META[st.s].dim}>{SEV_META[st.s].label}</Badge></td>
+                <td style={{ padding: "10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: C.textPrimary }}>{st.count}</td>
+                <td style={{ padding: "10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: C.textPrimary }}>{st.assets}</td>
+                <td style={{ padding: "10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: C.textPrimary }}>{st.avgAge}d</td>
+                <td style={{ padding: "10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: C.success }}>{st.withinCount}</td>
+                <td style={{ padding: "10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: st.pastDueCount ? C.critical : C.textPrimary }}>{st.pastDueCount}</td>
+                <td style={{ padding: "10px", width: 140 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <ProgressBar pct={st.compliance} color={st.compliance >= 80 ? C.success : st.compliance >= 50 ? C.medium : C.critical} />
+                    <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11.5, color: C.textSecondary }}>{st.compliance}%</span>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+    </div>
+  );
+}
+
+function AgeingPage({ rows }) {
+  const data = buildAgeingData(rows);
+  const open = rows.filter((r) => r.isOpen && r.ageDays !== null);
+  const b30 = open.filter((r) => r.ageDays >= 30 && r.ageDays <= 59).length;
+  const b60 = open.filter((r) => r.ageDays >= 60 && r.ageDays <= 89).length;
+  const b90 = open.filter((r) => r.ageDays >= 90 && r.ageDays <= 119).length;
+  const b120 = open.filter((r) => r.ageDays >= 120).length;
+  const secStats = [
+    { label: "(Sec) Ageing 30-59 days", value: b30, color: C.medium },
+    { label: "(Sec) Ageing 60-89 days", value: b60, color: C.medium },
+    { label: "(Sec) Ageing 90-119 days", value: b90, color: C.high },
+    { label: "(Sec) Ageing 120+ days", value: b120, color: C.critical },
+  ];
+
+  return (
+    <div>
+      <SectionTitle icon={AlertTriangle}>Standard ageing thresholds</SectionTitle>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
+        {secStats.map((s) => (
+          <KpiCard key={s.label} label={s.label} value={s.value} accentColor={s.color} icon={Clock} />
+        ))}
+      </div>
+      <Card>
+        <SectionTitle icon={Clock}>Vulnerability ageing by bucket</SectionTitle>
+        <ResponsiveContainer width="100%" height={340}>
+          <BarChart data={data}>
+            <CartesianGrid stroke={C.border} vertical={false} />
+            <XAxis dataKey="bucket" tick={axisStyle} label={{ value: "Days open", position: "insideBottom", offset: -4, fill: C.textMuted, fontSize: 11 }} />
+            <YAxis tick={axisStyle} />
+            <Tooltip contentStyle={tooltipStyle} />
+            <Legend wrapperStyle={{ fontSize: 11.5 }} />
+            <Bar dataKey="Critical" stackId="a" fill={C.critical} />
+            <Bar dataKey="High" stackId="a" fill={C.high} />
+            <Bar dataKey="Medium" stackId="a" fill={C.medium} radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+        <div style={{ fontSize: 11.5, color: C.textMuted, marginTop: 10 }}>
+          SLA thresholds: Critical 30 days &middot; High 120 days &middot; Medium 180 days
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function SlaPage({ rows, onSelect }) {
+  const [sortKey, setSortKey] = useState("overdue");
+  const breached = rows.filter((r) => r.isOpen && r.breached);
+  const sorted = useMemo(() => {
+    const arr = [...breached];
+    if (sortKey === "overdue") arr.sort((a, b) => (a.slaDelta ?? 0) - (b.slaDelta ?? 0));
+    if (sortKey === "severity") arr.sort((a, b) => b.sevNum - a.sevNum);
+    if (sortKey === "age") arr.sort((a, b) => (b.ageDays || 0) - (a.ageDays || 0));
+    return arr.slice(0, 200);
+  }, [breached, sortKey]);
+
+  const avgOverdue = breached.length ? Math.round(breached.reduce((s, r) => s + Math.abs(r.slaDelta || 0), 0) / breached.length) : 0;
+  const maxOverdue = breached.length ? Math.max(...breached.map((r) => Math.abs(r.slaDelta || 0))) : 0;
+
+  return (
+    <div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 16, marginBottom: 24 }}>
+        <KpiCard label="Total breached" value={breached.length} accentColor={C.critical} />
+        <KpiCard label="Critical breached" value={breached.filter((r) => r.sevNum === 5).length} accentColor={C.critical} />
+        <KpiCard label="High breached" value={breached.filter((r) => r.sevNum === 4).length} accentColor={C.high} />
+        <KpiCard label="Avg overdue" value={`${avgOverdue}d`} />
+        <KpiCard label="Max overdue" value={`${maxOverdue}d`} />
+      </div>
+      <Card>
+        <SectionTitle icon={AlertTriangle} right={
+          <div style={{ display: "flex", gap: 6 }}>
+            {[["overdue", "Most overdue"], ["severity", "Severity"], ["age", "Oldest"]].map(([k, l]) => (
+              <div key={k} onClick={() => setSortKey(k)} style={btnStyle(sortKey === k)}>{l}</div>
+            ))}
+          </div>
+        }>
+          SLA breach detail (top 200, click a row for details)
+        </SectionTitle>
+        <div style={{ maxHeight: 480, overflowY: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+            <thead style={{ position: "sticky", top: 0, background: C.surface }}>
+              <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                {["IP", "Hostname", "Infra", "Severity", "Vulnerability", "Age", "SLA", "Overdue"].map((h) => (
+                  <th key={h} style={{ textAlign: "left", padding: "8px 10px", color: C.textMuted, fontWeight: 600, fontSize: 10.5, textTransform: "uppercase" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((r, i) => (
+                <tr key={i} className="vd-row" onClick={() => onSelect(r)} style={{ borderBottom: `1px solid ${C.border}`, cursor: "pointer" }}>
+                  <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: C.textPrimary }}>{r.ip || "-"}</td>
+                  <td style={{ padding: "8px 10px", color: C.textSecondary }}>{r.dns || r.fqdn || "-"}</td>
+                  <td style={{ padding: "8px 10px", color: C.textSecondary }}>{r.infra}</td>
+                  <td style={{ padding: "8px 10px" }}><Badge color={SEV_META[r.sevNum].color} dim={SEV_META[r.sevNum].dim}>{r.sevLabel}</Badge></td>
+                  <td style={{ padding: "8px 10px", color: C.textPrimary, maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.vulnName || "-"}</td>
+                  <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{r.ageDays ?? "-"}d</td>
+                  <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: C.textMuted }}>{r.slaDays}d</td>
+                  <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: C.critical, fontWeight: 700 }}>{Math.abs(r.slaDelta || 0)}d</td>
+                </tr>
+              ))}
+              {!sorted.length && <tr><td colSpan={8} style={{ padding: 20, textAlign: "center", color: C.textMuted }}>No SLA breaches in the current filter.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function TopRiskPage({ rows }) {
+  const [topN, setTopN] = useState(10);
+  const assets = useMemo(() => buildAssetAgg(rows), [rows]);
+  const list = assets.slice(0, topN);
+
+  return (
+    <Card>
+      <SectionTitle icon={GaugeIcon} right={
+        <div style={{ display: "flex", gap: 6 }}>
+          {[10, 20, 50].map((n) => <div key={n} onClick={() => setTopN(n)} style={btnStyle(topN === n)}>Top {n}</div>)}
+        </div>
+      }>
+        Top risk assets
+      </SectionTitle>
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {list.map((a, i) => (
+          <div key={a.assetKey} className="vd-row" style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 14px", background: C.bgElevated, borderRadius: 8, border: `1px solid ${C.border}` }}>
+            <div style={{ width: 26, textAlign: "center", fontSize: 13, fontWeight: 700, color: C.textMuted, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{i + 1}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13.5, fontWeight: 600, color: C.textPrimary, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{a.assetKey}</div>
+              <div style={{ fontSize: 11.5, color: C.textMuted, marginTop: 2 }}>
+                {a.infra} &middot; {a.total} vulns &middot; Oldest {a.maxAge}d {a.breached > 0 && <span style={{ color: C.critical }}>&middot; {a.breached} SLA breaches</span>}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 6 }}>
+              {a.sev5 > 0 && <Badge color={C.critical} dim={C.criticalDim}>{a.sev5} Crit</Badge>}
+              {a.sev4 > 0 && <Badge color={C.high} dim={C.highDim}>{a.sev4} High</Badge>}
+              {a.sev3 > 0 && <Badge color={C.medium} dim={C.mediumDim}>{a.sev3} Med</Badge>}
+            </div>
+            <div style={{ width: 90, textAlign: "right" }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: C.textPrimary, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{a.riskScoreNorm}</div>
+              <div style={{ fontSize: 10, color: C.textMuted }}>risk score</div>
+            </div>
+          </div>
+        ))}
+        {!list.length && <div style={{ padding: 20, textAlign: "center", color: C.textMuted }}>No assets match the current filter.</div>}
+      </div>
+    </Card>
+  );
+}
+
+function InfraPage({ infraAgg }) {
+  return (
+    <Card>
+      <SectionTitle icon={Building2}>AWS vs Azure vs Network comparison</SectionTitle>
+      <div style={{ fontSize: 11.5, color: C.textMuted, marginBottom: 14 }}>
+        Assets running Cisco / network OS platforms are classified under Network / On-Prem and owned by the network team, regardless of any CSP tag.
+      </div>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5, marginBottom: 20 }}>
+        <thead>
+          <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+            {["Infrastructure", "Assets", "Open vulns", "Critical", "High", "Medium", "SLA breached", "Avg age", "Compliance"].map((h) => (
+              <th key={h} style={{ textAlign: "left", padding: "8px 10px", color: C.textMuted, fontWeight: 600, fontSize: 10.5, textTransform: "uppercase" }}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {infraAgg.map((r) => (
+            <tr key={r.infra} className="vd-row" style={{ borderBottom: `1px solid ${C.border}` }}>
+              <td style={{ padding: "10px", fontWeight: 600, color: C.textPrimary }}>{r.infra}</td>
+              <td style={{ padding: "10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{r.assets}</td>
+              <td style={{ padding: "10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{r.openVulns}</td>
+              <td style={{ padding: "10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: C.critical }}>{r.sev5}</td>
+              <td style={{ padding: "10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: C.high }}>{r.sev4}</td>
+              <td style={{ padding: "10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: C.medium }}>{r.sev3}</td>
+              <td style={{ padding: "10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: r.breached ? C.critical : C.textPrimary }}>{r.breached}</td>
+              <td style={{ padding: "10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{r.avgAge}d</td>
+              <td style={{ padding: "10px", width: 120 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <ProgressBar pct={r.compliance} color={r.compliance >= 80 ? C.success : r.compliance >= 50 ? C.medium : C.critical} />
+                  <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 11 }}>{r.compliance}%</span>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <ResponsiveContainer width="100%" height={220}>
+        <BarChart data={infraAgg}>
+          <CartesianGrid stroke={C.border} vertical={false} />
+          <XAxis dataKey="infra" tick={axisStyle} />
+          <YAxis tick={axisStyle} />
+          <Tooltip contentStyle={tooltipStyle} />
+          <Legend wrapperStyle={{ fontSize: 11.5 }} />
+          <Bar dataKey="sev5" fill={C.critical} name="Critical" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="sev4" fill={C.high} name="High" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="sev3" fill={C.medium} name="Medium" radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </Card>
+  );
+}
+
+function ApplicationsPage({ rows }) {
+  const apps = useMemo(() => buildAppAgg(rows), [rows]);
+  return (
+    <Card>
+      <SectionTitle icon={Briefcase} right={<span style={{ fontSize: 11.5, color: C.textMuted, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{apps.length} applications</span>}>
+        Applications &amp; owners
+      </SectionTitle>
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 980 }}>
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+              {["Application", "Owner", "Organization", "APM ID", "Assets", "Open vulns", "Critical", "High", "Medium", "SLA breached", "Avg age", "Compliance"].map((h) => (
+                <th key={h} style={{ textAlign: "left", padding: "8px 10px", color: C.textMuted, fontWeight: 600, fontSize: 10.5, textTransform: "uppercase" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {apps.map((a) => (
+              <tr key={a.appName} className="vd-row" style={{ borderBottom: `1px solid ${C.border}` }}>
+                <td style={{ padding: "8px 10px", color: C.textPrimary, fontWeight: 600 }}>{a.appName}</td>
+                <td style={{ padding: "8px 10px", color: C.textSecondary }}>{a.appOwner}</td>
+                <td style={{ padding: "8px 10px", color: C.textSecondary }}>{a.organization}</td>
+                <td style={{ padding: "8px 10px", color: C.textMuted, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{a.apmId}</td>
+                <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{a.assets}</td>
+                <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{a.total}</td>
+                <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: C.critical }}>{a.sev5}</td>
+                <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: C.high }}>{a.sev4}</td>
+                <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: C.medium }}>{a.sev3}</td>
+                <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: a.breached ? C.critical : C.textPrimary }}>{a.breached}</td>
+                <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{a.avgAge}d</td>
+                <td style={{ padding: "8px 10px", width: 110 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <ProgressBar pct={a.compliance} color={a.compliance >= 80 ? C.success : a.compliance >= 50 ? C.medium : C.critical} />
+                    <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10.5 }}>{a.compliance}%</span>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {!apps.length && <tr><td colSpan={12} style={{ padding: 20, textAlign: "center", color: C.textMuted }}>No application data found for the current filter.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+    </Card>
+  );
+}
+
+const defaultMailConfig = {
+  aistDashboard: "https://aist.dashboard.url",
+  saviyntDocs: "Instructions for requesting viewer access via Saviynt.docx",
+  rem: "REM (Risk Exception Management)",
+  dtvReports: "DTV_VA-Reports"
+};
+
+function OwnershipPage({ rows }) {
+  const owners = useMemo(() => buildOwnershipAgg(rows), [rows]);
+  const [config, setConfig] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("vulnOpsMailConfig")) || defaultMailConfig; }
+    catch { return defaultMailConfig; }
+  });
+  const [pocData, setPocData] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("vulnOpsPocData")) || {}; }
+    catch { return {}; }
+  });
+  const [mailStatus, setMailStatus] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("vulnOpsMailStatus")) || {}; }
+    catch { return {}; }
+  });
+  const [showConfig, setShowConfig] = useState(false);
+  const [activeMailOwner, setActiveMailOwner] = useState(null);
+  
+  const saveConfig = (newCfg) => {
+    setConfig(newCfg);
+    localStorage.setItem("vulnOpsMailConfig", JSON.stringify(newCfg));
+  };
+  
+  const handlePocUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = new Uint8Array(evt.target.result);
+        const wb = window.XLSX.read(data, { type: "array" });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const json = window.XLSX.utils.sheet_to_json(sheet, { defval: "" });
+        const newPocData = { ...pocData };
+        const newMailStatus = { ...mailStatus };
+        json.forEach(r => {
+          const ownerKey = String(r["App Owner"] || "").trim();
+          const apmKey = String(r["APM ID"] || "").trim();
+          if (ownerKey) {
+            if (!newPocData[ownerKey]) newPocData[ownerKey] = {};
+            newPocData[ownerKey][apmKey] = r["POC"];
+            if (r["Mail Status"]) newMailStatus[ownerKey] = r["Mail Status"];
+          }
+        });
+        setPocData(newPocData);
+        setMailStatus(newMailStatus);
+        localStorage.setItem("vulnOpsPocData", JSON.stringify(newPocData));
+        localStorage.setItem("vulnOpsMailStatus", JSON.stringify(newMailStatus));
+        alert("POC Tracker loaded successfully!");
+      } catch (err) {
+        alert("Failed to parse POC Tracker: " + err.message);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = null; // reset
+  };
+
+  const markMailSent = (ownerKey) => {
+    const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    const statusStr = `Initial Mail sent on ${dateStr}`;
+    const newStatus = { ...mailStatus, [ownerKey]: statusStr };
+    setMailStatus(newStatus);
+    localStorage.setItem("vulnOpsMailStatus", JSON.stringify(newStatus));
+  };
+
+  return (
+    <Card>
+      <SectionTitle icon={IdCard} right={
+        <div style={{ display: "flex", gap: 10 }}>
+          <label className="vd-nav" style={{ ...btnStyle(false), padding: "6px 12px", background: C.surfaceHover, border: `1px solid ${C.borderLight}` }}>
+            Upload POC Tracker
+            <input type="file" accept=".xlsx,.xls,.csv" style={{ display: "none" }} onChange={handlePocUpload} />
+          </label>
+          <div onClick={() => setShowConfig(!showConfig)} style={{ ...btnStyle(showConfig), padding: "6px 12px" }}>
+            Configure Links
+          </div>
+          <span style={{ fontSize: 11.5, color: C.textMuted, fontFamily: "'JetBrains Mono', ui-monospace, monospace", alignSelf: "center", marginLeft: 10 }}>{owners.length} App Owners</span>
+        </div>
+      }>
+        Ownership directory
+      </SectionTitle>
+
+      {showConfig && (
+        <div style={{ padding: 16, background: C.bgElevated, borderRadius: 8, border: `1px solid ${C.borderLight}`, marginBottom: 20 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: C.textPrimary }}>Mail Template Link Configuration</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {Object.keys(config).map(k => (
+              <div key={k}>
+                <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>{k}</div>
+                <input
+                  value={config[k]}
+                  onChange={e => saveConfig({ ...config, [k]: e.target.value })}
+                  style={{ width: "100%", padding: "8px 10px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 6, color: C.textPrimary, fontSize: 12 }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div style={{ fontSize: 11.5, color: C.textMuted, marginBottom: 14 }}>
+        Every App Owner currently carrying findings. Sorted alphabetically by owner.
+      </div>
+      <div style={{ overflowX: "auto", overflowY: "auto", maxHeight: "65vh" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 1000 }}>
+          <thead style={{ position: "sticky", top: 0, background: C.surface, zIndex: 1 }}>
+            <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+              {["App Owner", "Organization", "Apps/APMs", "Assets", "Open vulns", "SLA breached", "Compliance", "POC", "Mail Status", "Actions"].map((h) => (
+                <th key={h} style={{ textAlign: "left", padding: "8px 10px", color: C.textMuted, fontWeight: 600, fontSize: 10.5, textTransform: "uppercase" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {owners.map((o) => (
+              <tr key={o.appOwner} className="vd-row" style={{ borderBottom: `1px solid ${C.border}` }}>
+                <td style={{ padding: "8px 10px", color: C.textPrimary, fontWeight: 600 }}>{o.appOwner}</td>
+                <td style={{ padding: "8px 10px", color: C.textSecondary }}>{o.organization}</td>
+                <td style={{ padding: "8px 10px", color: C.textMuted }}>{o.apps.length} items</td>
+                <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{o.assets}</td>
+                <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{o.total}</td>
+                <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: o.breached ? C.critical : C.textPrimary }}>{o.breached}</td>
+                <td style={{ padding: "8px 10px", width: 110 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <ProgressBar pct={o.compliance} color={o.compliance >= 80 ? C.success : o.compliance >= 50 ? C.medium : C.critical} />
+                    <span style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace", fontSize: 10.5 }}>{o.compliance}%</span>
+                  </div>
+                </td>
+                <td style={{ padding: "8px 10px", color: C.textSecondary }}>
+                  {pocData[o.appOwner] ? Array.from(new Set(Object.values(pocData[o.appOwner]).filter(Boolean))).join(", ") : "-"}
+                </td>
+                <td style={{ padding: "8px 10px", color: mailStatus[o.appOwner] && mailStatus[o.appOwner] !== "Pending" ? C.success : C.textMuted }}>
+                  {mailStatus[o.appOwner] || "Pending"}
+                </td>
+                <td style={{ padding: "8px 10px" }}>
+                  <button
+                    onClick={() => setActiveMailOwner(o)}
+                    style={{ padding: "6px 12px", background: C.accentDim, color: C.accent, border: `1px solid ${C.accent}`, borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600 }}
+                  >
+                    Mail Template
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {!owners.length && <tr><td colSpan={10} style={{ padding: 20, textAlign: "center", color: C.textMuted }}>No ownership data found.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+
+      {activeMailOwner && (
+        <MailTemplateModal
+          owner={activeMailOwner}
+          config={config}
+          onClose={() => setActiveMailOwner(null)}
+          onMailSent={() => markMailSent(activeMailOwner.appOwner)}
+        />
+      )}
+    </Card>
+  );
+}
+
+function MailTemplateModal({ owner, config, onClose, onMailSent }) {
+  const contentRef = useRef(null);
+  const [headerColor, setHeaderColor] = useState("#1E3A8A");
+  
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const d = new Date();
+  const currentMonth = monthNames[d.getMonth()];
+  const currentYear = d.getFullYear();
+  
+  const handleCopy = () => {
+    if (contentRef.current) {
+      const htmlContent = contentRef.current.innerHTML;
+      const plainText = contentRef.current.innerText;
+      if (navigator.clipboard && window.ClipboardItem) {
+        const typeHtml = "text/html";
+        const typeText = "text/plain";
+        const blobHtml = new Blob([htmlContent], { type: typeHtml });
+        const blobText = new Blob([plainText], { type: typeText });
+        const data = [new ClipboardItem({ [typeHtml]: blobHtml, [typeText]: blobText })];
+        navigator.clipboard.write(data).then(() => {
+          onMailSent();
+          alert("Mail content copied to clipboard (Outlook format preserved)!");
+        }).catch(() => {
+          fallbackCopy();
+        });
+      } else {
+        fallbackCopy();
+      }
+    }
+  };
+
+  const fallbackCopy = () => {
+    const range = document.createRange();
+    range.selectNodeContents(contentRef.current);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand('copy');
+    sel.removeAllRanges();
+    onMailSent();
+    alert("Mail content copied to clipboard!");
+  };
+
+  const safeConfig = {
+    aistDashboard: config?.aistDashboard || "https://aist.dashboard.url",
+    saviyntDocs: config?.saviyntDocs || "Instructions for requesting viewer access via Saviynt.docx",
+    rem: config?.rem || "https://rem.exception.url",
+    dtvReports: config?.dtvReports || "https://dtv.reports.url"
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, width: "100%", maxWidth: 840, maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
+        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: C.textPrimary }}>Mail Template - {owner.appOwner}</div>
+          <div onClick={onClose} style={{ cursor: "pointer", padding: 4, borderRadius: 4, background: C.bgElevated }}><X size={16} color={C.textMuted} /></div>
+        </div>
+        <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>
+          <div style={{ marginBottom: 16, background: C.bgElevated, padding: "12px 16px", borderRadius: 8, border: `1px solid ${C.borderLight}` }}>
+            <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>Subject</div>
+            <div style={{ fontSize: 14, color: C.textPrimary, fontWeight: 600, userSelect: "all" }}>AIST Qualys Results for APMID's - {currentMonth} {currentYear}</div>
+          </div>
+          <div ref={contentRef} style={{ background: "#ffffff", color: "#111827", padding: "20px", borderRadius: 8, fontSize: 13, fontFamily: "Calibri, Arial, sans-serif", lineHeight: 1.6 }}>
+            <p style={{ margin: "0 0 16px 0", color: "#111827" }}>Hi Team,</p>
+            <p style={{ margin: "0 0 16px 0", color: "#111827" }}>Good day! Refer to the <a href={safeConfig.aistDashboard} style={{ color: "#0066cc", textDecoration: "underline", fontWeight: 600 }}>AIST Dashboard</a> to identify active vulnerabilities associated with the APM ID/IDs:</p>
+            
+            <table border="1" cellPadding="10" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", marginBottom: 24, border: "1px solid #94a3b8", fontFamily: "Calibri, Arial, sans-serif" }}>
+              <thead>
+                <tr style={{ backgroundColor: headerColor }}>
+                  <th style={{ border: "1px solid #94a3b8", padding: "10px 14px", textAlign: "left", backgroundColor: headerColor, color: "#ffffff", fontWeight: 700, fontSize: 13 }}>Application Name</th>
+                  <th style={{ border: "1px solid #94a3b8", padding: "10px 14px", textAlign: "left", backgroundColor: headerColor, color: "#ffffff", fontWeight: 700, fontSize: 13 }}>APM ID</th>
+                </tr>
+              </thead>
+              <tbody>
+                {owner.apps.map((a, idx) => (
+                  <tr key={a.apmId || idx} style={{ backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
+                    <td style={{ border: "1px solid #cbd5e1", padding: "10px 14px", color: "#1e293b", backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f8fafc" }}>{a.appName}</td>
+                    <td style={{ border: "1px solid #cbd5e1", padding: "10px 14px", color: "#1e293b", backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
+                      <span style={{ display: "inline-block", backgroundColor: "#eff6ff", color: "#1d4ed8", padding: "3px 10px", borderRadius: 4, fontWeight: 700, border: "1px solid #bfdbfe", fontFamily: "'Courier New', Courier, monospace" }}>
+                        {a.apmId}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <p style={{ margin: "0 0 12px 0", color: "#111827" }}>As per <strong>DOSS (DIRECTV Official Security Standards)</strong>, remediation timelines are as follows:</p>
+            <table border="1" cellPadding="8" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", marginBottom: 24, border: "1px solid #94a3b8", fontFamily: "Calibri, Arial, sans-serif", fontSize: 12.5 }}>
+              <thead>
+                <tr style={{ backgroundColor: "#1e293b", color: "#ffffff" }}>
+                  <th colSpan="2" style={{ border: "1px solid #94a3b8", padding: "10px 12px", backgroundColor: "#1e293b", color: "#ffffff", textAlign: "center", fontWeight: 700 }}>Remediation Category</th>
+                  <th style={{ border: "1px solid #94a3b8", padding: "10px 12px", backgroundColor: "#1e293b", color: "#ffffff", textAlign: "center", fontWeight: 700 }}>Critical-Internet-Facing and PCI</th>
+                  <th style={{ border: "1px solid #94a3b8", padding: "10px 12px", backgroundColor: "#1e293b", color: "#ffffff", textAlign: "center", fontWeight: 700 }}>Non-critical (Others)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td rowSpan="5" style={{ border: "1px solid #cbd5e1", padding: "10px 12px", textAlign: "center", verticalAlign: "middle", fontWeight: 700, backgroundColor: "#f8fafc", color: "#334155" }}>Vulnerability Type</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", fontWeight: 600, color: "#dc2626", backgroundColor: "#ffffff" }}>Critical</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=30 days</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=30 days</td>
+                </tr>
+                <tr>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", fontWeight: 600, color: "#ea580c", backgroundColor: "#ffffff" }}>High</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=90 days</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=120 days</td>
+                </tr>
+                <tr>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", fontWeight: 600, color: "#ca8a04", backgroundColor: "#ffffff" }}>Medium</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=180 days</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=180 days</td>
+                </tr>
+                <tr>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", fontWeight: 600, color: "#2563eb", backgroundColor: "#ffffff" }}>Low</td>
+                  <td colSpan="2" rowSpan="2" style={{ border: "1px solid #cbd5e1", padding: "10px 12px", textAlign: "center", verticalAlign: "middle", backgroundColor: "#ffffff", color: "#475569", fontWeight: 500 }}>Remediation as per applicability</td>
+                </tr>
+                <tr>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", fontWeight: 600, color: "#64748b", backgroundColor: "#ffffff" }}>Informational</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <p style={{ margin: "0 0 16px 0", color: "#111827" }}>To ensure timely resolution, please remediate vulnerabilities listed in the <a href={safeConfig.aistDashboard} style={{ color: "#0066cc", textDecoration: "underline", fontWeight: 600 }}>AIST Dashboard</a></p>
+            
+            <div style={{ fontWeight: 700, margin: "0 0 10px 0", color: "#111827" }}>Important Notes:</div>
+            <ol style={{ paddingLeft: 24, margin: "0 0 24px 0", color: "#334155" }}>
+              <li style={{ marginBottom: 6 }}><a href={safeConfig.saviyntDocs} style={{ color: "#0066cc", textDecoration: "underline" }}>Instructions for requesting viewer access via Saviynt.docx</a>.</li>
+              <li style={{ marginBottom: 6 }}>The vulnerabilities may take 1-2 business days to get reflected in Dashboard.</li>
+              <li style={{ marginBottom: 6 }}>For remediation guidance, right-click the vulnerability and refer to the "Recommendation" field in the Drill-Through view.</li>
+              <li style={{ marginBottom: 6 }}>If remediation cannot be completed within the timeline, submit a <a href={safeConfig.rem} style={{ color: "#0066cc", textDecoration: "underline", fontWeight: 600 }}>REM (Risk Exception Management)</a> request.</li>
+              <li style={{ marginBottom: 6 }}>Please refer <a href={safeConfig.dtvReports} style={{ color: "#0066cc", textDecoration: "underline" }}>DTV_VA-Reports</a> for the scan results associated with the application owners and prioritize the remediation of past due vulnerabilities.</li>
+            </ol>
+            
+            <p style={{ margin: "0", color: "#1e293b" }}><strong>Note:</strong> PowerBI dashboard data will be refreshed on every Monday.</p>
+          </div>
+        </div>
+        <div style={{ padding: "16px 20px", borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontSize: 13, color: C.textSecondary }}>Header Color:</span>
+            <input type="color" value={headerColor} onChange={(e) => setHeaderColor(e.target.value)} style={{ cursor: "pointer", border: "none", width: 32, height: 32, padding: 0, borderRadius: 4, background: "transparent" }} />
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <button onClick={onClose} style={{ padding: "8px 16px", borderRadius: 6, border: `1px solid ${C.border}`, background: "transparent", color: C.textSecondary, cursor: "pointer", fontWeight: 600 }}>Cancel</button>
+            <button onClick={handleCopy} style={{ padding: "8px 16px", borderRadius: 6, border: "none", background: C.accent, color: "#fff", cursor: "pointer", fontWeight: 600 }}>Copy Mail Content</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FollowUpMailTemplateModal({ filteredRows, onClose }) {
+  const contentRef = useRef(null);
+  const [headerColor, setHeaderColor] = useState("#0f766e");
+  
+  const config = useMemo(() => {
+    try { 
+      const saved = JSON.parse(localStorage.getItem("vulnOpsMailConfig"));
+      if (saved && typeof saved === "object") return saved;
+      return defaultMailConfig;
+    }
+    catch { return defaultMailConfig; }
+  }, []);
+  
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  const d = new Date();
+  const currentMonth = monthNames[d.getMonth()];
+  const currentYear = d.getFullYear();
+  
+  const handleCopy = () => {
+    if (contentRef.current) {
+      const htmlContent = contentRef.current.innerHTML;
+      const plainText = contentRef.current.innerText;
+      if (navigator.clipboard && window.ClipboardItem) {
+        const typeHtml = "text/html";
+        const typeText = "text/plain";
+        const blobHtml = new Blob([htmlContent], { type: typeHtml });
+        const blobText = new Blob([plainText], { type: typeText });
+        const data = [new ClipboardItem({ [typeHtml]: blobHtml, [typeText]: blobText })];
+        navigator.clipboard.write(data).then(() => {
+          alert("Follow up mail content copied to clipboard (Outlook format preserved)!");
+        }).catch(() => {
+          fallbackCopy();
+        });
+      } else {
+        fallbackCopy();
+      }
+    }
+  };
+
+  const fallbackCopy = () => {
+    const range = document.createRange();
+    range.selectNodeContents(contentRef.current);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    document.execCommand('copy');
+    sel.removeAllRanges();
+    alert("Follow up mail content copied to clipboard!");
+  };
+
+  const activeRows = filteredRows ? filteredRows.filter(r => r.isOpen) : [];
+  const total = activeRows.length || 923;
+  const pastSlaCount = filteredRows ? activeRows.filter(r => r.withinSlaStatus === "Past due SLA").length : 54;
+  const withinSlaCount = filteredRows ? activeRows.filter(r => r.withinSlaStatus === "Within SLA").length : 869;
+  const slaApplicableTotal = pastSlaCount + withinSlaCount;
+  const withinPct = slaApplicableTotal > 0 ? Math.round((withinSlaCount / slaApplicableTotal) * 100) : 94;
+  const pastPct = slaApplicableTotal > 0 ? (100 - withinPct) : 6;
+
+  const scanCounts = {};
+  if (activeRows.length > 0) {
+    activeRows.forEach(r => {
+      const st = r.scanType || r.category || "General Scan";
+      scanCounts[st] = (scanCounts[st] || 0) + 1;
+    });
+  } else {
+    scanCounts["VM / Host"] = 512;
+    scanCounts["Web App"] = 284;
+    scanCounts["Cloud / Container"] = 127;
+  }
+  
+  const maxScan = Math.max(...Object.values(scanCounts), 1);
+  const scanColors = ["#0284c7", "#0d9488", "#7c3aed", "#ea580c", "#db2777"];
+  const scanBars = Object.keys(scanCounts).map((k, i) => ({
+    name: k,
+    count: scanCounts[k],
+    pct: Math.max(Math.round((scanCounts[k] / maxScan) * 100), 12),
+    color: scanColors[i % scanColors.length]
+  })).sort((a,b) => b.count - a.count);
+
+  const rawAppNames = Array.from(new Set(activeRows.map(a => a.appName || a.raw?.["Application Name"]).filter(Boolean)));
+  const appNames = rawAppNames.length > 0 ? rawAppNames.join(", ") : "<App names>";
+
+  const rawApmIds = Array.from(new Set(activeRows.map(a => a.apmId || a.raw?.["APM ID"]).filter(Boolean)));
+  const apmIdsDisplay = rawApmIds.length > 0 ? rawApmIds : ["APM0012345"];
+  const apmIdsString = apmIdsDisplay.join(", ");
+
+  const safeConfig = {
+    aistDashboard: config?.aistDashboard || "https://aist.dashboard.url",
+    rem: config?.rem || "https://rem.exception.url",
+    saviyntDocs: config?.saviyntDocs || "Instructions for requesting viewer access via Saviynt.docx",
+    runbook: config?.saviyntDocs || config?.aistDashboard || "https://dtv.security.runbook.url"
+  };
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, width: "100%", maxWidth: 880, maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
+        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontSize: 15, fontWeight: 600, color: C.textPrimary }}>Follow Up Mail Template</div>
+          <div onClick={onClose} style={{ cursor: "pointer", padding: 4, borderRadius: 4, background: C.bgElevated }}><X size={16} color={C.textMuted} /></div>
+        </div>
+        <div style={{ padding: 20, overflowY: "auto", flex: 1 }}>
+          <div style={{ marginBottom: 16, background: C.bgElevated, padding: "12px 16px", borderRadius: 8, border: `1px solid ${C.borderLight}` }}>
+            <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>Subject</div>
+            <div style={{ fontSize: 14, color: C.textPrimary, fontWeight: 600, userSelect: "all" }}>Action Required: Remediation of Active Vulnerabilities for "{currentMonth} - {apmIdsString}"</div>
+          </div>
+          
+          <div ref={contentRef} style={{ background: "#ffffff", color: "#111827", padding: "24px", borderRadius: 8, fontSize: 13, fontFamily: "Calibri, Arial, sans-serif", lineHeight: 1.6 }}>
+            <p style={{ margin: "0 0 16px 0", color: "#111827" }}>Hello Team,</p>
+            <p style={{ margin: "0 0 20px 0", color: "#111827" }}>
+              The latest vulnerability scan results for <strong>{appNames}</strong> have been shared for the following APM ID(s):&nbsp;
+              {apmIdsDisplay.map((id, idx) => (
+                <span key={idx} style={{ display: "inline-block", backgroundColor: "#fef3c7", color: "#92400e", padding: "2px 8px", borderRadius: 4, fontWeight: 700, border: "1px solid #fde68a", marginRight: 6, marginBottom: 4, fontFamily: "'Courier New', Courier, monospace" }}>
+                  {id}
+                </span>
+              ))}
+            </p>
+
+            <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", marginBottom: 24, borderCollapse: "separate" }}>
+              <tbody>
+                <tr>
+                  <td style={{ verticalAlign: "top", width: "38%", paddingRight: 16 }}>
+                    <table border="1" cellPadding="10" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", border: "1px solid #94a3b8", fontFamily: "Calibri, Arial, sans-serif" }}>
+                      <thead>
+                        <tr style={{ backgroundColor: headerColor }}>
+                          <th colSpan="2" style={{ border: "1px solid #94a3b8", padding: "10px 14px", textAlign: "left", backgroundColor: headerColor, color: "#ffffff", fontWeight: 700, fontSize: 13 }}>
+                            Executive Summary
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr style={{ backgroundColor: "#ffffff" }}>
+                          <td style={{ border: "1px solid #cbd5e1", padding: "10px 12px", color: "#334155", fontWeight: 600, backgroundColor: "#ffffff" }}>Total vulnerabilities</td>
+                          <td style={{ border: "1px solid #cbd5e1", padding: "10px 12px", textAlign: "right", fontWeight: 700, color: "#0f172a", backgroundColor: "#ffffff", fontSize: 14 }}>{total}</td>
+                        </tr>
+                        <tr style={{ backgroundColor: "#f0fdf4" }}>
+                          <td style={{ border: "1px solid #cbd5e1", padding: "10px 12px", color: "#166534", fontWeight: 600, backgroundColor: "#f0fdf4" }}>Within SLA</td>
+                          <td style={{ border: "1px solid #cbd5e1", padding: "10px 12px", textAlign: "right", fontWeight: 700, color: "#15803d", backgroundColor: "#f0fdf4", fontSize: 14 }}>{withinSlaCount}</td>
+                        </tr>
+                        <tr style={{ backgroundColor: "#fef2f2" }}>
+                          <td style={{ border: "1px solid #cbd5e1", padding: "10px 12px", color: "#991b1b", fontWeight: 600, backgroundColor: "#fef2f2" }}>Past SLA</td>
+                          <td style={{ border: "1px solid #cbd5e1", padding: "10px 12px", textAlign: "right", fontWeight: 700, color: "#b91c1c", backgroundColor: "#fef2f2", fontSize: 14 }}>{pastSlaCount}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                  
+                  <td style={{ verticalAlign: "top", width: "62%" }}>
+                    <table border="1" cellPadding="12" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", border: "1px solid #94a3b8", backgroundColor: "#ffffff", fontFamily: "Calibri, Arial, sans-serif" }}>
+                      <thead>
+                        <tr style={{ backgroundColor: "#1e293b" }}>
+                          <th style={{ border: "1px solid #94a3b8", padding: "10px 14px", textAlign: "center", backgroundColor: "#1e293b", color: "#ffffff", fontWeight: 700, width: "55%", fontSize: 12.5 }}>
+                            Vulnerability by Scan Type
+                          </th>
+                          <th style={{ border: "1px solid #94a3b8", padding: "10px 14px", textAlign: "center", backgroundColor: "#1e293b", color: "#ffffff", fontWeight: 700, width: "45%", fontSize: 12.5 }}>
+                            SLA Status
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td style={{ border: "1px solid #cbd5e1", padding: "14px", verticalAlign: "middle", backgroundColor: "#ffffff" }}>
+                            {scanBars.map((bar, i) => (
+                              <div key={bar.name || i} style={{ marginBottom: i === scanBars.length - 1 ? 0 : 10 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11.5, fontWeight: 600, color: "#334155", marginBottom: 3 }}>
+                                  <span>{bar.name}</span>
+                                  <span style={{ color: "#0f172a", fontWeight: 700 }}>{bar.count}</span>
+                                </div>
+                                <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", height: "14px", backgroundColor: "#f1f5f9", borderRadius: "3px", border: "1px solid #e2e8f0" }}>
+                                  <tbody>
+                                    <tr>
+                                      <td style={{ width: `${bar.pct}%`, backgroundColor: bar.color, borderRadius: "2px", height: "12px" }}></td>
+                                      <td style={{ width: `${100 - bar.pct}%`, backgroundColor: "#f1f5f9" }}></td>
+                                    </tr>
+                                  </tbody>
+                                </table>
+                              </div>
+                            ))}
+                          </td>
+                          
+                          <td style={{ border: "1px solid #cbd5e1", padding: "14px", verticalAlign: "middle", textAlign: "center", backgroundColor: "#ffffff" }}>
+                            <div style={{ display: "inline-block", margin: "0 auto 10px auto" }}>
+                              <div style={{ width: 88, height: 88, borderRadius: "50%", background: `conic-gradient(#16a34a 0% ${withinPct}%, #dc2626 ${withinPct}% 100%)`, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #e2e8f0" }}>
+                                <div style={{ width: 48, height: 48, borderRadius: "50%", backgroundColor: "#ffffff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#0f172a" }}>
+                                  {withinPct}%
+                                </div>
+                              </div>
+                            </div>
+                            <table border="0" cellPadding="2" cellSpacing="0" style={{ width: "100%", fontSize: 11, fontFamily: "Calibri, Arial, sans-serif" }}>
+                              <tbody>
+                                <tr>
+                                  <td style={{ textAlign: "left", color: "#166534", fontWeight: 700 }}>
+                                    <span style={{ color: "#16a34a", fontSize: 14 }}>●</span> Within SLA:
+                                  </td>
+                                  <td style={{ textAlign: "right", fontWeight: 700, color: "#166534" }}>{withinSlaCount} ({withinPct}%)</td>
+                                </tr>
+                                <tr>
+                                  <td style={{ textAlign: "left", color: "#991b1b", fontWeight: 700 }}>
+                                    <span style={{ color: "#dc2626", fontSize: 14 }}>●</span> Past SLA:
+                                  </td>
+                                  <td style={{ textAlign: "right", fontWeight: 700, color: "#991b1b" }}>{pastSlaCount} ({pastPct}%)</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <p style={{ margin: "0 0 12px 0", color: "#111827" }}>Detailed findings and severity breakdowns are available in the <a href={safeConfig.aistDashboard} style={{ color: "#0066cc", textDecoration: "underline", fontWeight: 600 }}>AIST Dashboard</a>.</p>
+            <p style={{ margin: "0 0 20px 0", color: "#111827" }}>Please prioritize remediation of all past-due items and address remaining vulnerabilities within the applicable SLA. If remediation cannot be completed within the required timeline, submit a <a href={safeConfig.rem} style={{ color: "#0066cc", textDecoration: "underline", fontWeight: 600 }}>REM (Risk Exception Management)</a> request.</p>
+
+            <p style={{ margin: "0 0 8px 0", color: "#111827" }}><strong>As per DOSS (DIRECTV Official Security Standards), remediation timelines are as follows:</strong></p>
+            <table border="1" cellPadding="8" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", marginBottom: 24, border: "1px solid #94a3b8", fontFamily: "Calibri, Arial, sans-serif", fontSize: 12.5 }}>
+              <thead>
+                <tr style={{ backgroundColor: "#1e293b", color: "#ffffff" }}>
+                  <th colSpan="2" style={{ border: "1px solid #94a3b8", padding: "10px 12px", backgroundColor: "#1e293b", color: "#ffffff", textAlign: "center", fontWeight: 700 }}>Remediation Category</th>
+                  <th style={{ border: "1px solid #94a3b8", padding: "10px 12px", backgroundColor: "#1e293b", color: "#ffffff", textAlign: "center", fontWeight: 700 }}>Critical-Internet-Facing and PCI</th>
+                  <th style={{ border: "1px solid #94a3b8", padding: "10px 12px", backgroundColor: "#1e293b", color: "#ffffff", textAlign: "center", fontWeight: 700 }}>Non-critical (Others)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td rowSpan="5" style={{ border: "1px solid #cbd5e1", padding: "10px 12px", textAlign: "center", verticalAlign: "middle", fontWeight: 700, backgroundColor: "#f8fafc", color: "#334155" }}>Vulnerability Type</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", fontWeight: 600, color: "#dc2626", backgroundColor: "#ffffff" }}>Critical</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=30 days</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=30 days</td>
+                </tr>
+                <tr>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", fontWeight: 600, color: "#ea580c", backgroundColor: "#ffffff" }}>High</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=90 days</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=120 days</td>
+                </tr>
+                <tr>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", fontWeight: 600, color: "#ca8a04", backgroundColor: "#ffffff" }}>Medium</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=180 days</td>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", backgroundColor: "#ffffff", color: "#111827" }}>&lt;=180 days</td>
+                </tr>
+                <tr>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", fontWeight: 600, color: "#2563eb", backgroundColor: "#ffffff" }}>Low</td>
+                  <td colSpan="2" rowSpan="2" style={{ border: "1px solid #cbd5e1", padding: "10px 12px", textAlign: "center", verticalAlign: "middle", backgroundColor: "#ffffff", color: "#475569", fontWeight: 500 }}>Remediation as per applicability</td>
+                </tr>
+                <tr>
+                  <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", textAlign: "center", fontWeight: 600, color: "#64748b", backgroundColor: "#ffffff" }}>Informational</td>
+                </tr>
+              </tbody>
+            </table>
+            
+            <p style={{ margin: "0 0 10px 0", fontWeight: 700, color: "#111827" }}>Important Resources &amp; Links:</p>
+            <ul style={{ paddingLeft: 24, margin: "0 0 20px 0", color: "#334155" }}>
+              <li style={{ marginBottom: 6 }}>
+                <a href={safeConfig.aistDashboard} style={{ color: "#0066cc", textDecoration: "underline", fontWeight: 600 }}>AIST Dashboard</a> &mdash; Access live vulnerability tracking and asset drill-downs.
+              </li>
+              <li style={{ marginBottom: 6 }}>
+                <a href={safeConfig.rem} style={{ color: "#0066cc", textDecoration: "underline", fontWeight: 600 }}>REM (Risk Exception Management)</a> &mdash; Submit an exception request if remediation cannot be completed within SLA.
+              </li>
+              <li style={{ marginBottom: 6 }}>
+                <a href={safeConfig.saviyntDocs} style={{ color: "#0066cc", textDecoration: "underline" }}>DTV Security AIST Dashboard Access Runbook v1.0</a> &mdash; Step-by-step guidance for requesting access via Saviynt.
+              </li>
+              <li style={{ marginBottom: 6 }}>
+                Dashboard updates may take 1&ndash;2 business days to reflect scan remediations.
+              </li>
+            </ul>
+            
+            <p style={{ margin: "0", color: "#334155" }}>Thank you for your continued partnership. Please reach out if you have questions or need assistance.</p>
+          </div>
+        </div>
+        <div style={{ padding: "16px 20px", borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontSize: 13, color: C.textSecondary }}>Header Color:</span>
+            <input type="color" value={headerColor} onChange={(e) => setHeaderColor(e.target.value)} style={{ cursor: "pointer", border: "none", width: 32, height: 32, padding: 0, borderRadius: 4, background: "transparent" }} />
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <button onClick={onClose} style={{ padding: "8px 16px", borderRadius: 6, border: `1px solid ${C.border}`, background: "transparent", color: C.textSecondary, cursor: "pointer", fontWeight: 600 }}>Cancel</button>
+            <button onClick={handleCopy} style={{ padding: "8px 16px", borderRadius: 6, border: "none", background: "#ca8a04", color: "#fff", cursor: "pointer", fontWeight: 600 }}>Copy Mail Content</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+function AllVulnPage({ rows, onSelect }) {
+  const [page, setPage] = useState(0);
+  const pageSize = 25;
+  const pageRows = rows.slice(page * pageSize, (page + 1) * pageSize);
+  const totalPages = Math.max(1, Math.ceil(rows.length / pageSize));
+
+  return (
+    <Card>
+      <SectionTitle icon={ListChecks} right={<span style={{ fontSize: 11.5, color: C.textMuted, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{rows.length.toLocaleString()} records</span>}>
+        All vulnerabilities (click a row for details)
+      </SectionTitle>
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, minWidth: 950 }}>
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+              {["IP", "Hostname", "Vulnerability", "Severity", "Status", "Age", "SLA status", "Infra", "App"].map((h) => (
+                <th key={h} style={{ textAlign: "left", padding: "8px 10px", color: C.textMuted, fontWeight: 600, fontSize: 10.5, textTransform: "uppercase" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {pageRows.map((r, i) => (
+              <tr key={i} className="vd-row" onClick={() => onSelect(r)} style={{ borderBottom: `1px solid ${C.border}`, cursor: "pointer" }}>
+                <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{r.ip || "-"}</td>
+                <td style={{ padding: "8px 10px", color: C.textSecondary }}>{r.dns || r.fqdn || "-"}</td>
+                <td style={{ padding: "8px 10px", maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.vulnName || "-"}</td>
+                <td style={{ padding: "8px 10px" }}><Badge color={SEV_META[r.sevNum].color} dim={SEV_META[r.sevNum].dim}>{r.sevLabel}</Badge></td>
+                <td style={{ padding: "8px 10px", color: C.textSecondary }}>{r.vulnStatus || "-"}</td>
+                <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{r.ageDays ?? "-"}d</td>
+                <td style={{ padding: "8px 10px" }}>
+                  {r.isOpen
+                    ? <Badge color={r.breached ? C.critical : C.success} dim={r.breached ? C.criticalDim : C.successDim}>{r.breached ? "Breached" : "Within SLA"}</Badge>
+                    : <Badge color={C.textMuted} dim={C.infoDim}>Closed</Badge>}
+                </td>
+                <td style={{ padding: "8px 10px", color: C.textSecondary }}>{r.infra}</td>
+                <td style={{ padding: "8px 10px", color: C.textSecondary, maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.appNameVal}</td>
+              </tr>
+            ))}
+            {!pageRows.length && <tr><td colSpan={9} style={{ padding: 20, textAlign: "center", color: C.textMuted }}>No records match the current filter.</td></tr>}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 14 }}>
+        <span style={{ fontSize: 11.5, color: C.textMuted }}>Page {page + 1} of {totalPages}</span>
+        <div style={{ display: "flex", gap: 6 }}>
+          <div onClick={() => setPage((p) => Math.max(0, p - 1))} style={btnStyle(false)}>Previous</div>
+          <div onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} style={btnStyle(false)}>Next</div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function AverageAgeCalc({ allRows }) {
+  const [f, setF] = useState({ status: "all", severity: [], ifPci: "all", slaStatus: "all", category: "all", environment: "all" });
+  const statusOptions = useMemo(() => uniqueVals(allRows, "vulnStatus"), [allRows]);
+  const ifPciOptions = useMemo(() => uniqueVals(allRows, "ifOrPciVal"), [allRows]);
+  const slaOptions = useMemo(() => uniqueVals(allRows, "withinSlaStatus"), [allRows]);
+  const categoryOptions = useMemo(() => uniqueVals(allRows, "vulnCategoryVal"), [allRows]);
+  const envOptions = useMemo(() => uniqueVals(allRows, "environmentVal"), [allRows]);
+
+  const toggleSeverity = (val) => {
+    setF((prev) => {
+      const has = prev.severity.includes(val);
+      return { ...prev, severity: has ? prev.severity.filter((s) => s !== val) : [...prev.severity, val] };
+    });
+  };
+
+  const subset = useMemo(() => allRows.filter((r) => {
+    if (f.status !== "all" && r.vulnStatus !== f.status) return false;
+    if (f.severity.length > 0 && !f.severity.includes(String(r.sevNum))) return false;
+    if (f.ifPci !== "all" && r.ifOrPciVal !== f.ifPci) return false;
+    if (f.slaStatus !== "all" && r.withinSlaStatus !== f.slaStatus) return false;
+    if (f.category !== "all" && r.vulnCategoryVal !== f.category) return false;
+    if (f.environment !== "all" && r.environmentVal !== f.environment) return false;
+    return r.ageDays !== null;
+  }), [allRows, f]);
+
+  const avg = subset.length ? Math.round(subset.reduce((s, r) => s + r.ageDays, 0) / subset.length) : 0;
+
+  const groupBy = (key) => {
+    const map = new Map();
+    subset.forEach((r) => {
+      const k = r[key];
+      if (!map.has(k)) map.set(k, { key: k, count: 0, sum: 0 });
+      const c = map.get(k);
+      c.count += 1;
+      c.sum += r.ageDays;
+    });
+    return Array.from(map.values()).map((c) => ({ ...c, avg: Math.round(c.sum / c.count) })).sort((a, b) => b.avg - a.avg);
+  };
+  const byCategory = useMemo(() => groupBy("vulnCategoryVal").slice(0, 12), [subset]);
+  const byEnv = useMemo(() => groupBy("environmentVal"), [subset]);
+
+  const selectField = (label, key, options) => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <span style={{ fontSize: 10.5, color: C.textMuted, textTransform: "uppercase", fontWeight: 600 }}>{label}</span>
+      <select value={f[key]} onChange={(e) => setF((prev) => ({ ...prev, [key]: e.target.value }))} style={selectStyle}>
+        <option value="all">All</option>
+        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+      </select>
+    </div>
+  );
+
+  return (
+    <Card>
+      <SectionTitle icon={Clock}>Average vulnerability age calculator</SectionTitle>
+      <div style={{ fontSize: 11.5, color: C.textMuted, marginBottom: 14 }}>
+        Uses the full dataset independent of the page filters above &mdash; set dimensions below to recompute live.
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 18 }}>
+        {selectField("Vulnerability status", "status", statusOptions)}
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <span style={{ fontSize: 10.5, color: C.textMuted, textTransform: "uppercase", fontWeight: 600 }}>Severity (pick one or more)</span>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {[["5", "Critical"], ["4", "High"], ["3", "Medium"]].map(([val, label]) => {
+              const active = f.severity.includes(val);
+              return (
+                <div
+                  key={val}
+                  onClick={() => toggleSeverity(val)}
+                  style={{
+                    padding: "7px 10px", borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                    border: `1px solid ${active ? SEV_META[val].color : C.border}`,
+                    background: active ? SEV_META[val].dim : "transparent",
+                    color: active ? SEV_META[val].color : C.textSecondary,
+                  }}
+                >
+                  {label}
+                </div>
+              );
+            })}
+            {f.severity.length > 0 && (
+              <div onClick={() => setF((prev) => ({ ...prev, severity: [] }))} style={{ padding: "7px 8px", borderRadius: 7, fontSize: 11.5, cursor: "pointer", color: C.textMuted }}>
+                Clear
+              </div>
+            )}
+          </div>
+        </div>
+        {selectField("IF or PCI", "ifPci", ifPciOptions)}
+        {selectField("Within SLA / Past due", "slaStatus", slaOptions)}
+        {selectField("Vulnerability category", "category", categoryOptions)}
+        {selectField("Environment", "environment", envOptions)}
+      </div>
+      <div style={{ display: "flex", gap: 24, alignItems: "center", marginBottom: 20, padding: 16, background: C.bgElevated, borderRadius: 8, border: `1px solid ${C.border}` }}>
+        <div>
+          <div style={{ fontSize: 32, fontWeight: 700, color: C.accent, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{avg}</div>
+          <div style={{ fontSize: 11, color: C.textMuted }}>average days open</div>
+        </div>
+        <div style={{ width: 1, height: 36, background: C.border }} />
+        <div>
+          <div style={{ fontSize: 20, fontWeight: 700, color: C.textPrimary, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{subset.length}</div>
+          <div style={{ fontSize: 11, color: C.textMuted }}>vulnerabilities matched</div>
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <div>
+          <div style={{ fontSize: 11.5, fontWeight: 600, color: C.textSecondary, marginBottom: 8, textTransform: "uppercase" }}>By category</div>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+            <tbody>
+              {byCategory.map((c) => (
+                <tr key={c.key} className="vd-row" style={{ borderBottom: `1px solid ${C.border}` }}>
+                  <td style={{ padding: "6px 8px", color: C.textSecondary }}>{c.key}</td>
+                  <td style={{ padding: "6px 8px", textAlign: "right", color: C.textMuted, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{c.count}</td>
+                  <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 700, color: C.textPrimary, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{c.avg}d</td>
+                </tr>
+              ))}
+              {!byCategory.length && <tr><td style={{ padding: 10, color: C.textMuted }}>No matches</td></tr>}
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div style={{ fontSize: 11.5, fontWeight: 600, color: C.textSecondary, marginBottom: 8, textTransform: "uppercase" }}>By environment</div>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+            <tbody>
+              {byEnv.map((c) => (
+                <tr key={c.key} className="vd-row" style={{ borderBottom: `1px solid ${C.border}` }}>
+                  <td style={{ padding: "6px 8px", color: C.textSecondary }}>{c.key}</td>
+                  <td style={{ padding: "6px 8px", textAlign: "right", color: C.textMuted, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{c.count}</td>
+                  <td style={{ padding: "6px 8px", textAlign: "right", fontWeight: 700, color: C.textPrimary, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{c.avg}d</td>
+                </tr>
+              ))}
+              {!byEnv.length && <tr><td style={{ padding: 10, color: C.textMuted }}>No matches</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function KeyTablesPage({ rows, allRows }) {
+  const weekly = useMemo(() => buildWeeklyAgg(rows), [rows]);
+  return (
+    <div>
+      <Card style={{ marginBottom: 20 }}>
+        <SectionTitle icon={Table2}>Weekly metrics</SectionTitle>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12.5 }}>
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+              {["Week", "Open vulns", "Critical", "High", "Medium", "SLA breached", "Avg age"].map((h) => (
+                <th key={h} style={{ textAlign: "left", padding: "8px 10px", color: C.textMuted, fontWeight: 600, fontSize: 10.5, textTransform: "uppercase" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {weekly.map((w) => (
+              <tr key={w.week} className="vd-row" style={{ borderBottom: `1px solid ${C.border}` }}>
+                <td style={{ padding: "8px 10px", color: C.textPrimary, fontWeight: 600 }}>{w.week}</td>
+                <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{w.total}</td>
+                <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: C.critical }}>{w.sev5}</td>
+                <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: C.high }}>{w.sev4}</td>
+                <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: C.medium }}>{w.sev3}</td>
+                <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: w.breached ? C.critical : C.textPrimary }}>{w.breached}</td>
+                <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{w.avgAge}d</td>
+              </tr>
+            ))}
+            {!weekly.length && <tr><td colSpan={7} style={{ padding: 20, textAlign: "center", color: C.textMuted }}>No weekly metrics data found in this export.</td></tr>}
+          </tbody>
+        </table>
+      </Card>
+      <AverageAgeCalc allRows={allRows} />
+    </div>
+  );
+}
+
+function ComparePage({ rows, prevRows, setPrevRows }) {
+  if (!prevRows) {
+    return (
+      <Card>
+        <SectionTitle icon={GitCompare}>Compare against a previous snapshot</SectionTitle>
+        <p style={{ fontSize: 13, color: C.textSecondary, marginTop: 0, marginBottom: 16, lineHeight: 1.6 }}>
+          Upload an earlier Qualys export to see what changed &mdash; new findings, resolved findings, and net movement since then.
+        </p>
+        <UploadPanel
+          compact
+          label="Drop the previous Qualys export here"
+          onData={(computed) => setPrevRows(computed.filter((r) => r.sevNum >= 3))}
+        />
+      </Card>
+    );
+  }
+
+  const currentOpenKeys = new Set(rows.filter((r) => r.isOpen).map((r) => r.uniqueId || r.vulnId || `${r.ip}|${r.vulnName}`));
+  const prevOpenKeys = new Set(prevRows.filter((r) => r.isOpen).map((r) => r.uniqueId || r.vulnId || `${r.ip}|${r.vulnName}`));
+
+  let newCount = 0, resolvedCount = 0, persistentCount = 0;
+  currentOpenKeys.forEach((k) => (prevOpenKeys.has(k) ? persistentCount++ : newCount++));
+  prevOpenKeys.forEach((k) => { if (!currentOpenKeys.has(k)) resolvedCount++; });
+
+  const net = newCount - resolvedCount;
+
+  return (
+    <div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
+        <KpiCard label="New vulnerabilities" value={newCount} accentColor={C.critical} icon={TrendingUp} />
+        <KpiCard label="Resolved" value={resolvedCount} accentColor={C.success} icon={TrendingDown} />
+        <KpiCard label="Persistent" value={persistentCount} />
+        <KpiCard label="Net change" value={(net >= 0 ? "+" : "") + net} accentColor={net > 0 ? C.critical : C.success} />
+      </div>
+      <Card>
+        <SectionTitle>Summary</SectionTitle>
+        <p style={{ fontSize: 13, color: C.textSecondary, lineHeight: 1.7 }}>
+          The previous snapshot had <b style={{ color: C.textPrimary }}>{prevOpenKeys.size.toLocaleString()}</b> open findings.
+          The current snapshot has <b style={{ color: C.textPrimary }}>{currentOpenKeys.size.toLocaleString()}</b> open findings &mdash;{" "}
+          <b style={{ color: net > 0 ? C.critical : C.success }}>{net > 0 ? `${net} more` : `${Math.abs(net)} fewer`}</b> than before.
+          Matching is based on Unique id / Vulnerability ID (falling back to IP + vulnerability name when IDs are missing).
+        </p>
+      </Card>
+    </div>
+  );
+}
+
+function RawVerifyPage({ allRows, rawRows, setRawRows }) {
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  const rawMap = useMemo(() => {
+    const m = new Map();
+    (rawRows || []).forEach((r) => {
+      const qid = String(r.qid || "").trim();
+      if (!qid || !r.ip) return;
+      m.set(rawMatchKey(r.ip, qid), r);
+    });
+    return m;
+  }, [rawRows]);
+
+  const results = useMemo(() => {
+    if (!rawRows) return [];
+    return allRows.filter((r) => r.isOpen).map((r) => {
+      const qid = extractQid(r.vulnId) || extractQid(r.uniqueId);
+      const match = qid ? rawMap.get(rawMatchKey(r.ip, qid)) : null;
+      let status = "noMatch";
+      if (match) {
+        const raw = String(match.vulnStatus || "").toLowerCase();
+        status = /fixed|closed/.test(raw) ? "fixed" : "stillOpen";
+      }
+      return { ...r, rawQid: qid, rawMatch: match, rawStatus: status };
+    });
+  }, [allRows, rawMap, rawRows]);
+
+  if (!rawRows) {
+    return (
+      <Card>
+        <SectionTitle icon={FileWarning}>Verify against a raw Qualys scan</SectionTitle>
+        <p style={{ fontSize: 13, color: C.textSecondary, marginTop: 0, marginBottom: 16, lineHeight: 1.6 }}>
+          Upload the native raw Qualys export (IP, QID, Vuln Status, etc.) to check which of the
+          currently tracked findings have actually been fixed. Matching is done on <b style={{ color: C.textPrimary }}>IP + QID</b>
+          &nbsp;&mdash; the QID is extracted from each finding's Vulnerability ID (format <code>IP/QID</code>) and
+          compared against the raw report's native QID column.
+        </p>
+        <UploadPanel
+          compact
+          label="Drop the raw Qualys report here"
+          canonicalList={RAW_CANONICAL}
+          onData={(computed) => setRawRows(computed)}
+        />
+      </Card>
+    );
+  }
+
+  const fixedCount = results.filter((r) => r.rawStatus === "fixed").length;
+  const stillOpenCount = results.filter((r) => r.rawStatus === "stillOpen").length;
+  const noMatchCount = results.filter((r) => r.rawStatus === "noMatch").length;
+
+  const filtered = statusFilter === "all" ? results : results.filter((r) => r.rawStatus === statusFilter);
+
+  const statusBadge = (status) => {
+    if (status === "fixed") return <Badge color={C.success} dim={C.successDim}>Fixed</Badge>;
+    if (status === "stillOpen") return <Badge color={C.critical} dim={C.criticalDim}>Still open</Badge>;
+    return <Badge color={C.textMuted} dim={C.infoDim}>No match</Badge>;
+  };
+
+  return (
+    <div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
+        <KpiCard label="Checked findings" value={results.length} icon={FileWarning} />
+        <KpiCard label="Confirmed fixed" value={fixedCount} accentColor={C.success} icon={CheckSquare} />
+        <KpiCard label="Still open" value={stillOpenCount} accentColor={C.critical} icon={AlertTriangle} />
+        <KpiCard label="No match in raw report" value={noMatchCount} sub="Asset/QID not found in the raw file" />
+      </div>
+      <Card>
+        <SectionTitle icon={FileWarning} right={
+          <div style={{ display: "flex", gap: 6 }}>
+            {[["all", "All"], ["fixed", "Fixed"], ["stillOpen", "Still open"], ["noMatch", "No match"]].map(([k, l]) => (
+              <div key={k} onClick={() => setStatusFilter(k)} style={btnStyle(statusFilter === k)}>{l}</div>
+            ))}
+          </div>
+        }>
+          Raw scan reconciliation
+        </SectionTitle>
+        <div style={{ maxHeight: 480, overflowY: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+            <thead style={{ position: "sticky", top: 0, background: C.surface }}>
+              <tr style={{ borderBottom: `1px solid ${C.border}` }}>
+                {["IP", "QID", "Vulnerability", "Severity", "Tracked status", "Raw report status", "Raw date fixed"].map((h) => (
+                  <th key={h} style={{ textAlign: "left", padding: "8px 10px", color: C.textMuted, fontWeight: 600, fontSize: 10.5, textTransform: "uppercase" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.slice(0, 300).map((r, i) => (
+                <tr key={i} className="vd-row" style={{ borderBottom: `1px solid ${C.border}` }}>
+                  <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{r.ip || "-"}</td>
+                  <td style={{ padding: "8px 10px", fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: C.textMuted }}>{r.rawQid || "-"}</td>
+                  <td style={{ padding: "8px 10px", maxWidth: 240, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.vulnName || "-"}</td>
+                  <td style={{ padding: "8px 10px" }}><Badge color={SEV_META[r.sevNum].color} dim={SEV_META[r.sevNum].dim}>{r.sevLabel}</Badge></td>
+                  <td style={{ padding: "8px 10px", color: C.textSecondary }}>{r.vulnStatus || "-"}</td>
+                  <td style={{ padding: "8px 10px" }}>{statusBadge(r.rawStatus)}</td>
+                  <td style={{ padding: "8px 10px", color: C.textMuted }}>{r.rawMatch && r.rawMatch.dateLastFixed ? String(r.rawMatch.dateLastFixed).slice(0, 10) : "-"}</td>
+                </tr>
+              ))}
+              {!filtered.length && <tr><td colSpan={7} style={{ padding: 20, textAlign: "center", color: C.textMuted }}>No findings match this filter.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+        {filtered.length > 300 && <div style={{ fontSize: 11, color: C.textMuted, marginTop: 10 }}>Showing the first 300 of {filtered.length} matches.</div>}
+      </Card>
+    </div>
+  );
+}
+
+/* ===================================================================== */
+/*  APP                                                                   */
+/* ===================================================================== */
+
+const PieChartIcon = makeIcon(<><path d="M21.21 15.89A10 10 0 118 2.83" /><path d="M22 12A10 10 0 0012 2v10z" /></>);
+const FilterIcon = makeIcon(<><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></>);
+const ChevronDown = makeIcon(<polyline points="6 9 12 15 18 9" />);
+const Check = makeIcon(<polyline points="20 6 9 17 4 12" />);
+
+/* --------------------------------- Custom Dashboard Feature --------------------------------- */
+
+function MultiSelectDropdown({ label, options, selected, onChange, searchable = false }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const ddRef = useRef(null);
+
+  useEffect(() => {
+    const handleClick = (e) => { if (ddRef.current && !ddRef.current.contains(e.target)) setIsOpen(false); };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  const toggleOption = (opt) => {
+    if (selected.includes(opt)) {
+      onChange(selected.filter(x => x !== opt));
+    } else {
+      onChange([...selected, opt]);
+    }
+  };
+
+  const filteredOptions = searchable 
+    ? options.filter(o => String(o).toLowerCase().includes(search.toLowerCase()))
+    : options;
+
+  return (
+    <div ref={ddRef} style={{ position: "relative", display: "inline-block" }}>
+      <div 
+        onClick={() => setIsOpen(!isOpen)} 
+        style={{ 
+          background: selected.length > 0 ? C.accentDim : C.bgElevated, 
+          border: `1px solid ${selected.length > 0 ? C.accent : C.borderLight}`, 
+          borderRadius: 8, 
+          padding: "8px 14px", fontSize: 13, color: selected.length > 0 ? C.accent : C.textPrimary, cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "space-between", minWidth: 160,
+          fontWeight: selected.length > 0 ? 600 : 500, transition: "all 0.2s ease"
+        }}
+      >
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 120 }}>
+          {selected.length === 0 ? `All ${label}` : `${selected.length} ${label} selected`}
+        </span>
+        <ChevronDown size={14} color={selected.length > 0 ? C.accent : C.textMuted} style={{ marginLeft: 6, transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
+      </div>
+
+      {isOpen && (
+        <div style={{ 
+          position: "absolute", top: "100%", left: 0, marginTop: 6, background: C.surface, 
+          border: `1px solid ${C.borderLight}`, borderRadius: 10, boxShadow: "0 10px 40px rgba(0,0,0,0.5)", 
+          zIndex: 100, minWidth: 220, maxHeight: 320, display: "flex", flexDirection: "column",
+          overflow: "hidden"
+        }}>
+          {searchable && (
+            <div style={{ padding: 10, borderBottom: `1px solid ${C.borderLight}`, background: C.bgElevated }}>
+              <input 
+                value={search} onChange={e => setSearch(e.target.value)}
+                placeholder={`Search ${label}...`}
+                style={{ width: "100%", background: C.surface, border: `1px solid ${C.borderLight}`, borderRadius: 6, padding: "8px 12px", fontSize: 13, color: C.textPrimary, outline: "none", transition: "border-color 0.2s" }}
+                onFocus={(e) => e.target.style.borderColor = C.accent}
+                onBlur={(e) => e.target.style.borderColor = C.borderLight}
+              />
+            </div>
+          )}
+          <div style={{ overflowY: "auto", padding: "6px 0" }}>
+            <div 
+              onClick={() => onChange([])}
+              style={{ padding: "8px 16px", fontSize: 13, color: selected.length === 0 ? C.textPrimary : C.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", background: selected.length === 0 ? C.surfaceHover : "transparent", fontWeight: selected.length === 0 ? 600 : 400 }}
+            >
+              <div style={{ width: 16, height: 16, border: `1px solid ${selected.length === 0 ? C.accent : C.borderLight}`, borderRadius: 4, marginRight: 10, display: "flex", alignItems: "center", justifyContent: "center", background: selected.length === 0 ? C.accent : "transparent", transition: "all 0.2s" }}>
+                {selected.length === 0 && <Check size={12} color="#fff" />}
+              </div>
+              All {label}
+            </div>
+            {filteredOptions.map(opt => {
+              const isSel = selected.includes(opt);
+              return (
+                <div 
+                  key={opt} onClick={() => toggleOption(opt)}
+                  style={{ padding: "8px 16px", fontSize: 13, color: isSel ? C.textPrimary : C.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", background: isSel ? C.surfaceHover : "transparent", fontWeight: isSel ? 600 : 400 }}
+                >
+                  <div style={{ width: 16, height: 16, border: `1px solid ${isSel ? C.accent : C.borderLight}`, borderRadius: 4, marginRight: 10, display: "flex", alignItems: "center", justifyContent: "center", background: isSel ? C.accent : "transparent", transition: "all 0.2s" }}>
+                    {isSel && <Check size={12} color="#fff" />}
+                  </div>
+                  {opt}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CustomDashboardFilterBar({ filters, setFilters, filterOptions }) {
+  const isClean = Object.values(filters).every(arr => arr.length === 0);
+
+  const clearAll = () => {
+    const fresh = {};
+    Object.keys(filters).forEach(k => fresh[k] = []);
+    setFilters(fresh);
+  };
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
+      <MultiSelectDropdown label="IF/PCI" options={filterOptions.ifPci} selected={filters.ifPci} onChange={(v) => setFilters(f => ({...f, ifPci: v}))} />
+      <MultiSelectDropdown label="SLA Status" options={filterOptions.slaStatus} selected={filters.slaStatus} onChange={(v) => setFilters(f => ({...f, slaStatus: v}))} />
+      <MultiSelectDropdown label="Category" options={filterOptions.vulnCategory} selected={filters.vulnCategory} onChange={(v) => setFilters(f => ({...f, vulnCategory: v}))} searchable />
+      <MultiSelectDropdown label="Scan Type" options={filterOptions.scanType} selected={filters.scanType} onChange={(v) => setFilters(f => ({...f, scanType: v}))} />
+      <MultiSelectDropdown label="Risk Rating" options={filterOptions.riskRating} selected={filters.riskRating} onChange={(v) => setFilters(f => ({...f, riskRating: v}))} />
+      <MultiSelectDropdown label="Environment" options={filterOptions.environment} selected={filters.environment} onChange={(v) => setFilters(f => ({...f, environment: v}))} />
+      <MultiSelectDropdown label="CSP" options={filterOptions.csp} selected={filters.csp} onChange={(v) => setFilters(f => ({...f, csp: v}))} />
+      <MultiSelectDropdown label="App Name" options={filterOptions.appName} selected={filters.appName} onChange={(v) => setFilters(f => ({...f, appName: v}))} searchable />
+      <MultiSelectDropdown label="App Owner" options={filterOptions.appOwner} selected={filters.appOwner} onChange={(v) => setFilters(f => ({...f, appOwner: v}))} searchable />
+
+      {!isClean && (
+        <div onClick={clearAll} style={{ ...btnStyle(false), color: C.critical, borderColor: C.critical, padding: "6px 12px", display: "flex", alignItems: "center", gap: 4 }}>
+          <X size={14} /> Clear All
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CustomDashboardPage({ rows, setRows, setAllRows }) {
+  const [filters, setFilters] = useState({
+    ifPci: [], slaStatus: [], vulnCategory: [], scanType: [], riskRating: [], environment: [], csp: [], appName: [], appOwner: []
+  });
+  const [showFollowUpModal, setShowFollowUpModal] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
+  const [config, setConfig] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("vulnOpsMailConfig")) || defaultMailConfig; }
+    catch { return defaultMailConfig; }
+  });
+
+  const saveConfig = (newCfg) => {
+    setConfig(newCfg);
+    localStorage.setItem("vulnOpsMailConfig", JSON.stringify(newCfg));
+  };
+
+  const getOpts = (key) => Array.from(new Set(rows.map(r => r[key] || r.raw?.[key]).filter(Boolean))).sort();
+  const getSlaStatus = (r) => r.slaStatus || r.raw?.["SLA Status"] || (r.withinSlaStatus ? r.withinSlaStatus : "Unknown");
+  const getIfPci = (r) => r.ifOrPci || r.raw?.["IF or PCI"] || r.ifPciAlt || r.raw?.["IF-PCI"] || "Unknown";
+  const getRiskRating = (r) => r.riskRating || r.raw?.["Risk Rating"] || "Unknown";
+
+  const filterOptions = useMemo(() => {
+    if (!rows) return {};
+    return {
+      ifPci: Array.from(new Set(rows.map(getIfPci))).filter(x => x !== "Unknown").sort(),
+      slaStatus: Array.from(new Set(rows.map(getSlaStatus))).filter(x => x !== "Unknown").sort(),
+      vulnCategory: getOpts("vulnCategory"),
+      scanType: getOpts("scanType"),
+      riskRating: Array.from(new Set(rows.map(getRiskRating))).filter(x => x !== "Unknown").sort(),
+      environment: getOpts("environment"),
+      csp: getOpts("csp"),
+      appName: getOpts("appName"),
+      appOwner: getOpts("appOwner")
+    };
+  }, [rows]);
+
+  const filteredRows = useMemo(() => {
+    if (!rows) return [];
+    return rows.filter(r => {
+      const matchAttr = (selArr, val) => selArr.length === 0 || selArr.includes(val);
+      
+      return matchAttr(filters.ifPci, getIfPci(r)) &&
+             matchAttr(filters.slaStatus, getSlaStatus(r)) &&
+             matchAttr(filters.vulnCategory, r.vulnCategory || r.raw?.["Vulnerability Category"]) &&
+             matchAttr(filters.scanType, r.scanType || r.raw?.["Scan Type"]) &&
+             matchAttr(filters.riskRating, getRiskRating(r)) &&
+             matchAttr(filters.environment, r.environment || r.raw?.["Environment"]) &&
+             matchAttr(filters.csp, r.csp || r.raw?.["CSP"]) &&
+             matchAttr(filters.appName, r.appName || r.raw?.["Application Name"]) &&
+             matchAttr(filters.appOwner, r.appOwner || r.raw?.["App Owner"]);
+    });
+  }, [rows, filters]);
+
+  // Handle new file upload to replace dataset
+  const handleUpload = (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const d = new Uint8Array(evt.target.result);
+        const wb = XLSX.read(d, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rawJson = XLSX.utils.sheet_to_json(ws, { defval: "" });
+        
+        const headerMap = buildHeaderMap(Object.keys(rawJson[0] || {}), CANONICAL);
+        const processed = rawJson.map(raw => {
+          const c = convertRow(raw, headerMap);
+          return { ...c, raw, id: Math.random().toString(36).substr(2, 9) };
+        });
+        
+        setRows(processed);
+        setAllRows(processed);
+        alert(`Successfully imported ${processed.length} rows.`);
+      } catch (err) {
+        alert("Failed to parse file: " + err.message);
+      }
+    };
+    reader.readAsArrayBuffer(f);
+  };
+
+  if (!rows || rows.length === 0) {
+    return (
+      <div style={{ padding: 40, textAlign: "center", color: C.textSecondary, background: `linear-gradient(135deg, ${C.surface}, ${C.bgElevated})`, border: `1px solid ${C.border}`, borderRadius: 16, boxShadow: "0 10px 30px rgba(0,0,0,0.1)", maxWidth: 600, margin: "40px auto" }}>
+        <div style={{ marginBottom: 20 }}>
+          <Sparkles size={48} color={C.accent} style={{ filter: "drop-shadow(0 0 10px rgba(59, 130, 246, 0.5))" }} />
+        </div>
+        <h2 style={{ fontSize: 24, fontWeight: 700, color: C.textPrimary, marginBottom: 12 }}>Upload Data for Follow Mail</h2>
+        <p style={{ fontSize: 14, marginBottom: 24, lineHeight: 1.6 }}>Please upload a CSV or XLSX file containing the dataset for generating your follow-up mail.</p>
+        <label style={{ ...btnStyle(true), padding: "12px 24px", fontSize: 15, borderRadius: 8, cursor: "pointer", display: "inline-block", background: `linear-gradient(135deg, ${C.accent}, #2563EB)`, border: "none", boxShadow: "0 4px 15px rgba(59, 130, 246, 0.4)" }}>
+          Upload Dataset
+          <input type="file" accept=".csv,.xlsx,.xls" onChange={handleUpload} style={{ display: "none" }} />
+        </label>
+      </div>
+    );
+  }
+
+  const riskCounts = filteredRows.reduce((acc, r) => {
+    const v = getRiskRating(r) || "None";
+    acc[v] = (acc[v] || 0) + 1;
+    return acc;
+  }, {});
+  
+  const riskData = Object.keys(riskCounts).map(k => ({ name: k, value: riskCounts[k] }));
+
+  const slaCounts = filteredRows.reduce((acc, r) => {
+    const v = getSlaStatus(r) || "None";
+    acc[v] = (acc[v] || 0) + 1;
+    return acc;
+  }, {});
+  const slaData = Object.keys(slaCounts).map(k => ({ name: k, value: slaCounts[k] }));
+
+  // New Insights Calculations
+  const activeRows = filteredRows.filter(r => r.isOpen);
+  
+  const vulnCounts = {};
+  activeRows.forEach(r => {
+    const title = r.vulnName || r.raw?.["Title"] || r.raw?.["Vulnerability Name"] || "Unknown";
+    vulnCounts[title] = (vulnCounts[title] || 0) + 1;
+  });
+  const topVulns = Object.keys(vulnCounts).map(k => ({ title: k, count: vulnCounts[k] })).sort((a,b) => b.count - a.count).slice(0, 5);
+
+  const assetCounts = {};
+  activeRows.forEach(r => {
+    const asset = r.impactedAsset || r.ip || r.fqdn || r.dns || "Unknown Asset";
+    assetCounts[asset] = (assetCounts[asset] || 0) + 1;
+  });
+  const topAssets = Object.keys(assetCounts).map(k => ({ asset: k, count: assetCounts[k] })).sort((a,b) => b.count - a.count).slice(0, 5);
+
+  const oldestVulns = [...activeRows].filter(r => r.ageDays > 0).sort((a,b) => b.ageDays - a.ageDays).slice(0, 5);
+
+  const appStats = {};
+  activeRows.forEach(r => {
+    const app = r.appName || r.raw?.["Application Name"] || "Unknown App";
+    if (!appStats[app]) appStats[app] = { total: 0, pastDue: 0, withinSla: 0, criticalHigh: 0 };
+    appStats[app].total++;
+    if (r.withinSlaStatus === "Past due SLA") appStats[app].pastDue++;
+    else if (r.withinSlaStatus === "Within SLA") appStats[app].withinSla++;
+    if (r.sevNum === 5 || r.sevNum === 4) appStats[app].criticalHigh++;
+  });
+  const appTableRows = Object.keys(appStats).map(app => ({ app, ...appStats[app] })).sort((a,b) => b.total - a.total);
+
+  return (
+    <div>
+      <Card style={{ marginBottom: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <SectionTitle icon={FilterIcon}>Advanced Filters</SectionTitle>
+          <div style={{ display: "flex", gap: 8 }}>
+            <div onClick={() => setShowConfig(!showConfig)} style={{ ...btnStyle(showConfig), padding: "6px 12px" }}>
+              Configure Links
+            </div>
+            <button
+              onClick={() => setShowFollowUpModal(true)}
+              style={{ ...btnStyle(false), background: "rgba(234, 179, 8, 0.1)", color: "#ca8a04", border: `1px solid #ca8a04`, padding: "6px 12px", cursor: "pointer", fontWeight: 600 }}
+            >
+              Follow Up Mail
+            </button>
+            <label style={{ ...btnStyle(false), padding: "6px 12px", background: C.surfaceHover, border: `1px solid ${C.borderLight}`, cursor: "pointer", fontWeight: 600 }}>
+              Replace Dataset
+              <input type="file" accept=".csv,.xlsx,.xls" onChange={handleUpload} style={{ display: "none" }} />
+            </label>
+          </div>
+        </div>
+
+        {showConfig && (
+          <div style={{ padding: 16, background: C.bgElevated, borderRadius: 8, border: `1px solid ${C.borderLight}`, marginBottom: 20 }}>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12, color: C.textPrimary }}>Follow Up Mail Link Configuration</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              {Object.keys(config).map(k => (
+                <div key={k}>
+                  <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>{k}</div>
+                  <input
+                    value={config[k]}
+                    onChange={e => saveConfig({ ...config, [k]: e.target.value })}
+                    style={{ width: "100%", padding: "8px 10px", background: C.surface, border: `1px solid ${C.border}`, borderRadius: 6, color: C.textPrimary, fontSize: 12 }}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <CustomDashboardFilterBar filters={filters} setFilters={setFilters} filterOptions={filterOptions} />
+      </Card>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 20 }}>
+        <KpiCard label="Total Vulnerabilities" value={filteredRows.length} accentColor={C.accent} />
+        <KpiCard label="Critical Risk" value={riskCounts["Critical"] || 0} accentColor={C.critical} />
+        <KpiCard label="High Risk" value={riskCounts["High"] || 0} accentColor={C.high} />
+        <KpiCard label="SLA Breached" value={slaCounts["Breached"] || 0} accentColor={C.critical} />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+        <Card>
+          <SectionTitle icon={PieChartIcon}>Risk Rating Distribution</SectionTitle>
+          <div style={{ height: 300, width: "100%" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={riskData} innerRadius={70} outerRadius={110} paddingAngle={4} dataKey="value">
+                  {riskData.map((e, i) => (
+                    <Cell key={i} fill={e.name === "Critical" ? C.critical : e.name === "High" ? C.high : e.name === "Medium" ? C.medium : C.textMuted} />
+                  ))}
+                </Pie>
+                <Tooltip contentStyle={tooltipStyle} />
+                <Legend wrapperStyle={{ fontSize: 12, color: C.textPrimary }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        <Card>
+          <SectionTitle icon={PieChartIcon}>SLA Status Distribution</SectionTitle>
+          <div style={{ height: 300, width: "100%" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={slaData} layout="vertical" margin={{ top: 10, right: 20, left: 20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={C.border} horizontal={false} />
+                <XAxis type="number" stroke={C.borderLight} tick={axisStyle} />
+                <YAxis dataKey="name" type="category" stroke={C.borderLight} tick={axisStyle} width={100} />
+                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: C.surfaceHover }} />
+                <Bar dataKey="value" fill={C.accent} radius={[0, 4, 4, 0]} barSize={24} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      </div>
+      
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20, marginBottom: 20 }}>
+        <Card>
+          <SectionTitle icon={AlertTriangle}>Top 5 Vulnerabilities</SectionTitle>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {topVulns.map((v, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", background: C.surfaceHover, borderRadius: 6, border: `1px solid ${C.borderLight}` }}>
+                <div style={{ fontSize: 13, color: C.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200 }} title={v.title}>{v.title}</div>
+                <div style={{ fontSize: 13, fontWeight: "bold", color: C.accent }}>{v.count}</div>
+              </div>
+            ))}
+            {topVulns.length === 0 && <div style={{ fontSize: 13, color: C.textMuted, padding: 8 }}>No data available</div>}
+          </div>
+        </Card>
+
+        <Card>
+          <SectionTitle icon={Cloud}>Top 5 Impacted Assets</SectionTitle>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {topAssets.map((a, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", background: C.surfaceHover, borderRadius: 6, border: `1px solid ${C.borderLight}` }}>
+                <div style={{ fontSize: 13, color: C.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200 }} title={a.asset}>{a.asset}</div>
+                <div style={{ fontSize: 13, fontWeight: "bold", color: C.accent }}>{a.count}</div>
+              </div>
+            ))}
+            {topAssets.length === 0 && <div style={{ fontSize: 13, color: C.textMuted, padding: 8 }}>No data available</div>}
+          </div>
+        </Card>
+
+        <Card>
+          <SectionTitle icon={Clock}>Top 5 Oldest Vulnerabilities</SectionTitle>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {oldestVulns.map((v, i) => (
+              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", background: C.surfaceHover, borderRadius: 6, border: `1px solid ${C.borderLight}` }}>
+                <div style={{ fontSize: 13, color: C.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200 }} title={v.vulnName || v.raw?.["Title"]}>{v.vulnName || v.raw?.["Title"] || "Unknown"}</div>
+                <div style={{ fontSize: 13, fontWeight: "bold", color: C.critical }}>{v.ageDays} days</div>
+              </div>
+            ))}
+            {oldestVulns.length === 0 && <div style={{ fontSize: 13, color: C.textMuted, padding: 8 }}>No data available</div>}
+          </div>
+        </Card>
+      </div>
+
+      <Card style={{ marginBottom: 20 }}>
+        <SectionTitle icon={Briefcase}>Application & SLA Breakdown</SectionTitle>
+        <div style={{ overflowX: "auto", overflowY: "auto", maxHeight: 600 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead style={{ position: "sticky", top: 0, zIndex: 1 }}>
+                <tr style={{ background: C.bgElevated, color: C.textMuted, fontSize: 12, textTransform: "uppercase" }}>
+                  <th style={{ padding: "12px 16px", textAlign: "left", fontWeight: 600, borderBottom: `1px solid ${C.border}` }}>Application Name</th>
+                  <th style={{ padding: "12px 16px", textAlign: "center", fontWeight: 600, borderBottom: `1px solid ${C.border}` }}>Total Active</th>
+                  <th style={{ padding: "12px 16px", textAlign: "center", fontWeight: 600, borderBottom: `1px solid ${C.border}` }}>Critical / High</th>
+                  <th style={{ padding: "12px 16px", textAlign: "center", fontWeight: 600, borderBottom: `1px solid ${C.border}` }}>Within SLA</th>
+                  <th style={{ padding: "12px 16px", textAlign: "center", fontWeight: 600, borderBottom: `1px solid ${C.border}` }}>Past Due SLA</th>
+                </tr>
+              </thead>
+              <tbody>
+                {appTableRows.map((r, i) => (
+                  <tr key={i} style={{ borderBottom: `1px solid ${C.borderLight}`, transition: "background 0.2s" }} onMouseOver={e => e.currentTarget.style.background = C.surfaceHover} onMouseOut={e => e.currentTarget.style.background = 'transparent'}>
+                    <td style={{ padding: "12px 16px", fontSize: 13, color: C.textPrimary, fontWeight: 500 }}>{r.app}</td>
+                    <td style={{ padding: "12px 16px", fontSize: 13, color: C.textPrimary, textAlign: "center" }}>{r.total}</td>
+                    <td style={{ padding: "12px 16px", fontSize: 13, color: r.criticalHigh > 0 ? C.high : C.textSecondary, textAlign: "center", fontWeight: r.criticalHigh > 0 ? "bold" : "normal" }}>{r.criticalHigh}</td>
+                    <td style={{ padding: "12px 16px", fontSize: 13, color: r.withinSla > 0 ? C.safe : C.textSecondary, textAlign: "center" }}>{r.withinSla}</td>
+                    <td style={{ padding: "12px 16px", fontSize: 13, color: r.pastDue > 0 ? C.critical : C.textSecondary, textAlign: "center", fontWeight: r.pastDue > 0 ? "bold" : "normal" }}>{r.pastDue}</td>
+                  </tr>
+                ))}
+                {appTableRows.length === 0 && (
+                  <tr>
+                    <td colSpan={5} style={{ padding: "24px 16px", textAlign: "center", color: C.textMuted, fontSize: 13 }}>No applications found matching the current filters.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      
+      {showFollowUpModal && (
+        <FollowUpMailTemplateModal
+          filteredRows={filteredRows}
+          onClose={() => setShowFollowUpModal(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+
+function App() {
+  const [allRows, setAllRows] = useState(null);
+  const [prevRows, setPrevRows] = useState(null);
+  const [rawRows, setRawRows] = useState(null);
+  const [fileName, setFileName] = useState("");
+  const [matchInfo, setMatchInfo] = useState(null);
+  const [page, setPage] = useState("overview");
+  const [selectedVuln, setSelectedVuln] = useState(null);
+  const [filters, setFilters] = useState({ severity: "all", infra: "all", slaStatus: "all", search: "", csp: "all", ifPci: "all", appName: "" });
+
+  const handleData = (computed, name, matched, total) => {
+    const filtered = computed.filter((r) => r.sevNum >= 3);
+    setAllRows(filtered);
+    setFileName(name);
+    setMatchInfo({ matched, total });
+    setPage("overview");
+  };
+
+  const infraOptions = useMemo(() => (allRows ? Array.from(new Set(allRows.map((r) => r.infra))).sort() : []), [allRows]);
+  const cspOptions = useMemo(() => (allRows ? uniqueVals(allRows, "cspVal") : []), [allRows]);
+  const ifPciOptions = useMemo(() => (allRows ? uniqueVals(allRows, "ifOrPciVal") : []), [allRows]);
+  const appNameOptions = useMemo(() => (allRows ? uniqueVals(allRows, "appNameVal") : []), [allRows]);
+
+  const filteredRows = useMemo(() => {
+    if (!allRows) return [];
+    return allRows.filter((r) => {
+      if (filters.severity !== "all" && r.sevNum !== filters.severity) return false;
+      if (filters.infra !== "all" && r.infra !== filters.infra) return false;
+      if (filters.slaStatus === "breached" && !r.breached) return false;
+      if (filters.slaStatus === "within" && (r.breached || !r.isOpen)) return false;
+      if (filters.csp !== "all" && r.cspVal !== filters.csp) return false;
+      if (filters.ifPci !== "all" && r.ifOrPciVal !== filters.ifPci) return false;
+      if (filters.appName && !r.appNameVal.toLowerCase().includes(filters.appName.toLowerCase())) return false;
+      if (filters.search) {
+        const s = filters.search.toLowerCase();
+        const hay = `${r.ip} ${r.dns} ${r.fqdn} ${r.vulnName} ${r.cveId} ${r.assetKey}`.toLowerCase();
+        if (!hay.includes(s)) return false;
+      }
+      return true;
+    });
+  }, [allRows, filters]);
+
+  const kpi = useMemo(() => {
+    const open = filteredRows.filter((r) => r.isOpen);
+    const withAge = open.filter((r) => r.ageDays !== null);
+    const breached = open.filter((r) => r.breached).length;
+    return {
+      totalAssets: new Set(open.map((r) => r.assetKey)).size,
+      totalOpen: open.length,
+      sev5: open.filter((r) => r.sevNum === 5).length,
+      sev4: open.filter((r) => r.sevNum === 4).length,
+      sev3: open.filter((r) => r.sevNum === 3).length,
+      slaBreached: breached,
+      slaCompliance: open.length ? Math.round(((open.length - breached) / open.length) * 100) : 100,
+      avgAge: withAge.length ? Math.round(withAge.reduce((s, r) => s + r.ageDays, 0) / withAge.length) : 0,
+    };
+  }, [filteredRows]);
+
+  const posture = useMemo(() => computePosture(kpi), [kpi]);
+  const infraAgg = useMemo(() => buildInfraAgg(filteredRows), [filteredRows]);
+
+  const ageingHeat = useMemo(() => {
+    const out = { 5: {}, 4: {}, 3: {} };
+    const open = filteredRows.filter((r) => r.isOpen && r.ageDays !== null && [5, 4, 3].includes(r.sevNum));
+    AGE_BUCKETS.forEach((b) => {
+      [5, 4, 3].forEach((s) => {
+        out[s][b.label] = open.filter((r) => r.sevNum === s && r.ageDays >= b.min && r.ageDays <= b.max).length;
+      });
+    });
+    return out;
+  }, [filteredRows]);
+
+  const dataQuality = useMemo(() => {
+    if (!allRows) return { total: 0, missingSeverity: 0, missingDates: 0, duplicates: 0 };
+    const idCounts = new Map();
+    allRows.forEach((r) => {
+      const id = r.uniqueId || r.vulnId;
+      if (id) idCounts.set(id, (idCounts.get(id) || 0) + 1);
+    });
+    let dup = 0;
+    idCounts.forEach((c) => { if (c > 1) dup += c - 1; });
+    return {
+      total: allRows.length,
+      missingSeverity: allRows.filter((r) => !r.hasSeverityData).length,
+      missingDates: allRows.filter((r) => !r.hasDateData).length,
+      duplicates: dup,
+    };
+  }, [allRows]);
+
+  if (!allRows) {
+    return (
+      <div style={{ background: C.bg, minHeight: 560, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Inter, -apple-system, system-ui, sans-serif", padding: 24 }}>
+        <div style={{ width: "100%", maxWidth: 520 }}>
+          <div style={{ textAlign: "center", marginBottom: 24 }}>
+            <ShieldCheck size={36} color={C.accent} style={{ marginBottom: 10 }} />
+            <h1 style={{ fontSize: 20, fontWeight: 700, color: C.textPrimary, margin: "0 0 6px" }}>VulnOps Intelligence</h1>
+            <p style={{ fontSize: 13, color: C.textSecondary, margin: 0 }}>Upload your Qualys export to generate the full risk, ageing, and SLA analysis.</p>
+          </div>
+          <UploadPanel onData={handleData} />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", background: C.bg, minHeight: 640, fontFamily: "Inter, -apple-system, system-ui, sans-serif" }}>
+      <style>{`
+        .vd-row { transition: background .12s ease; }
+        .vd-row:hover { background: ${C.surfaceHover} !important; }
+        .vd-nav { transition: background .12s ease, color .12s ease; }
+        .vd-nav:hover { background: ${C.surfaceHover}; color: ${C.textPrimary}; }
+        .vd-card { transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        .vd-card:hover { border-color: ${C.borderLight}; box-shadow: 0 6px 20px rgba(0,0,0,0.28); transform: translateY(-1px); }
+        select.vd-select option { background: ${C.surface}; color: ${C.textPrimary}; }
+        input, select { transition: border-color .12s ease, box-shadow .12s ease; }
+        input:focus, select:focus { outline: none; border-color: ${C.accent} !important; box-shadow: 0 0 0 3px ${C.accentDim}; }
+      `}</style>
+      <Sidebar page={page} setPage={setPage} fileName={fileName} rowCount={allRows.length} onReset={() => { setAllRows(null); setPrevRows(null); setRawRows(null); }} />
+      <div style={{ flex: 1, padding: 24, minWidth: 0, overflowX: "hidden" }}>
+        <TopBar fileName={fileName} kpi={kpi} posture={posture} />
+        {matchInfo && matchInfo.matched < matchInfo.total * 0.9 && (
+          <div style={{ marginBottom: 16, fontSize: 12, color: C.medium, background: C.mediumDim, padding: "8px 12px", borderRadius: 7 }}>
+            Matched {matchInfo.matched} of {matchInfo.total} expected columns &mdash; some fields may be missing from this export.
+          </div>
+        )}
+        {page !== "compare" && page !== "rawVerify" && page !== "customDashboard" && (
+          <FilterBar
+            filters={filters} setFilters={setFilters}
+            infraOptions={infraOptions} cspOptions={cspOptions}
+            ifPciOptions={ifPciOptions} appNameOptions={appNameOptions}
+          />
+        )}
+
+        {page === "overview" && <OverviewPage rows={filteredRows} kpi={kpi} posture={posture} infraAgg={infraAgg} ageingHeat={ageingHeat} dataQuality={dataQuality} />}
+        {page === "severity" && <SeverityPage rows={filteredRows} />}
+        {page === "ageing" && <AgeingPage rows={filteredRows} />}
+        {page === "sla" && <SlaPage rows={filteredRows} onSelect={setSelectedVuln} />}
+        {page === "topRisk" && <TopRiskPage rows={filteredRows} />}
+        {page === "applications" && <ApplicationsPage rows={filteredRows} />}
+        {page === "ownership" && <OwnershipPage rows={filteredRows} />}
+        {page === "infra" && <InfraPage infraAgg={infraAgg} />}
+        {page === "keyTables" && <KeyTablesPage rows={filteredRows} allRows={allRows} />}
+        {page === "customDashboard" && <CustomDashboardPage rows={allRows} setRows={setAllRows} setAllRows={setAllRows} />}
+        {page === "all" && <AllVulnPage rows={filteredRows} onSelect={setSelectedVuln} />}
+        {page === "compare" && <ComparePage rows={allRows} prevRows={prevRows} setPrevRows={setPrevRows} />}
+        {page === "rawVerify" && <RawVerifyPage allRows={allRows} rawRows={rawRows} setRawRows={setRawRows} />}
+      </div>
+      <VulnDetailPanel vuln={selectedVuln} onClose={() => setSelectedVuln(null)} />
+      <div style={{ position: "fixed", right: 14, bottom: 10, fontSize: 10, color: C.textMuted, opacity: 0.55, letterSpacing: 0.3, pointerEvents: "none", zIndex: 5 }}>
+        Built by Barathraj V
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------ mount ------------------------------ */
+const rootEl = document.getElementById("root");
+ReactDOM.createRoot(rootEl).render(<App />);
+
+</script>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+<script src="https://unpkg.com/recharts@2.12.7/umd/Recharts.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+<script>
+(function () {
+  var mounted = false;
+
+  function showError(title, err) {
+    if (mounted) return;
+    var loader = document.getElementById("boot-loader");
+    var titleEl = document.getElementById("boot-title");
+    var box = document.getElementById("boot-error");
+    var retry = document.getElementById("boot-retry");
+    if (titleEl) titleEl.textContent = title;
+    if (box) {
+      box.style.display = "block";
+      var name = (err && err.name) || "Error";
+      var msg = (err && err.message) || (typeof err === "string" ? err : "Unknown error");
+      var stack = (err && err.stack) || "";
+      box.textContent = name + ": " + msg + (stack ? "\n\n" + stack : "");
+    }
+    if (retry) retry.style.display = "inline-block";
+    if (loader) loader.className = "vd-show";
+  }
+
+  window.addEventListener("error", function (e) {
+    if (!mounted) showError("Failed to load the dashboard", e.error || new Error(e.message || "Unknown script error"));
+  });
+
+  function boot() {
+    try {
+      if (typeof React === "undefined") throw new Error("React failed to load from CDN. Check your internet connection and try again.");
+      if (typeof ReactDOM === "undefined") throw new Error("ReactDOM failed to load from CDN.");
+      if (typeof Recharts === "undefined") throw new Error("Recharts failed to load from CDN.");
+      if (typeof XLSX === "undefined") throw new Error("XLSX (SheetJS) failed to load from CDN.");
+      if (typeof Babel === "undefined") throw new Error("Babel standalone failed to load from CDN.");
+
+      var sourceEl = document.getElementById("app-source");
+      var source = sourceEl.textContent;
+
+      var compiled;
+      try {
+        compiled = Babel.transform(source, { presets: ["react"], filename: "app.jsx", sourceType: "script" }).code;
+      } catch (compileErr) {
+        var e1 = new Error("JSX compile error: " + (compileErr.message || compileErr));
+        e1.stack = compileErr.stack || e1.stack;
+        throw e1;
+      }
+
+      var runner;
+      try {
+        runner = new Function("React", "ReactDOM", "Recharts", compiled);
+      } catch (buildErr) {
+        var e2 = new Error("Compiled script has invalid syntax: " + (buildErr.message || buildErr));
+        e2.stack = buildErr.stack || e2.stack;
+        throw e2;
+      }
+
+      try {
+        runner(React, ReactDOM, Recharts);
+      } catch (runErr) {
+        var e3 = new Error("Dashboard crashed while starting: " + (runErr.message || runErr));
+        e3.stack = runErr.stack || e3.stack;
+        throw e3;
+      }
+
+      mounted = true;
+    } catch (err) {
+      showError("Failed to start the dashboard", err);
+    }
+  }
+
+  boot();
+})();
+</script>
+
+</body>
+</html>

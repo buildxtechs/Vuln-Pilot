@@ -1,0 +1,4578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>VulnOps · Weekly Vulnerability Reporting Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#0B0D12;
+  --bg-grid: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 0);
+  --surface:#12141b;
+  --surface-2:#191c25;
+  --surface-3:#20242f;
+  --border:#262a35;
+  --border-strong:#343a48;
+  --text:#eef0f4;
+  --text-dim:#96a0b0;
+  --text-faint:#616b7a;
+  --accent:#E1122C;
+  --accent-dim:#3a1017;
+  --accent-glow: rgba(225,18,44,0.38);
+  --crit:#B3001F;
+  --high:#F0590B;
+  --med:#F5A800;
+  --ok:#22C766;
+  --danger:#E1122C;
+  --aws:#FF9900;
+  --azure:#0E8AE0;
+  --onprem:#9B6BFF;
+  --radius: 10px;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+  --sans: 'Inter', -apple-system, sans-serif;
+  --disp: 'Space Grotesk', 'Inter', sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    linear-gradient(180deg, rgba(225,18,44,0.07), transparent 340px),
+    radial-gradient(circle at 85% 0%, rgba(14,138,224,0.06), transparent 40%),
+    var(--bg-grid),
+    var(--bg);
+  background-size: auto, auto, 22px 22px, auto;
+  color:var(--text);
+  font-family:var(--sans);
+  font-size:14px;
+  -webkit-font-smoothing:antialiased;
+}
+::selection{ background: var(--accent); color:#fff; }
+::-webkit-scrollbar{ width:10px; height:10px; }
+::-webkit-scrollbar-track{ background:transparent; }
+::-webkit-scrollbar-thumb{ background:var(--border-strong); border-radius:8px; }
+::-webkit-scrollbar-thumb:hover{ background:#4a5264; }
+
+a{ color: var(--accent); }
+button{ font-family:var(--sans); cursor:pointer; }
+input,select,textarea{ font-family:var(--sans); }
+
+.app-shell{ display:flex; min-height:100vh; }
+
+/* ---------- Sidebar ---------- */
+.sidebar{
+  width:230px; flex-shrink:0; background:linear-gradient(180deg,#151821,#0a0c11);
+  border-right:1px solid var(--border); display:flex; flex-direction:column;
+  padding:20px 14px; position:sticky; top:0; height:100vh;
+}
+.brand{ display:flex; align-items:center; gap:10px; padding:4px 6px 20px 6px; }
+.brand-mark{
+  width:34px; height:34px; border-radius:9px; flex-shrink:0;
+  background: conic-gradient(from 220deg, var(--accent), #7A0A16, var(--accent));
+  display:flex; align-items:center; justify-content:center;
+  box-shadow: 0 0 22px var(--accent-glow);
+  font-family:var(--disp); font-weight:700; color:#fff; font-size:15px;
+}
+.brand-text{ line-height:1.15; }
+.brand-text .t1{ font-family:var(--disp); font-weight:700; font-size:15px; letter-spacing:0.2px; }
+.brand-text .t2{ font-size:10.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:1.2px; margin-top:2px; }
+
+.nav{ display:flex; flex-direction:column; gap:3px; margin-top:6px; }
+.nav-item{
+  display:flex; align-items:center; gap:10px; padding:9px 11px; border-radius:8px;
+  color:var(--text-dim); font-size:13px; font-weight:500; border:1px solid transparent; border-left:2px solid transparent;
+  background:transparent; text-align:left; width:100%; transition:all .14s ease; position:relative;
+}
+.nav-item .ico{ width:16px; height:16px; flex-shrink:0; opacity:0.85; transition:transform .16s ease; }
+.nav-item:hover{ background:var(--surface-2); color:var(--text); transform:translateX(2px); }
+.nav-item:hover .ico{ transform:scale(1.1); }
+.nav-item.active{ background:var(--surface-3); color:#FF4D6A; border-color:var(--border-strong); border-left:2px solid var(--accent); }
+.nav-item .n-badge{
+  margin-left:auto; font-family:var(--mono); font-size:10px; background:var(--surface-3);
+  color:var(--text-dim); padding:1px 6px; border-radius:20px; border:1px solid var(--border-strong);
+}
+.nav-item.active .n-badge{ background:var(--accent-dim); color:#FF4D6A; border-color:var(--accent-dim); }
+
+.nav-section-label{ font-size:10px; text-transform:uppercase; letter-spacing:1.4px; color:var(--text-faint); margin:16px 8px 6px; }
+
+.sidebar-foot{ margin-top:auto; padding-top:14px; border-top:1px solid var(--border); }
+.report-date-mini{ font-family:var(--mono); font-size:11px; color:var(--text-dim); padding:4px 6px; }
+.credit{ font-size:10px; color:var(--text-faint); padding:6px 6px 0; letter-spacing:0.3px; }
+
+/* ---------- Main ---------- */
+.main{ flex:1; min-width:0; padding:26px 34px 60px; max-width:1400px; }
+.pagehead{ display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:14px;}
+.pagehead h1{ font-family:var(--disp); font-size:23px; margin:0 0 4px; font-weight:700; letter-spacing:0.2px;}
+.pagehead p{ margin:0; color:var(--text-dim); font-size:13px; max-width:640px; }
+.eyebrow{ font-family:var(--mono); font-size:11px; color:var(--accent); text-transform:uppercase; letter-spacing:2px; margin-bottom:6px; display:block;}
+
+.card{
+  background: linear-gradient(180deg, var(--surface), var(--surface) 60%, #0d0f15);
+  border:1px solid var(--border); border-radius:var(--radius); padding:20px;
+}
+.card + .card{ margin-top:16px; }
+.card-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+.card-title{ font-family:var(--disp); font-weight:600; font-size:14.5px; }
+.card-sub{ color:var(--text-faint); font-size:12px; margin-top:2px; }
+
+.grid{ display:grid; gap:16px; }
+.grid-2{ grid-template-columns:1fr 1fr; }
+.grid-3{ grid-template-columns:repeat(3,1fr); }
+.grid-4{ grid-template-columns:repeat(4,1fr); }
+@media (max-width:1050px){ .grid-4{grid-template-columns:repeat(2,1fr);} .grid-3{grid-template-columns:repeat(2,1fr);} .grid-2{grid-template-columns:1fr;} }
+
+/* buttons */
+.btn{ display:inline-flex; align-items:center; gap:7px; padding:9px 15px; border-radius:8px; font-size:13px; font-weight:600;
+  border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); transition:transform .12s ease, filter .12s ease, border-color .12s ease, background .12s ease, box-shadow .12s ease; }
+.btn:hover{ border-color:#4a5264; background:var(--surface-3); transform:translateY(-1px); }
+.btn:active{ transform:translateY(0) scale(0.97); }
+.btn:disabled{ opacity:0.4; cursor:not-allowed; transform:none !important; }
+.btn-primary{ background:linear-gradient(180deg, #F5324E, var(--accent)); color:#fff; border-color:transparent; box-shadow:0 0 0 1px rgba(225,18,44,0.2), 0 8px 20px -8px var(--accent-glow); }
+.btn-primary:hover{ filter:brightness(1.08); box-shadow:0 0 0 1px rgba(225,18,44,0.28), 0 10px 24px -8px var(--accent-glow); }
+.btn-ghost{ background:transparent; border-color:var(--border); color:var(--text-dim); }
+.btn-ghost:hover{ color:var(--text); border-color:var(--border-strong); }
+.btn-sm{ padding:6px 10px; font-size:12px; border-radius:6px; }
+.btn-danger{ background:transparent; border-color:rgba(225,18,44,0.4); color:var(--danger); }
+.btn-danger:hover{ background:rgba(225,18,44,0.1); border-color:rgba(225,18,44,0.6); }
+.btn-success{ background:linear-gradient(180deg, #2FDE86, var(--ok)); color:#042313; border-color:transparent; box-shadow:0 0 0 1px rgba(34,199,102,0.2), 0 8px 20px -8px rgba(34,199,102,0.4); }
+.btn-success:hover{ filter:brightness(1.08); }
+.btn-info{ background:linear-gradient(180deg, #35A9F7, var(--azure)); color:#fff; border-color:transparent; box-shadow:0 0 0 1px rgba(14,138,224,0.2), 0 8px 20px -8px rgba(14,138,224,0.4); }
+.btn-info:hover{ filter:brightness(1.08); }
+.btn-warn{ background:linear-gradient(180deg, #FFC53D, var(--med)); color:#3a2600; border-color:transparent; box-shadow:0 0 0 1px rgba(245,168,0,0.25), 0 8px 20px -8px rgba(245,168,0,0.4); }
+.btn-warn:hover{ filter:brightness(1.06); }
+.btn-refresh{ background:var(--surface-2); border-color:rgba(14,138,224,0.4); color:#4FB4F5; }
+.btn-refresh:hover{ background:rgba(14,138,224,0.1); border-color:rgba(14,138,224,0.65); color:#6FC6FF; }
+.btn-refresh .ico{ transition:transform .35s ease; }
+.btn-refresh:hover .ico{ transform:rotate(140deg); }
+.btn-icon{ padding:8px; }
+
+/* upload cards */
+.upload-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+@media (max-width:900px){ .upload-grid{ grid-template-columns:1fr; } }
+.upload-card{
+  border:1.5px dashed var(--border-strong); border-radius:var(--radius); padding:18px; position:relative;
+  background:var(--surface); transition:border-color .15s ease;
+}
+.upload-card.filled{ border-style:solid; border-color:var(--accent-dim); background:linear-gradient(180deg, rgba(225,18,44,0.06), var(--surface) 40%); }
+.upload-card .stage-no{ font-family:var(--mono); font-size:11px; color:var(--text-faint); letter-spacing:1px; }
+.upload-card h3{ font-family:var(--disp); font-size:15px; margin:4px 0 2px; }
+.upload-card .req{ font-size:11.5px; color:var(--text-faint); margin-bottom:12px; }
+.dropzone{ border:1px solid var(--border); border-radius:8px; padding:16px; text-align:center; background:var(--surface-2); }
+.dropzone input{ display:none; }
+.dropzone label{ cursor:pointer; color:var(--accent); font-weight:600; font-size:12.5px; }
+.file-meta{ margin-top:12px; font-family:var(--mono); font-size:11.5px; color:var(--text-dim); line-height:1.9; }
+.file-meta .row{ display:flex; justify-content:space-between; gap:10px; }
+.file-meta .ok{ color:var(--ok); }
+.file-meta .warn{ color:var(--med); }
+.chip-row{ display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+.mini-chip{ font-family:var(--mono); font-size:10px; padding:2px 7px; border-radius:20px; background:var(--surface-3); border:1px solid var(--border-strong); color:var(--text-dim); }
+
+/* pipeline rail - signature element */
+.pipeline-rail{ display:flex; align-items:stretch; gap:0; overflow-x:auto; padding:6px 0 10px; }
+.stage-block{ flex:1; min-width:128px; position:relative; padding:16px 14px; border:1px solid var(--border); background:var(--surface-2); }
+.stage-block:first-child{ border-top-left-radius:var(--radius); border-bottom-left-radius:var(--radius); }
+.stage-block:last-child{ border-top-right-radius:var(--radius); border-bottom-right-radius:var(--radius); }
+.stage-block + .stage-block{ border-left:none; }
+.stage-block.done{ background:linear-gradient(180deg, rgba(225,18,44,0.10), var(--surface-2)); }
+.stage-block .sno{ font-family:var(--mono); font-size:10px; color:var(--text-faint); }
+.stage-block.done .sno{ color:var(--accent); }
+.stage-block .slabel{ font-size:11.5px; font-weight:600; margin-top:5px; color:var(--text-dim); }
+.stage-block.done .slabel{ color:var(--text); }
+.stage-block .sval{ font-family:var(--mono); font-size:19px; font-weight:600; margin-top:8px; color:var(--text-faint); }
+.stage-block.done .sval{ color:var(--accent); }
+.stage-arrow{ display:flex; align-items:center; color:var(--border-strong); padding:0 2px; font-size:14px; }
+.stage-block.done + .stage-arrow{ color:var(--accent-dim); }
+
+/* stat cards */
+.stat-card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; position:relative; overflow:hidden; transition:transform .16s ease, box-shadow .16s ease; }
+.stat-card:hover{ transform:translateY(-2px); box-shadow:0 10px 22px -12px rgba(0,0,0,0.5); }
+.stat-card::before{ content:""; position:absolute; top:0; left:0; right:0; height:3px; background:transparent; }
+.stat-card .lbl{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:1px; }
+.stat-card .val{ font-family:var(--disp); font-size:26px; font-weight:700; margin-top:6px; }
+.stat-card .sub{ font-size:11.5px; color:var(--text-dim); margin-top:4px; }
+.stat-card.accent{ background:linear-gradient(160deg, rgba(225,18,44,0.12), var(--surface) 65%); border-color:rgba(225,18,44,0.28); }
+.stat-card.accent::before{ background:var(--accent); }
+.stat-card.accent .val{ color:#FF4D6A; }
+.stat-card.crit{ background:linear-gradient(160deg, rgba(179,0,31,0.14), var(--surface) 65%); border-color:rgba(179,0,31,0.3); }
+.stat-card.crit::before{ background:var(--crit); }
+.stat-card.crit .val{ color:#FF4D6A; }
+.stat-card.high{ background:linear-gradient(160deg, rgba(240,89,11,0.13), var(--surface) 65%); border-color:rgba(240,89,11,0.28); }
+.stat-card.high::before{ background:var(--high); }
+.stat-card.high .val{ color:var(--high); }
+.stat-card.med{ background:linear-gradient(160deg, rgba(245,168,0,0.13), var(--surface) 65%); border-color:rgba(245,168,0,0.28); }
+.stat-card.med::before{ background:var(--med); }
+.stat-card.med .val{ color:var(--med); }
+.stat-card.ok{ background:linear-gradient(160deg, rgba(34,199,102,0.13), var(--surface) 65%); border-color:rgba(34,199,102,0.28); }
+.stat-card.ok::before{ background:var(--ok); }
+.stat-card.ok .val{ color:var(--ok); }
+.stat-card.danger{ background:linear-gradient(160deg, rgba(225,18,44,0.14), var(--surface) 65%); border-color:rgba(225,18,44,0.3); }
+.stat-card.danger::before{ background:var(--danger); }
+.stat-card.danger .val{ color:#FF4D6A; }
+
+/* tables */
+.table-scroll{ overflow:auto; border:1px solid var(--border); border-radius:var(--radius); }
+table.data{ border-collapse:collapse; width:100%; font-size:12.5px; }
+table.data thead th{
+  position:sticky; top:0; background:#171a22; text-align:left; padding:9px 12px; font-size:10.5px;
+  text-transform:uppercase; letter-spacing:0.6px; color:var(--text-faint); border-bottom:1px solid var(--border-strong); white-space:nowrap;
+}
+table.data tbody td{ padding:8px 12px; border-bottom:1px solid var(--border); white-space:nowrap; font-family:var(--mono); color:var(--text-dim); }
+table.data tbody tr:hover{ background:var(--surface-2); }
+table.data tbody tr:last-child td{ border-bottom:none; }
+
+.badge{ display:inline-flex; align-items:center; gap:5px; padding:2px 8px; border-radius:20px; font-size:10.5px; font-weight:600; font-family:var(--mono); border:1px solid; }
+.badge-crit{ color:#FF4D6A; border-color:rgba(179,0,31,0.45); background:rgba(179,0,31,0.16); }
+.badge-high{ color:var(--high); border-color:rgba(240,89,11,0.4); background:rgba(240,89,11,0.13); }
+.badge-med{ color:var(--med); border-color:rgba(245,168,0,0.4); background:rgba(245,168,0,0.14); }
+.badge-ok{ color:var(--ok); border-color:rgba(34,199,102,0.4); background:rgba(34,199,102,0.12); }
+.badge-danger{ color:#FF4D6A; border-color:rgba(225,18,44,0.4); background:rgba(225,18,44,0.13); }
+.badge-aws{ color:var(--aws); border-color:rgba(255,153,0,0.4); background:rgba(255,153,0,0.12); }
+.badge-azure{ color:#4FB4F5; border-color:rgba(14,138,224,0.4); background:rgba(14,138,224,0.13); }
+.badge-info{ color:#4FB4F5; border-color:rgba(14,138,224,0.4); background:rgba(14,138,224,0.13); }
+.badge-neutral{ color:var(--text-dim); border-color:var(--border-strong); background:var(--surface-3); }
+
+/* form bits */
+.field{ margin-bottom:12px; }
+.field label{ display:block; font-size:11.5px; color:var(--text-dim); margin-bottom:5px; font-weight:600; }
+.field input[type=text], .field input[type=number], .field input[type=date], .field select, .field textarea{
+  width:100%; background:var(--surface-2); border:1px solid var(--border-strong); border-radius:7px; padding:8px 10px;
+  color:var(--text); font-size:12.5px; font-family:var(--mono);
+}
+.field textarea{ font-family:var(--mono); min-height:160px; resize:vertical; }
+.inline-fields{ display:flex; gap:10px; }
+.inline-fields .field{ flex:1; }
+
+.config-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+.config-table th{ text-align:left; font-size:10.5px; text-transform:uppercase; color:var(--text-faint); padding:6px 8px; letter-spacing:0.5px; border-bottom:1px solid var(--border-strong); }
+.config-table td{ padding:5px 8px; border-bottom:1px solid var(--border); }
+.config-table input, .config-table select{ width:100%; background:var(--surface-2); border:1px solid var(--border); border-radius:5px; padding:5px 7px; color:var(--text); font-family:var(--mono); font-size:12px; }
+
+.tabs{ display:flex; gap:4px; border-bottom:1px solid var(--border); margin-bottom:16px; flex-wrap:wrap; }
+.tab-btn{ padding:9px 14px; background:transparent; border:none; color:var(--text-dim); font-size:12.5px; font-weight:600; border-bottom:2px solid transparent; margin-bottom:-1px; cursor:pointer; transition:color .14s ease, border-color .14s ease; }
+.tab-btn:hover{ color:var(--text); }
+.tab-btn.active{ color:#FF4D6A; border-bottom-color:var(--accent); }
+
+.searchbar{ display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center; }
+.searchbar input[type=text]{ flex:1; min-width:180px; background:var(--surface-2); border:1px solid var(--border-strong); border-radius:7px; padding:8px 12px; color:var(--text); font-size:12.5px; }
+.searchbar select{ background:var(--surface-2); border:1px solid var(--border-strong); border-radius:7px; padding:8px 10px; color:var(--text); font-size:12px; }
+
+.pager{ display:flex; align-items:center; gap:10px; margin-top:12px; font-size:12px; color:var(--text-dim); }
+.pager button{ background:var(--surface-2); border:1px solid var(--border-strong); border-radius:6px; padding:5px 10px; color:var(--text); font-size:12px; }
+.pager button:disabled{ opacity:0.35; }
+
+.empty-state{ text-align:center; padding:60px 20px; color:var(--text-faint); }
+.empty-state .glyph{ font-size:34px; margin-bottom:10px; opacity:0.6; }
+.empty-state h3{ color:var(--text-dim); font-family:var(--disp); font-weight:600; margin-bottom:6px; }
+.empty-state p{ font-size:12.5px; max-width:380px; margin:0 auto; }
+
+.bar-row{ display:flex; align-items:center; gap:10px; margin-bottom:9px; }
+.bar-label{ width:150px; flex-shrink:0; font-size:12px; color:var(--text-dim); }
+.bar-track{ flex:1; height:9px; background:var(--surface-2); border-radius:6px; overflow:hidden; border:1px solid var(--border); }
+.bar-fill{ height:100%; border-radius:6px; }
+.bar-val{ width:52px; text-align:right; font-family:var(--mono); font-size:12px; color:var(--text-dim); flex-shrink:0; }
+
+.kv-strip{ display:flex; flex-wrap:wrap; gap:8px; }
+.kv{ background:var(--surface-2); border:1px solid var(--border); border-radius:7px; padding:8px 12px; }
+.kv .k{ font-size:10px; text-transform:uppercase; color:var(--text-faint); letter-spacing:0.5px; }
+.kv .v{ font-family:var(--mono); font-size:14px; margin-top:2px; }
+
+.toast{ position:fixed; bottom:22px; right:22px; background:var(--surface-3); border:1px solid var(--border-strong); border-left:3px solid var(--accent); padding:12px 16px; border-radius:8px; font-size:12.5px; max-width:340px; box-shadow:0 12px 30px rgba(0,0,0,0.4); z-index:50; }
+.toast.err{ border-left-color:var(--danger); }
+
+.note-box{ background:var(--surface-2); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:8px; padding:12px 14px; font-size:12px; color:var(--text-dim); line-height:1.6; }
+.note-box.warn{ border-left-color:var(--med); }
+
+.spinner{ width:16px; height:16px; border-radius:50%; border:2px solid rgba(255,255,255,0.18); border-top-color:var(--accent); animation:spin .7s linear infinite; }
+.btn-primary .spinner{ border-color:rgba(255,255,255,0.35); border-top-color:#fff; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+.checkline{ display:flex; align-items:center; gap:7px; font-size:12px; color:var(--text-dim); padding:2px 0; }
+.checkline .dot{ width:6px; height:6px; border-radius:50%; flex-shrink:0; }
+.dot-ok{ background:var(--ok); }
+.dot-warn{ background:var(--med); }
+.dot-bad{ background:var(--danger); }
+
+.scrollx{ overflow-x:auto; }
+.hairline{ height:1px; background:var(--border); margin:16px 0; }
+code.inline{ font-family:var(--mono); background:var(--surface-3); padding:1px 6px; border-radius:4px; font-size:11.5px; color:var(--accent); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+const {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useRef
+} = React;
+
+/* ============================================================
+   CONSTANTS & FIELD DEFINITIONS
+   ============================================================ */
+
+const FINAL_COLUMNS = ["Application Name", "APM ID", "Scan Type", "IP", "DNS", "NetBIOS", "Tracking Method", "OS", "IP Status", "Unique id", "Vulnerability Name", "Vulnerability Status", "Type", "Risk Rating", "Port", "Protocol", "FQDN", "SSL", "First Found date", "Last Detected", "Times Detected", "Date Last Fixed", "First Reopened", "Last Reopened", "Times Reopened", "CVE ID", "Vendor Reference", "Bugtraq ID", "Threat", "Impact", "Recommendation", "Exploitability", "Results", "PCI Vuln", "Ticket State", "Instance", "Category", "QDS", "ARS", "ACS", "TruRisk Score", "IF or PCI", "Source", "SLA", "Vulnerability Age", "App Owner", "Organization", "IF", "PCI", "Impacted Asset", "Cloud Account Name", "Environment", "CSP", "Vulnerability ID", "Vulnerability Category", "Within SLA/Past due SLA", "Weekly Metrics"];
+const QUALYS_ALIASES = {
+  IP: ["IP"],
+  DNS: ["DNS"],
+  NetBIOS: ["NetBIOS"],
+  TrackingMethod: ["Tracking Method"],
+  OS: ["OS"],
+  IPStatus: ["IP Status"],
+  QID: ["QID"],
+  Title: ["Title"],
+  VulnStatus: ["Vuln Status", "Vulnerability Status", "Status"],
+  Type: ["Type"],
+  Severity: ["Severity"],
+  Port: ["Port"],
+  Protocol: ["Protocol"],
+  FQDN: ["FQDN"],
+  SSL: ["SSL"],
+  FirstDetected: ["First Detected"],
+  LastDetected: ["Last Detected"],
+  TimesDetected: ["Times Detected"],
+  DateLastFixed: ["Date Last Fixed"],
+  FirstReopened: ["First Reopened"],
+  LastReopened: ["Last Reopened"],
+  TimesReopened: ["Times Reopened"],
+  CVEID: ["CVE ID"],
+  VendorReference: ["Vendor Reference"],
+  BugtraqID: ["Bugtraq ID"],
+  Threat: ["Threat"],
+  Impact: ["Impact"],
+  Solution: ["Solution"],
+  Exploitability: ["Exploitability"],
+  Results: ["Results"],
+  PCIVuln: ["PCI Vuln"],
+  TicketState: ["Ticket State"],
+  Instance: ["Instance"],
+  Category: ["Category"],
+  AssociatedTags: ["Associated Tags"],
+  QDS: ["QDS"],
+  ARS: ["ARS"],
+  ACS: ["ACS"],
+  TruRiskScore: ["TruRisk Score"]
+};
+const QUALYS_REQUIRED = ["IP", "QID", "Severity", "Title", "VulnStatus", "FirstDetected"];
+const AWS_ALIASES = {
+  AccountId: ["AccountId"],
+  AccountName: ["AccountName"],
+  Region: ["Region"],
+  InstanceId: ["InstanceId"],
+  InstanceName: ["InstanceName"],
+  PrivateIpAddress: ["PrivateIpAddress"],
+  PublicIpAddress: ["PublicIpAddress"],
+  InstanceType: ["InstanceType"],
+  InstanceState: ["InstanceState"],
+  PlatformDetails: ["PlatformDetails"],
+  CreationDate: ["CreationDate"],
+  VpcId: ["VpcId"],
+  AmiId: ["AmiId"],
+  AppOwner: ["CAT-AppOwner"],
+  MOTSID: ["CAT-MOTSID"],
+  AVP: ["CAT-AVP"],
+  AppName: ["CAT-AppName"],
+  Dir: ["CAT-Dir"],
+  SVP: ["CAT-SVP"],
+  SrDir: ["CAT-SrDir"],
+  VP: ["CAT-VP"]
+};
+const AWS_REQUIRED = ["PrivateIpAddress", "InstanceState", "AccountName", "InstanceName"];
+const AZURE_ALIASES = {
+  NAME: ["NAME"],
+  SUBSCRIPTION: ["SUBSCRIPTION"],
+  RESOURCEGROUP: ["RESOURCE GROUP"],
+  LOCATION: ["LOCATION"],
+  STATUS: ["STATUS"],
+  OS: ["OPERATING SYSTEM"],
+  SIZE: ["SIZE"],
+  PRIVATEIP: ["PRIVATE IP ADDRESS"],
+  DISKS: ["DISKS"],
+  MOTSID: ["MOTS_ID (TAG)"],
+  OWNERNAME: ["OWNERNAME (TAG)"],
+  RESOURCELINK: ["RESOURCE LINK"]
+};
+const AZURE_REQUIRED = ["PRIVATEIP", "STATUS", "SUBSCRIPTION", "NAME"];
+const CMDB_TARGETS = [{
+  key: "ip",
+  label: "IP Address",
+  guesses: ["ip", "ipaddress", "assetip", "hostip"],
+  required: false
+}, {
+  key: "hostname",
+  label: "Hostname / DNS (fallback match)",
+  guesses: ["hostname", "dns", "hostdns", "fqdn", "assetname"],
+  required: false
+}, {
+  key: "appName",
+  label: "Application Name",
+  guesses: ["applicationname", "appname", "application"],
+  required: true
+}, {
+  key: "apmId",
+  label: "APM ID",
+  guesses: ["apmid", "apm"],
+  required: true
+}, {
+  key: "ifFlag",
+  label: "IF (Internet-Facing)",
+  guesses: ["if", "internetfacing", "isinternetfacing"],
+  required: false
+}, {
+  key: "pciFlag",
+  label: "PCI",
+  guesses: ["pci", "pciscope", "ispci"],
+  required: false
+}, {
+  key: "appOwner",
+  label: "App Owner",
+  guesses: ["appowner", "applicationowner", "owner"],
+  required: false
+}, {
+  key: "organization",
+  label: "Organization",
+  guesses: ["organization", "org", "businessunit", "bu"],
+  required: false
+}, {
+  key: "environment",
+  label: "Environment",
+  guesses: ["environment", "env"],
+  required: false
+}, {
+  key: "correlationId",
+  label: "Correlation ID (5-digit account/subscription match)",
+  guesses: ["correlationid", "correlation", "accountcorrelationid", "corrid", "corrnumber"],
+  required: false
+}];
+const DEFAULT_SLA_RULES = [{
+  classification: "IF",
+  risk: 5,
+  days: 30
+}, {
+  classification: "IF",
+  risk: 4,
+  days: 90
+}, {
+  classification: "IF",
+  risk: 3,
+  days: 180
+}, {
+  classification: "PCI",
+  risk: 5,
+  days: 30
+}, {
+  classification: "PCI",
+  risk: 4,
+  days: 90
+}, {
+  classification: "PCI",
+  risk: 3,
+  days: 180
+}, {
+  classification: "IF & PCI",
+  risk: 5,
+  days: 30
+}, {
+  classification: "IF & PCI",
+  risk: 4,
+  days: 90
+}, {
+  classification: "IF & PCI",
+  risk: 3,
+  days: 180
+}, {
+  classification: "Non-IF/Non-PCI",
+  risk: 5,
+  days: 30
+}, {
+  classification: "Non-IF/Non-PCI",
+  risk: 4,
+  days: 120
+}, {
+  classification: "Non-IF/Non-PCI",
+  risk: 3,
+  days: 180
+}, {
+  classification: "Unknown",
+  risk: 5,
+  days: 30
+}, {
+  classification: "Unknown",
+  risk: 4,
+  days: 120
+}, {
+  classification: "Unknown",
+  risk: 3,
+  days: 180
+}];
+const DEFAULT_SCAN_TYPE_RULES = [{
+  match: "AGENT",
+  scanType: "Agent"
+}, {
+  match: "INSTANCE",
+  scanType: "Cloud Agent"
+}, {
+  match: "IP",
+  scanType: "Network"
+}, {
+  match: "DNS",
+  scanType: "Network"
+}, {
+  match: "NETBIOS",
+  scanType: "Network"
+}];
+const SEVERITY_LABEL = {
+  5: "Critical",
+  4: "High",
+  3: "Medium",
+  2: "Low",
+  1: "Info"
+};
+const todayISO = () => new Date().toISOString().slice(0, 10);
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+
+function normHeader(h) {
+  return String(h == null ? "" : h).trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+function buildHeaderMap(headers) {
+  const map = {};
+  (headers || []).forEach(h => {
+    map[normHeader(h)] = h;
+  });
+  return map;
+}
+function findHeader(headerMap, aliases) {
+  for (const a of aliases) {
+    const hit = headerMap[normHeader(a)];
+    if (hit) return hit;
+  }
+  return null;
+}
+function resolveAliasSet(headers, aliasDict) {
+  const hm = buildHeaderMap(headers);
+  const resolved = {};
+  Object.keys(aliasDict).forEach(k => {
+    resolved[k] = findHeader(hm, aliasDict[k]);
+  });
+  return resolved;
+}
+function autoGuessCmdbMapping(headers) {
+  const hm = buildHeaderMap(headers);
+  const mapping = {};
+  CMDB_TARGETS.forEach(t => {
+    let found = null;
+    for (const g of t.guesses) {
+      const ng = normHeader(g);
+      const exact = hm[ng];
+      if (exact) {
+        found = exact;
+        break;
+      }
+    }
+    if (!found) {
+      // contains-match fallback
+      const keys = Object.keys(hm);
+      for (const g of t.guesses) {
+        const ng = normHeader(g);
+        const hitKey = keys.find(k => k.includes(ng) || ng.includes(k));
+        if (hitKey) {
+          found = hm[hitKey];
+          break;
+        }
+      }
+    }
+    mapping[t.key] = found || "";
+  });
+  return mapping;
+}
+function normText(v) {
+  return String(v == null ? "" : v).trim();
+}
+function normTextLower(v) {
+  return normText(v).toLowerCase();
+}
+function normIP(v) {
+  const s = normText(v);
+  if (!s) return "";
+  const parts = s.split(".");
+  if (parts.length !== 4) return "";
+  for (const p of parts) {
+    const n = Number(p);
+    if (!Number.isInteger(n) || n < 0 || n > 255) return "";
+  }
+  return s;
+}
+function isValidIP(v) {
+  return normIP(v) !== "";
+}
+
+// Cloud account names / subscription names (e.g. "PROD-12345-APP") carry a 5-digit
+// number that also appears in the CMDB's correlation field. Extract it from either side.
+function extractFiveDigit(v) {
+  const s = normText(v);
+  const m = s.match(/(\d{5})/);
+  return m ? m[1] : "";
+}
+const MONTHS = {
+  jan: 0,
+  feb: 1,
+  mar: 2,
+  apr: 3,
+  may: 4,
+  jun: 5,
+  jul: 6,
+  aug: 7,
+  sep: 8,
+  oct: 9,
+  nov: 10,
+  dec: 11
+};
+function parseDateFlexible(v) {
+  if (v === null || v === undefined || v === "") return null;
+  if (v instanceof Date && !isNaN(v)) return v;
+  if (typeof v === "number") {
+    // excel serial fallback
+    const d = new Date(Math.round((v - 25569) * 86400 * 1000));
+    if (!isNaN(d)) return d;
+    return null;
+  }
+  const s = String(v).trim();
+  if (!s) return null;
+  // dd-mmm-yyyy or dd-mmm-yy  (e.g. 20-Aug-2026)
+  let m = s.match(/^(\d{1,2})[-\/ ]([A-Za-z]{3,})[-\/ ](\d{2,4})/);
+  if (m) {
+    const mon = MONTHS[m[2].toLowerCase().slice(0, 3)];
+    if (mon !== undefined) {
+      let yr = parseInt(m[3], 10);
+      if (yr < 100) yr += 2000;
+      return new Date(yr, mon, parseInt(m[1], 10));
+    }
+  }
+  // yyyy-mm-dd
+  m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if (m) return new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, parseInt(m[3], 10));
+  // mm/dd/yyyy
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+  if (m) {
+    let yr = parseInt(m[3], 10);
+    if (yr < 100) yr += 2000;
+    return new Date(yr, parseInt(m[1], 10) - 1, parseInt(m[2], 10));
+  }
+  const fallback = new Date(s);
+  if (!isNaN(fallback)) return fallback;
+  return null;
+}
+function fmtDate(d) {
+  if (!d) return "";
+  const dt = d instanceof Date ? d : parseDateFlexible(d);
+  if (!dt || isNaN(dt)) return "";
+  const y = dt.getFullYear(),
+    m = String(dt.getMonth() + 1).padStart(2, "0"),
+    day = String(dt.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+// Keeps date columns exactly as they appeared in the uploaded raw report — if the source
+// cell was text (typical for CSV or a text-formatted Excel column), that literal string is
+// reused untouched. Only if the source workbook stored a true Excel date cell (parsed to a
+// JS Date by SheetJS, with no original text to fall back on) is it rendered back out, using
+// the same MM/DD/YYYY HH:MM:SS layout Qualys itself exports. Calculations (age, SLA, etc.)
+// still use the separately-parsed Date object — this only affects what's displayed/exported.
+function preserveOriginalDate(rawVal) {
+  if (rawVal === null || rawVal === undefined || rawVal === "") return "";
+  if (rawVal instanceof Date) {
+    if (isNaN(rawVal)) return "";
+    const pad = n => String(n).padStart(2, "0");
+    return `${pad(rawVal.getMonth() + 1)}/${pad(rawVal.getDate())}/${rawVal.getFullYear()} ${pad(rawVal.getHours())}:${pad(rawVal.getMinutes())}:${pad(rawVal.getSeconds())}`;
+  }
+  return String(rawVal).trim();
+}
+function daysBetween(later, earlier) {
+  if (!later || !earlier) return null;
+  const ms = later.setHours ? later.getTime() - earlier.getTime() : null;
+  const diff = Math.floor((later.getTime() - earlier.getTime()) / 86400000);
+  return diff;
+}
+function truthy(v) {
+  const s = normTextLower(v);
+  return ["yes", "y", "true", "1", "x", "internet facing"].includes(s);
+}
+function safeNum(v, fallback) {
+  const n = Number(v);
+  return isNaN(n) ? fallback : n;
+}
+function uid() {
+  return Math.random().toString(36).slice(2, 10);
+}
+
+/* ============================================================
+   FILE PARSING
+   ============================================================ */
+
+async function parseAnyFile(file) {
+  const ext = file.name.split(".").pop().toLowerCase();
+  const buf = await file.arrayBuffer();
+  let wb;
+  if (ext === "csv") {
+    const text = new TextDecoder("utf-8").decode(buf);
+    wb = XLSX.read(text, {
+      type: "string",
+      raw: true
+    });
+  } else {
+    wb = XLSX.read(buf, {
+      type: "array",
+      cellDates: true
+    });
+  }
+  const sheetName = wb.SheetNames[0];
+  const ws = wb.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(ws, {
+    defval: "",
+    raw: true
+  });
+  let headers = [];
+  if (rows.length) {
+    headers = Object.keys(rows[0]);
+  } else {
+    const aoa = XLSX.utils.sheet_to_json(ws, {
+      header: 1
+    });
+    headers = aoa[0] || [];
+  }
+  return {
+    headers,
+    rows,
+    recordCount: rows.length,
+    fileName: file.name,
+    sheetName
+  };
+}
+
+/* ============================================================
+   PIPELINE / PROCESSING ENGINE
+   ============================================================ */
+
+function buildAwsIndex(awsRows, fieldMap) {
+  const idx = new Map();
+  const dupes = new Set();
+  (awsRows || []).forEach(r => {
+    const ip = normIP(r[fieldMap.PrivateIpAddress]);
+    if (!ip) return;
+    if (idx.has(ip)) dupes.add(ip);
+    if (!idx.has(ip)) idx.set(ip, []);
+    idx.get(ip).push(r);
+  });
+  return {
+    idx,
+    dupes
+  };
+}
+function buildAzureIndex(azureRows, fieldMap) {
+  const idx = new Map();
+  const dupes = new Set();
+  (azureRows || []).forEach(r => {
+    const ip = normIP(r[fieldMap.PRIVATEIP]);
+    if (!ip) return;
+    if (idx.has(ip)) dupes.add(ip);
+    if (!idx.has(ip)) idx.set(ip, []);
+    idx.get(ip).push(r);
+  });
+  return {
+    idx,
+    dupes
+  };
+}
+function buildCmdbIndex(cmdbRows, mapping) {
+  const byIP = new Map();
+  const byHost = new Map();
+  const byCorrelation = new Map();
+  (cmdbRows || []).forEach(r => {
+    if (mapping.ip) {
+      const ip = normIP(r[mapping.ip]);
+      if (ip) {
+        if (!byIP.has(ip)) byIP.set(ip, []);
+        byIP.get(ip).push(r);
+      }
+    }
+    if (mapping.hostname) {
+      const h = normTextLower(r[mapping.hostname]);
+      if (h) {
+        if (!byHost.has(h)) byHost.set(h, []);
+        byHost.get(h).push(r);
+      }
+    }
+    if (mapping.correlationId) {
+      const corr = extractFiveDigit(r[mapping.correlationId]);
+      if (corr) {
+        if (!byCorrelation.has(corr)) byCorrelation.set(corr, []);
+        byCorrelation.get(corr).push(r);
+      }
+    }
+  });
+  return {
+    byIP,
+    byHost,
+    byCorrelation
+  };
+}
+function classifyIfPci(ifVal, pciVal, ifMapped, pciMapped) {
+  if (!ifMapped && !pciMapped) return {
+    IF: "Unknown",
+    PCI: "Unknown",
+    classification: "Unknown"
+  };
+  const IF = ifMapped ? truthy(ifVal) ? "Yes" : "No" : "Unknown";
+  const PCI = pciMapped ? truthy(pciVal) ? "Yes" : "No" : "Unknown";
+  let classification = "Non-IF/Non-PCI";
+  if (IF === "Unknown" && PCI === "Unknown") classification = "Unknown";else if (IF === "Yes" && PCI === "Yes") classification = "IF & PCI";else if (IF === "Yes") classification = "IF";else if (PCI === "Yes") classification = "PCI";else classification = "Non-IF/Non-PCI";
+  return {
+    IF,
+    PCI,
+    classification
+  };
+}
+function lookupSla(slaRules, classification, risk) {
+  let rule = slaRules.find(r => r.classification === classification && Number(r.risk) === Number(risk));
+  if (rule) return {
+    days: Number(rule.days),
+    matched: true
+  };
+  if (classification === "IF & PCI") {
+    const ifR = slaRules.find(r => r.classification === "IF" && Number(r.risk) === Number(risk));
+    const pciR = slaRules.find(r => r.classification === "PCI" && Number(r.risk) === Number(risk));
+    if (ifR || pciR) {
+      const days = Math.min(...[ifR, pciR].filter(Boolean).map(r => Number(r.days)));
+      return {
+        days,
+        matched: true
+      };
+    }
+  }
+  rule = slaRules.find(r => r.classification === "Non-IF/Non-PCI" && Number(r.risk) === Number(risk));
+  if (rule) return {
+    days: Number(rule.days),
+    matched: false
+  };
+  return {
+    days: 30,
+    matched: false
+  };
+}
+function deriveScanType(trackingMethod, scanTypeRules) {
+  const tm = normTextLower(trackingMethod);
+  if (!tm) return "Unknown";
+  for (const rule of scanTypeRules) {
+    if (tm.includes(normTextLower(rule.match))) return rule.scanType;
+  }
+  return "Unknown";
+}
+
+// Vulnerability Category is decided automatically — no CMDB/config mapping required.
+// Every vulnerability is classified as belonging to the "Operating System" (the underlying
+// platform: Windows/Linux/Unix patches, kernel, local privilege issues, etc.) or the
+// "Application" running on top of it (web servers, databases, browsers, middleware, etc.),
+// based on keyword signals in Qualys's own Category, Title and OS fields.
+const OS_CATEGORY_KEYWORDS = ["windows","microsoft windows","linux","unix","solaris","red hat","redhat","rhel","centos","suse","ubuntu","debian","aix","hp-ux","hpux","macos","mac os","os x","freebsd","netbsd","kernel","operating system","local","service pack","hotfix","security update","cumulative update","patch tuesday"];
+const APP_CATEGORY_KEYWORDS = ["web application","apache","nginx","tomcat","java","php","oracle","mysql","postgres","postgresql","sql server","database","adobe","chrome","firefox","edge browser","browser","office","exchange","sharepoint","iis","ftp","ssh","openssl","node.js","nodejs","python","docker","kubernetes","jenkins","wordpress","drupal","joomla","citrix","vmware","cisco","juniper","f5","cms","mail service","dns and bind","tls/ssl","web server"];
+
+function classifyVulnCategory(row, qMap){
+  const category = normTextLower(row[qMap.Category]);
+  const title = normTextLower(row[qMap.Title]);
+  const os = normTextLower(row[qMap.OS]);
+  const haystack = category + " " + title;
+  const hasOS = OS_CATEGORY_KEYWORDS.some(k => haystack.includes(k));
+  const hasApp = APP_CATEGORY_KEYWORDS.some(k => haystack.includes(k));
+  if(hasOS && !hasApp) return "Operating System";
+  if(hasApp && !hasOS) return "Application";
+  if(hasOS && hasApp) return "Application"; // app-specific keyword found alongside a generic OS mention — treat as application-layer
+  if(os && (category === "" || category === "general")) return "Operating System";
+  return "Application";
+}
+
+// Shared weekly-metrics rollup — used both by the pipeline (whole dataset) and by the
+// Dashboard's live filters (any filtered subset), so the two never drift out of sync.
+function computeWeeklyMetricsFromRows(rows){
+  return {
+    "Total Vulnerabilities": rows.length,
+    "New Vulnerabilities": rows.filter(r => r["Weekly Metrics"] === "New").length,
+    "Existing Vulnerabilities": rows.filter(r => r["Weekly Metrics"] === "Existing").length,
+    "Reopened Vulnerabilities": rows.filter(r => r["Weekly Metrics"] === "Reopened").length,
+    "Fixed Vulnerabilities": rows.filter(r => r["Weekly Metrics"] === "Fixed").length,
+    "Past Due Vulnerabilities": rows.filter(r => r["Within SLA/Past due SLA"] === "Past Due SLA").length,
+    "Within SLA": rows.filter(r => r["Within SLA/Past due SLA"] === "Within SLA").length,
+    "Severity 5": rows.filter(r => r["Risk Rating"] === 5).length,
+    "Severity 4": rows.filter(r => r["Risk Rating"] === 4).length,
+    "Severity 3": rows.filter(r => r["Risk Rating"] === 3).length,
+    "IF Vulnerabilities": rows.filter(r => r["IF"] === "Yes").length,
+    "PCI Vulnerabilities": rows.filter(r => r["PCI"] === "Yes").length,
+    "AWS Vulnerabilities": rows.filter(r => r["CSP"] === "AWS").length,
+    "Azure Vulnerabilities": rows.filter(r => r["CSP"] === "Azure").length
+  };
+}
+
+function runPipeline({
+  qualysData,
+  awsData,
+  azureData,
+  cmdbData,
+  cmdbMapping,
+  config,
+  previousFinalRows
+}) {
+  const stats = {
+    qualysTotal: 0,
+    sev1Removed: 0,
+    sev2Removed: 0,
+    invalidSeverity: 0,
+    afterSeverityFilter: 0,
+    awsRunningMatches: 0,
+    awsNotRunning: 0,
+    azureRunningMatches: 0,
+    azureNotRunning: 0,
+    noCloudMatch: 0,
+    cmdbMatches: 0,
+    cmdbDuplicates: 0,
+    cmdbMissing: 0,
+    finalOutcome: 0,
+    invalidIP: 0,
+    missingQID: 0
+  };
+  const exceptions = [];
+  const addException = (row, reason, source, details) => {
+    exceptions.push({
+      IP: row ? row[qMap.IP] || "" : "",
+      QID: row ? row[qMap.QID] || "" : "",
+      Reason: reason,
+      Source: source || "",
+      Details: details || ""
+    });
+  };
+  const qHeaders = qualysData ? qualysData.headers : [];
+  const qMap = resolveAliasSet(qHeaders, QUALYS_ALIASES);
+  const aHeaders = awsData ? awsData.headers : [];
+  const aMap = resolveAliasSet(aHeaders, AWS_ALIASES);
+  const zHeaders = azureData ? azureData.headers : [];
+  const zMap = resolveAliasSet(zHeaders, AZURE_ALIASES);
+  const awsIndex = buildAwsIndex(awsData ? awsData.rows : [], aMap);
+  const azureIndex = buildAzureIndex(azureData ? azureData.rows : [], zMap);
+  const cmdbIndex = buildCmdbIndex(cmdbData ? cmdbData.rows : [], cmdbMapping);
+  const exceptionApprovalSet = new Set();
+  (config.exceptionApprovals || []).forEach(rule => {
+    const apm = normTextLower(rule.apmId);
+    if (!apm) return;
+    (rule.vulnNames || []).forEach(vn => exceptionApprovalSet.add(apm + "|||" + normTextLower(vn)));
+  });
+  const qualysRows = qualysData ? qualysData.rows : [];
+  stats.qualysTotal = qualysRows.length;
+  stats.exceptionApprovedCount = 0;
+  const reportDate = parseDateFlexible(config.reportDate) || new Date();
+  const todayForAge = new Date();
+  todayForAge.setHours(0, 0, 0, 0);
+  const minSeverity = safeNum(config.severityMin, 3);
+
+  // previous week index for New/Existing/Reopened/Fixed comparison
+  let prevIdSet = null;
+  if (previousFinalRows && previousFinalRows.length) {
+    prevIdSet = new Set(previousFinalRows.map(r => r["Unique id"]));
+  }
+  const finalRows = [];
+  const awsOnly = [];
+  const azureOnly = [];
+  qualysRows.forEach(row => {
+    const sevRaw = row[qMap.Severity];
+    const sev = safeNum(sevRaw, null);
+    if (sev === null) {
+      stats.invalidSeverity++;
+      addException(row, "Invalid Severity", "Qualys", `Severity value: ${sevRaw}`);
+      return;
+    }
+    if (sev === 1) {
+      stats.sev1Removed++;
+      return;
+    }
+    if (sev === 2) {
+      stats.sev2Removed++;
+      return;
+    }
+    if (sev < minSeverity) {
+      return;
+    }
+    const ipRaw = row[qMap.IP];
+    const ip = normIP(ipRaw);
+    if (!ip) {
+      stats.invalidIP++;
+      addException(row, "Invalid IP", "Qualys", `IP value: ${ipRaw}`);
+      return;
+    }
+    const qid = normText(row[qMap.QID]);
+    if (!qid) {
+      stats.missingQID++;
+      addException(row, "Missing QID", "Qualys", "");
+      return;
+    }
+    stats.afterSeverityFilter++;
+    const uniqueId = `${ip}/${qid}`;
+    const vulnerabilityId = `${ip}/${qid}`;
+
+    // Cloud matching
+    let csp = "",
+      cloudAccountName = "",
+      impactedAsset = ip,
+      cloudEnv = "";
+    let matchedCloud = false;
+    const awsHit = awsIndex.idx.get(ip);
+    if (awsHit && awsHit.length) {
+      if (awsIndex.dupes.has(ip)) addException(row, "Duplicate AWS IP", "AWS", `${awsHit.length} AWS records share IP ${ip}`);
+      const rec = awsHit[0];
+      const state = normTextLower(rec[aMap.InstanceState]);
+      if (state === "running") {
+        matchedCloud = true;
+        csp = "AWS";
+        cloudAccountName = normText(rec[aMap.AccountName]);
+        impactedAsset = ip;
+        stats.awsRunningMatches++;
+        awsOnly.push({
+          __ip: ip,
+          __qid: qid,
+          rec,
+          qrow: row
+        });
+      } else {
+        stats.awsNotRunning++;
+        addException(row, "AWS IP Not Running", "AWS", `InstanceState=${rec[aMap.InstanceState]}`);
+      }
+    }
+    if (!matchedCloud) {
+      const azHit = azureIndex.idx.get(ip);
+      if (azHit && azHit.length) {
+        if (azureIndex.dupes.has(ip)) addException(row, "Duplicate Azure IP", "Azure", `${azHit.length} Azure records share IP ${ip}`);
+        const rec = azHit[0];
+        const state = normTextLower(rec[zMap.STATUS]);
+        if (state === "running") {
+          matchedCloud = true;
+          csp = "Azure";
+          cloudAccountName = normText(rec[zMap.SUBSCRIPTION]);
+          impactedAsset = ip;
+          stats.azureRunningMatches++;
+          azureOnly.push({
+            __ip: ip,
+            __qid: qid,
+            rec,
+            qrow: row
+          });
+        } else {
+          stats.azureNotRunning++;
+          addException(row, "Azure IP Not Running", "Azure", `STATUS=${rec[zMap.STATUS]}`);
+        }
+      }
+    }
+    if (!matchedCloud) {
+      stats.noCloudMatch++;
+      addException(row, "No Cloud Inventory Match", "Cloud", `IP ${ip} not found running in AWS or Azure`);
+    }
+
+    // CMDB matching — priority: IP, then Correlation ID (5-digit code shared between
+    // the cloud Account/Subscription name and the CMDB correlation field), then hostname.
+    let cmdbRec = null,
+      cmdbDup = false,
+      cmdbMatchMethod = "";
+    if (cmdbMapping.ip) {
+      const hits = cmdbIndex.byIP.get(ip);
+      if (hits && hits.length) {
+        cmdbRec = hits[0];
+        cmdbMatchMethod = "IP";
+        if (hits.length > 1) {
+          cmdbDup = true;
+        }
+      }
+    }
+    let correlationCode = "";
+    if (!cmdbRec && cmdbMapping.correlationId && cloudAccountName) {
+      correlationCode = extractFiveDigit(cloudAccountName);
+      if (correlationCode) {
+        const hits = cmdbIndex.byCorrelation.get(correlationCode);
+        if (hits && hits.length) {
+          cmdbRec = hits[0];
+          cmdbMatchMethod = "Correlation ID";
+          if (hits.length > 1) {
+            cmdbDup = true;
+          }
+        }
+      }
+    }
+    if (!cmdbRec && cmdbMapping.hostname) {
+      const hn = normTextLower(row[qMap.DNS]) || normTextLower(row[qMap.NetBIOS]);
+      if (hn) {
+        const hits = cmdbIndex.byHost.get(hn);
+        if (hits && hits.length) {
+          cmdbRec = hits[0];
+          cmdbMatchMethod = "Hostname";
+          if (hits.length > 1) {
+            cmdbDup = true;
+          }
+        }
+      }
+    }
+    if (cmdbRec) {
+      stats.cmdbMatches++;
+      if (cmdbMatchMethod === "IP") stats.cmdbMatchByIP = (stats.cmdbMatchByIP || 0) + 1;
+      if (cmdbMatchMethod === "Correlation ID") stats.cmdbMatchByCorrelation = (stats.cmdbMatchByCorrelation || 0) + 1;
+      if (cmdbMatchMethod === "Hostname") stats.cmdbMatchByHostname = (stats.cmdbMatchByHostname || 0) + 1;
+      if (cmdbDup) {
+        stats.cmdbDuplicates++;
+        addException(row, "CMDB Duplicate Match", "CMDB", `Multiple CMDB records matched via ${cmdbMatchMethod} for ${cmdbMatchMethod === "Correlation ID" ? "code " + correlationCode : ip}`);
+      }
+    } else {
+      stats.cmdbMissing++;
+      addException(row, "CMDB Match Missing", "CMDB", correlationCode ? `No CMDB record for IP ${ip} or correlation code ${correlationCode}` : `No CMDB record for IP ${ip}`);
+    }
+    const appName = cmdbRec && cmdbMapping.appName ? normText(cmdbRec[cmdbMapping.appName]) : "";
+    const apmId = cmdbRec && cmdbMapping.apmId ? normText(cmdbRec[cmdbMapping.apmId]) : "";
+    if (cmdbRec) {
+      if (!appName) addException(row, "Missing Application", "CMDB", "CMDB matched but Application Name blank");
+      if (!apmId) addException(row, "Missing APM ID", "CMDB", "CMDB matched but APM ID blank");
+    }
+    const ifPci = classifyIfPci(cmdbRec ? cmdbRec[cmdbMapping.ifFlag] : null, cmdbRec ? cmdbRec[cmdbMapping.pciFlag] : null, !!cmdbMapping.ifFlag && !!cmdbRec, !!cmdbMapping.pciFlag && !!cmdbRec);
+    const appOwner = cmdbRec && cmdbMapping.appOwner ? normText(cmdbRec[cmdbMapping.appOwner]) : "";
+    const organization = cmdbRec && cmdbMapping.organization ? normText(cmdbRec[cmdbMapping.organization]) : "";
+    const environment = cmdbRec && cmdbMapping.environment ? normText(cmdbRec[cmdbMapping.environment]) : "Unknown";
+    const vulnCategory = classifyVulnCategory(row, qMap);
+    const source = "IVM";
+    const scanType = deriveScanType(row[qMap.TrackingMethod], config.scanTypeRules);
+    const firstFound = parseDateFlexible(row[qMap.FirstDetected]);
+    const firstFoundMidnight = firstFound ? new Date(firstFound.getFullYear(), firstFound.getMonth(), firstFound.getDate()) : null;
+    const age = firstFoundMidnight ? Math.max(0, daysBetween(todayForAge, firstFoundMidnight)) : null;
+    const slaLookup = lookupSla(config.slaRules, ifPci.classification, sev);
+    const slaDays = slaLookup.days;
+    if (!slaLookup.matched) {
+      addException(row, "Missing SLA Config", "SLA", `No explicit SLA rule for ${ifPci.classification} / Risk ${sev} — used fallback ${slaDays}d`);
+    }
+    const vulnStatus = normText(row[qMap.VulnStatus]);
+    const isFixed = /fixed/i.test(vulnStatus);
+    let withinSla = "Unknown";
+    if (isFixed) withinSla = "Fixed";else if (age !== null) withinSla = age <= slaDays ? "Within SLA" : "Past Due SLA";
+    const timesReopened = safeNum(row[qMap.TimesReopened], 0);
+    let weeklyBucket = "Existing";
+    if (isFixed) weeklyBucket = "Fixed";else if (timesReopened > 0) weeklyBucket = "Reopened";else if (prevIdSet) {
+      weeklyBucket = prevIdSet.has(uniqueId) ? "Existing" : "New";
+    } else if (firstFound) {
+      weeklyBucket = daysBetween(reportDate, firstFound) <= 7 ? "New" : "Existing";
+    }
+    const vulnerabilityName = normText(row[qMap.Title]);
+    let displayVulnStatus = vulnStatus;
+    if (exceptionApprovalSet.has(normTextLower(apmId) + "|||" + normTextLower(vulnerabilityName))) {
+      displayVulnStatus = "Exception Approved";
+      stats.exceptionApprovedCount++;
+    }
+    const finalObj = {
+      "Application Name": appName,
+      "APM ID": apmId,
+      "Scan Type": scanType,
+      "IP": ip,
+      "DNS": normText(row[qMap.DNS]),
+      "NetBIOS": normText(row[qMap.NetBIOS]),
+      "Tracking Method": normText(row[qMap.TrackingMethod]),
+      "OS": normText(row[qMap.OS]),
+      "IP Status": normText(row[qMap.IPStatus]),
+      "Unique id": uniqueId,
+      "Vulnerability Name": vulnerabilityName,
+      "Vulnerability Status": displayVulnStatus,
+      "Type": normText(row[qMap.Type]),
+      "Risk Rating": sev,
+      "Port": normText(row[qMap.Port]),
+      "Protocol": normText(row[qMap.Protocol]),
+      "FQDN": normText(row[qMap.FQDN]),
+      "SSL": normText(row[qMap.SSL]),
+      "First Found date": preserveOriginalDate(row[qMap.FirstDetected]),
+      "Last Detected": preserveOriginalDate(row[qMap.LastDetected]),
+      "Times Detected": normText(row[qMap.TimesDetected]),
+      "Date Last Fixed": preserveOriginalDate(row[qMap.DateLastFixed]),
+      "First Reopened": preserveOriginalDate(row[qMap.FirstReopened]),
+      "Last Reopened": preserveOriginalDate(row[qMap.LastReopened]),
+      "Times Reopened": timesReopened,
+      "CVE ID": normText(row[qMap.CVEID]),
+      "Vendor Reference": normText(row[qMap.VendorReference]),
+      "Bugtraq ID": normText(row[qMap.BugtraqID]),
+      "Threat": normText(row[qMap.Threat]),
+      "Impact": normText(row[qMap.Impact]),
+      "Recommendation": normText(row[qMap.Solution]),
+      "Exploitability": normText(row[qMap.Exploitability]),
+      "Results": normText(row[qMap.Results]),
+      "PCI Vuln": normText(row[qMap.PCIVuln]),
+      "Ticket State": normText(row[qMap.TicketState]),
+      "Instance": normText(row[qMap.Instance]),
+      "Category": normText(row[qMap.Category]),
+      "QDS": normText(row[qMap.QDS]),
+      "ARS": normText(row[qMap.ARS]),
+      "ACS": normText(row[qMap.ACS]),
+      "TruRisk Score": normText(row[qMap.TruRiskScore]),
+      "IF or PCI": ifPci.classification,
+      "Source": source,
+      "SLA": slaDays,
+      "Vulnerability Age": age === null ? "" : age,
+      "App Owner": appOwner,
+      "Organization": organization,
+      "IF": ifPci.IF,
+      "PCI": ifPci.PCI,
+      "Impacted Asset": impactedAsset,
+      "Cloud Account Name": cloudAccountName,
+      "Environment": environment,
+      "CSP": csp || "Unknown",
+      "Vulnerability ID": vulnerabilityId,
+      "Vulnerability Category": vulnCategory,
+      "Within SLA/Past due SLA": withinSla,
+      "Weekly Metrics": weeklyBucket
+    };
+    finalRows.push(finalObj);
+  });
+  stats.finalOutcome = finalRows.length;
+
+  // Weekly metrics (overall)
+  const wm = computeWeeklyMetricsFromRows(finalRows);
+  let weekOverWeek = null;
+  if (previousFinalRows && previousFinalRows.length) {
+    const prevTotal = previousFinalRows.length;
+    const curTotal = finalRows.length;
+    const change = curTotal - prevTotal;
+    const pct = prevTotal ? change / prevTotal * 100 : 0;
+    weekOverWeek = {
+      prevTotal,
+      curTotal,
+      change,
+      pct
+    };
+  }
+
+  // Fixed vulnerabilities — identified three ways:
+  //  1) Qualys marks it Fixed in the current processed report on its own (works even with
+  //     only the Qualys raw report uploaded — no previous week or cloud/CMDB data needed).
+  //  2) It existed in last week's processed Final Outcome but no longer appears in this
+  //     week's (i.e. it was remediated) — requires the optional previous-week upload.
+  //  3) Comparing last week's processed report against this week's processed report is what
+  //     powers the severity-wise fixed breakdown below.
+  let fixedComparison = null;
+  if (finalRows.length) {
+    const hasPreviousWeek = !!(previousFinalRows && previousFinalRows.length);
+    const currentIds = new Set(finalRows.map(r => r["Unique id"]));
+    const disappeared = hasPreviousWeek ? previousFinalRows.filter(r => !currentIds.has(r["Unique id"])) : [];
+    const explicitlyFixedNow = finalRows.filter(r => r["Within SLA/Past due SLA"] === "Fixed");
+    const seen = new Set();
+    const fixedRecords = [];
+    disappeared.forEach(r => {
+      const id = r["Unique id"];
+      if (!seen.has(id)) {
+        seen.add(id);
+        const idParts = String(id).split("/");
+        fixedRecords.push({ ...r, __fixReason: "Remediated (no longer in this week's report)", __qid: idParts.slice(1).join("/") || "" });
+      }
+    });
+    explicitlyFixedNow.forEach(r => {
+      const id = r["Unique id"];
+      if (!seen.has(id)) {
+        seen.add(id);
+        const idParts = String(id).split("/");
+        fixedRecords.push({ ...r, __fixReason: "Marked Fixed in Qualys", __qid: idParts.slice(1).join("/") || "" });
+      }
+    });
+
+    const byCSPMap = new Map();
+    const byAppMap = new Map();
+    const byRiskMap = new Map([[5, 0], [4, 0], [3, 0]]);
+    fixedRecords.forEach(r => {
+      const csp = r["CSP"] || "Unknown";
+      byCSPMap.set(csp, (byCSPMap.get(csp) || 0) + 1);
+      const app = r["Application Name"] || "(Unmapped)";
+      byAppMap.set(app, (byAppMap.get(app) || 0) + 1);
+      const risk = r["Risk Rating"];
+      if (byRiskMap.has(risk)) byRiskMap.set(risk, byRiskMap.get(risk) + 1);
+    });
+    const byCSP = Array.from(byCSPMap.entries()).map(([csp, count]) => ({ CSP: csp, Fixed: count })).sort((a, b) => b.Fixed - a.Fixed);
+    const byApp = Array.from(byAppMap.entries()).map(([app, count]) => ({ Application: app, Fixed: count })).sort((a, b) => b.Fixed - a.Fixed);
+    const byRisk = [5, 4, 3].map(risk => ({ risk, label: SEVERITY_LABEL[risk], Fixed: byRiskMap.get(risk) || 0 }));
+    fixedComparison = { total: fixedRecords.length, byCSP, byApp, byRisk, hasPreviousWeek, records: fixedRecords };
+  }
+
+  // New vs Existing vulnerabilities — compares this week's report against last week's by
+  // Vulnerability ID (== Unique id, IP/QID). Anything whose Vulnerability ID wasn't present
+  // last week is "New"; anything that was already there is "Existing". Only meaningful once
+  // a previous week's Final Outcome file has been uploaded.
+  let newVulnComparison = null;
+  if (finalRows.length && previousFinalRows && previousFinalRows.length) {
+    const newRecords = finalRows.filter(r => r["Weekly Metrics"] === "New");
+    const existingRecords = finalRows.filter(r => r["Weekly Metrics"] === "Existing");
+    const byCSPMap = new Map();
+    const byAppMap = new Map();
+    const byRiskMap = new Map([[5, 0], [4, 0], [3, 0]]);
+    newRecords.forEach(r => {
+      const csp = r["CSP"] || "Unknown";
+      byCSPMap.set(csp, (byCSPMap.get(csp) || 0) + 1);
+      const app = r["Application Name"] || "(Unmapped)";
+      byAppMap.set(app, (byAppMap.get(app) || 0) + 1);
+      const risk = r["Risk Rating"];
+      if (byRiskMap.has(risk)) byRiskMap.set(risk, byRiskMap.get(risk) + 1);
+    });
+    const byCSP = Array.from(byCSPMap.entries()).map(([csp, count]) => ({ CSP: csp, Count: count })).sort((a, b) => b.Count - a.Count);
+    const byApp = Array.from(byAppMap.entries()).map(([app, count]) => ({ Application: app, Count: count })).sort((a, b) => b.Count - a.Count);
+    const byRisk = [5, 4, 3].map(risk => ({ risk, label: SEVERITY_LABEL[risk], Count: byRiskMap.get(risk) || 0 }));
+    newVulnComparison = { newTotal: newRecords.length, existingTotal: existingRecords.length, byCSP, byApp, byRisk, newRecords, existingRecords };
+  }
+
+  // Application metrics
+  const appGroups = new Map();
+  finalRows.forEach(r => {
+    const key = `${r["Application Name"]}|||${r["APM ID"]}`;
+    if (!appGroups.has(key)) {
+      appGroups.set(key, {
+        "Application": r["Application Name"] || "(Unmapped)",
+        "APM ID": r["APM ID"] || "",
+        "App Owner": r["App Owner"],
+        "Organization": r["Organization"],
+        Total: 0,
+        Sev5: 0,
+        Sev4: 0,
+        Sev3: 0,
+        PastDue: 0
+      });
+    }
+    const g = appGroups.get(key);
+    g.Total++;
+    if (r["Risk Rating"] === 5) g.Sev5++;
+    if (r["Risk Rating"] === 4) g.Sev4++;
+    if (r["Risk Rating"] === 3) g.Sev3++;
+    if (r["Within SLA/Past due SLA"] === "Past Due SLA") g.PastDue++;
+  });
+  const appMetrics = Array.from(appGroups.values()).sort((a, b) => b.Total - a.Total);
+  const processingSummary = [{
+    Metric: "Total Qualys Records",
+    Value: stats.qualysTotal
+  }, {
+    Metric: "Severity 1 Removed",
+    Value: stats.sev1Removed
+  }, {
+    Metric: "Severity 2 Removed",
+    Value: stats.sev2Removed
+  }, {
+    Metric: "Invalid Severity Removed",
+    Value: stats.invalidSeverity
+  }, {
+    Metric: "Invalid IP Removed",
+    Value: stats.invalidIP
+  }, {
+    Metric: "Missing QID Removed",
+    Value: stats.missingQID
+  }, {
+    Metric: "After Severity Filter",
+    Value: stats.afterSeverityFilter
+  }, {
+    Metric: "AWS Running Matches",
+    Value: stats.awsRunningMatches
+  }, {
+    Metric: "AWS Not-Running Excluded From Cloud Match",
+    Value: stats.awsNotRunning
+  }, {
+    Metric: "Azure Running Matches",
+    Value: stats.azureRunningMatches
+  }, {
+    Metric: "Azure Not-Running Excluded From Cloud Match",
+    Value: stats.azureNotRunning
+  }, {
+    Metric: "No Cloud Inventory Match",
+    Value: stats.noCloudMatch
+  }, {
+    Metric: "CMDB Matches",
+    Value: stats.cmdbMatches
+  }, {
+    Metric: "CMDB Matches via IP",
+    Value: stats.cmdbMatchByIP || 0
+  }, {
+    Metric: "CMDB Matches via Correlation ID",
+    Value: stats.cmdbMatchByCorrelation || 0
+  }, {
+    Metric: "CMDB Matches via Hostname",
+    Value: stats.cmdbMatchByHostname || 0
+  }, {
+    Metric: "CMDB Duplicate Matches",
+    Value: stats.cmdbDuplicates
+  }, {
+    Metric: "CMDB Match Missing",
+    Value: stats.cmdbMissing
+  }, {
+    Metric: "Final Outcome Records",
+    Value: stats.finalOutcome
+  }, {
+    Metric: "Exception Log Entries",
+    Value: exceptions.length
+  }, {
+    Metric: "Report Date",
+    Value: fmtDate(reportDate)
+  }, {
+    Metric: "Vulnerability Age Calculated As Of",
+    Value: fmtDate(todayForAge)
+  }, {
+    Metric: "Exception Approved Overrides Applied",
+    Value: stats.exceptionApprovedCount
+  }];
+  return {
+    finalRows,
+    exceptions,
+    weeklyMetrics: wm,
+    appMetrics,
+    processingSummary,
+    stats,
+    weekOverWeek,
+    fixedComparison,
+    newVulnComparison,
+    awsRows: awsOnly.map(x => finalRows.find(r => r["Unique id"] === `${x.__ip}/${x.__qid}`)).filter(Boolean),
+    azureRows: azureOnly.map(x => finalRows.find(r => r["Unique id"] === `${x.__ip}/${x.__qid}`)).filter(Boolean)
+  };
+}
+
+/* ============================================================
+   EXPORT (XLSX / CSV)
+   ============================================================ */
+
+function rowsToAOA(rows, columns) {
+  const aoa = [columns];
+  rows.forEach(r => aoa.push(columns.map(c => r[c] === undefined ? "" : r[c])));
+  return aoa;
+}
+function buildWorkbook(result, reportDateStr) {
+  const wb = XLSX.utils.book_new();
+  const wsFinal = XLSX.utils.aoa_to_sheet(rowsToAOA(result.finalRows, FINAL_COLUMNS));
+  XLSX.utils.book_append_sheet(wb, wsFinal, "Final Outcome");
+  const wmRows = Object.keys(result.weeklyMetrics).map(k => ({
+    Metric: k,
+    Value: result.weeklyMetrics[k]
+  }));
+  if (result.weekOverWeek) {
+    wmRows.push({
+      Metric: "Previous Week Total",
+      Value: result.weekOverWeek.prevTotal
+    });
+    wmRows.push({
+      Metric: "Change vs Previous Week",
+      Value: result.weekOverWeek.change
+    });
+    wmRows.push({
+      Metric: "Percent Change",
+      Value: `${result.weekOverWeek.pct.toFixed(2)}%`
+    });
+  }
+  const wsMetrics = XLSX.utils.aoa_to_sheet(rowsToAOA(wmRows, ["Metric", "Value"]));
+  XLSX.utils.book_append_sheet(wb, wsMetrics, "Weekly Metrics");
+  const appCols = ["Application", "APM ID", "App Owner", "Organization", "Total", "Sev5", "Sev4", "Sev3", "PastDue"];
+  const wsApp = XLSX.utils.aoa_to_sheet(rowsToAOA(result.appMetrics, appCols));
+  XLSX.utils.book_append_sheet(wb, wsApp, "Application Metrics");
+  const wsAws = XLSX.utils.aoa_to_sheet(rowsToAOA(result.awsRows, FINAL_COLUMNS));
+  XLSX.utils.book_append_sheet(wb, wsAws, "AWS Vulnerabilities");
+  const wsAzure = XLSX.utils.aoa_to_sheet(rowsToAOA(result.azureRows, FINAL_COLUMNS));
+  XLSX.utils.book_append_sheet(wb, wsAzure, "Azure Vulnerabilities");
+  const excCols = ["IP", "QID", "Reason", "Source", "Details"];
+  const wsExc = XLSX.utils.aoa_to_sheet(rowsToAOA(result.exceptions, excCols));
+  XLSX.utils.book_append_sheet(wb, wsExc, "Exceptions");
+  const wsSummary = XLSX.utils.aoa_to_sheet(rowsToAOA(result.processingSummary, ["Metric", "Value"]));
+  XLSX.utils.book_append_sheet(wb, wsSummary, "Processing Summary");
+  if (result.fixedComparison) {
+    const fcRows = [{ Section: "Total Fixed vs Previous Week", Value: result.fixedComparison.total }, { Section: "", Value: "" }, { Section: "By CSP", Value: "" }];
+    result.fixedComparison.byCSP.forEach(r => fcRows.push({ Section: r.CSP, Value: r.Fixed }));
+    fcRows.push({ Section: "", Value: "" });
+    fcRows.push({ Section: "By Application", Value: "" });
+    result.fixedComparison.byApp.forEach(r => fcRows.push({ Section: r.Application, Value: r.Fixed }));
+    const wsFixed = XLSX.utils.aoa_to_sheet(rowsToAOA(fcRows, ["Section", "Value"]));
+    XLSX.utils.book_append_sheet(wb, wsFixed, "Fixed vs Previous Week");
+  }
+  if (result.newVulnComparison) {
+    const nc = result.newVulnComparison;
+    const ncRows = [{ Section: "New Vulnerabilities (not in last week)", Value: nc.newTotal }, { Section: "Existing Vulnerabilities (also in last week)", Value: nc.existingTotal }, { Section: "", Value: "" }, { Section: "New — By Severity", Value: "" }];
+    nc.byRisk.forEach(r => ncRows.push({ Section: `${r.label} (Sev ${r.risk})`, Value: r.Count }));
+    ncRows.push({ Section: "", Value: "" });
+    ncRows.push({ Section: "New — By CSP", Value: "" });
+    nc.byCSP.forEach(r => ncRows.push({ Section: r.CSP, Value: r.Count }));
+    ncRows.push({ Section: "", Value: "" });
+    ncRows.push({ Section: "New — By Application", Value: "" });
+    nc.byApp.forEach(r => ncRows.push({ Section: r.Application, Value: r.Count }));
+    const wsNew = XLSX.utils.aoa_to_sheet(rowsToAOA(ncRows, ["Section", "Value"]));
+    XLSX.utils.book_append_sheet(wb, wsNew, "New vs Existing");
+  }
+  return wb;
+}
+function downloadWorkbookXLSX(wb, filename) {
+  XLSX.writeFile(wb, filename);
+}
+function downloadFinalCSV(result, filename) {
+  const ws = XLSX.utils.aoa_to_sheet(rowsToAOA(result.finalRows, FINAL_COLUMNS));
+  const csv = XLSX.utils.sheet_to_csv(ws, {
+    FS: ",",
+    RS: "\n"
+  });
+  const blob = new Blob(["\uFEFF" + csv], {
+    type: "text/csv;charset=utf-8;"
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+/* ============================================================
+   SMALL UI PRIMITIVES
+   ============================================================ */
+
+function Icon({
+  d,
+  size = 16
+}) {
+  return /*#__PURE__*/React.createElement("svg", {
+    className: "ico",
+    width: size,
+    height: size,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: "1.8",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }, d);
+}
+const ICONS = {
+  upload: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+    d: "M12 16V4"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M6 10l6-6 6 6"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M4 20h16"
+  })),
+  cog: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "12",
+    r: "3"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M19.4 15a1.6 1.6 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.6 1.6 0 00-1.8-.3 1.6 1.6 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.6 1.6 0 00-1-1.5 1.6 1.6 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.6 1.6 0 00.3-1.8 1.6 1.6 0 00-1.5-1H3a2 2 0 110-4h.1a1.6 1.6 0 001.5-1 1.6 1.6 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.6 1.6 0 001.8.3H9a1.6 1.6 0 001-1.5V3a2 2 0 114 0v.1a1.6 1.6 0 001 1.5 1.6 1.6 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.6 1.6 0 00-.3 1.8V9a1.6 1.6 0 001.5 1H21a2 2 0 110 4h-.1a1.6 1.6 0 00-1.5 1z"
+  })),
+  play: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+    d: "M5 3l16 9-16 9V3z"
+  })),
+  table: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+    x: "3",
+    y: "4",
+    width: "18",
+    height: "16",
+    rx: "2"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M3 10h18M9 4v16"
+  })),
+  chart: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+    d: "M3 3v18h18"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M7 15l4-6 3 3 5-7"
+  })),
+  grid: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+    x: "3",
+    y: "3",
+    width: "7",
+    height: "7",
+    rx: "1.5"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "14",
+    y: "3",
+    width: "7",
+    height: "7",
+    rx: "1.5"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "3",
+    y: "14",
+    width: "7",
+    height: "7",
+    rx: "1.5"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "14",
+    y: "14",
+    width: "7",
+    height: "7",
+    rx: "1.5"
+  })),
+  alert: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+    d: "M12 9v4"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M12 17h.01"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M10.3 3.9L2.7 17a2 2 0 001.7 3h15.2a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"
+  })),
+  download: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+    d: "M12 4v12"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M6 12l6 6 6-6"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M4 20h16"
+  })),
+  clock: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("circle", {
+    cx: "12",
+    cy: "12",
+    r: "9"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M12 7v5l3 2"
+  })),
+  check: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+    d: "M20 6L9 17l-5-5"
+  })),
+  x: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+    d: "M18 6L6 18"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M6 6l12 12"
+  })),
+  file: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+    d: "M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M14 2v6h6"
+  })),
+  spark: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+    d: "M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8z"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"
+  })),
+  refresh: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+    d: "M21 12a9 9 0 01-15.5 6.5L3 16"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M3 12a9 9 0 0115.5-6.5L21 8"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M21 3v5h-5"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M3 21v-5h5"
+  })),
+  book: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+    d: "M4 19.5A2.5 2.5 0 016.5 17H20"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"
+  })),
+  trash: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+    d: "M3 6h18"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"
+  }))
+};
+function Nav({
+  icon,
+  label,
+  active,
+  onClick,
+  badge
+}) {
+  return /*#__PURE__*/React.createElement("button", {
+    className: "nav-item" + (active ? " active" : ""),
+    onClick: onClick
+  }, /*#__PURE__*/React.createElement(Icon, {
+    d: icon
+  }), /*#__PURE__*/React.createElement("span", null, label), badge !== undefined && badge !== null && /*#__PURE__*/React.createElement("span", {
+    className: "n-badge"
+  }, badge));
+}
+function StatCard({
+  label,
+  value,
+  sub,
+  tone
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "stat-card" + (tone ? " " + tone : "")
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "lbl"
+  }, label), /*#__PURE__*/React.createElement("div", {
+    className: "val"
+  }, value), sub && /*#__PURE__*/React.createElement("div", {
+    className: "sub"
+  }, sub));
+}
+function SevBadge({
+  sev
+}) {
+  const cls = sev === 5 ? "badge-crit" : sev === 4 ? "badge-high" : sev === 3 ? "badge-med" : "badge-neutral";
+  return /*#__PURE__*/React.createElement("span", {
+    className: "badge " + cls
+  }, SEVERITY_LABEL[sev] || sev, " · ", sev);
+}
+function SlaBadge({
+  v
+}) {
+  const cls = v === "Past Due SLA" ? "badge-danger" : v === "Within SLA" ? "badge-ok" : v === "Fixed" ? "badge-neutral" : "badge-neutral";
+  return /*#__PURE__*/React.createElement("span", {
+    className: "badge " + cls
+  }, v || "Unknown");
+}
+function CspBadge({
+  v
+}) {
+  if (v === "AWS") return /*#__PURE__*/React.createElement("span", {
+    className: "badge badge-aws"
+  }, "AWS");
+  if (v === "Azure") return /*#__PURE__*/React.createElement("span", {
+    className: "badge badge-azure"
+  }, "Azure");
+  return /*#__PURE__*/React.createElement("span", {
+    className: "badge badge-neutral"
+  }, v || "Unknown");
+}
+function Bar({
+  label,
+  value,
+  max,
+  color
+}) {
+  const pct = max ? Math.max(2, Math.round(value / max * 100)) : 0;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "bar-row"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bar-label"
+  }, label), /*#__PURE__*/React.createElement("div", {
+    className: "bar-track"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bar-fill",
+    style: {
+      width: pct + "%",
+      background: color
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "bar-val"
+  }, value));
+}
+function Toast({
+  toast,
+  onClose
+}) {
+  if (!toast) return null;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "toast" + (toast.type === "err" ? " err" : ""),
+    onClick: onClose
+  }, toast.msg);
+}
+function RefreshButton({
+  onRefresh,
+  running,
+  disabled
+}) {
+  return /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-refresh btn-sm",
+    onClick: onRefresh,
+    disabled: running || disabled,
+    title: "Re-run the pipeline with the current files and configuration"
+  }, running ? /*#__PURE__*/React.createElement("span", {
+    className: "spinner"
+  }) : /*#__PURE__*/React.createElement(Icon, {
+    d: ICONS.refresh,
+    size: 14
+  }), "Refresh");
+}
+
+/* ============================================================
+   VIEW: UPLOAD
+   ============================================================ */
+
+function UploadCard({
+  stageNo,
+  title,
+  requirement,
+  accept,
+  fileData,
+  onFile,
+  requiredFields,
+  aliasDict,
+  colorTag,
+  optional
+}) {
+  const inputRef = useRef(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const handleFiles = async fileList => {
+    const f = fileList[0];
+    if (!f) return;
+    setBusy(true);
+    setErr("");
+    try {
+      const parsed = await parseAnyFile(f);
+      onFile(parsed);
+    } catch (e) {
+      setErr("Could not parse file: " + e.message);
+    }
+    setBusy(false);
+  };
+  let foundReq = [],
+    missingReq = [];
+  if (fileData && requiredFields && aliasDict) {
+    const resolved = resolveAliasSet(fileData.headers, aliasDict);
+    requiredFields.forEach(f => {
+      (resolved[f] ? foundReq : missingReq).push(f);
+    });
+  }
+  return /*#__PURE__*/React.createElement("div", {
+    className: "upload-card" + (fileData ? " filled" : "")
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "stage-no"
+  }, "STAGE ", stageNo, optional ? " · OPTIONAL" : ""), /*#__PURE__*/React.createElement("h3", null, title), /*#__PURE__*/React.createElement("div", {
+    className: "req"
+  }, requirement), /*#__PURE__*/React.createElement("div", {
+    className: "dropzone",
+    onDragOver: e => e.preventDefault(),
+    onDrop: e => {
+      e.preventDefault();
+      handleFiles(e.dataTransfer.files);
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    ref: inputRef,
+    type: "file",
+    accept: accept,
+    id: "file-" + stageNo,
+    onChange: e => handleFiles(e.target.files)
+  }), /*#__PURE__*/React.createElement("label", {
+    htmlFor: "file-" + stageNo
+  }, busy ? "Parsing..." : fileData ? "Replace file" : "Choose file or drop here"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: "11px",
+      color: "var(--text-faint)",
+      marginTop: "6px"
+    }
+  }, ".xlsx or .csv")), err && /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: "var(--danger)",
+      fontSize: "11.5px",
+      marginTop: "8px"
+    }
+  }, err), fileData && /*#__PURE__*/React.createElement("div", {
+    className: "file-meta"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "row"
+  }, /*#__PURE__*/React.createElement("span", null, "File"), /*#__PURE__*/React.createElement("span", {
+    className: "ok"
+  }, fileData.fileName)), /*#__PURE__*/React.createElement("div", {
+    className: "row"
+  }, /*#__PURE__*/React.createElement("span", null, "Records"), /*#__PURE__*/React.createElement("span", null, fileData.recordCount.toLocaleString())), /*#__PURE__*/React.createElement("div", {
+    className: "row"
+  }, /*#__PURE__*/React.createElement("span", null, "Columns detected"), /*#__PURE__*/React.createElement("span", null, fileData.headers.length)), requiredFields && /*#__PURE__*/React.createElement("div", {
+    className: "row"
+  }, /*#__PURE__*/React.createElement("span", null, "Required columns"), /*#__PURE__*/React.createElement("span", {
+    className: missingReq.length ? "warn" : "ok"
+  }, missingReq.length ? `${foundReq.length}/${requiredFields.length} found` : "All required columns detected")), missingReq.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "chip-row"
+  }, missingReq.map(m => /*#__PURE__*/React.createElement("span", {
+    key: m,
+    className: "mini-chip",
+    style: {
+      color: "var(--med)"
+    }
+  }, "missing: ", m)))));
+}
+function UploadView({
+  files,
+  setFile,
+  onReset
+}) {
+  const hasAnyFile = !!(files.qualys || files.aws || files.azure || files.cmdb || files.previous);
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "pagehead"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "eyebrow"
+  }, "Stage 01 — Ingest"), /*#__PURE__*/React.createElement("h1", null, "Upload weekly source files"), /*#__PURE__*/React.createElement("p", null, "Provide the four weekly exports. Files are parsed entirely in your browser — nothing is uploaded to a server. Original files are never modified.")), hasAnyFile && /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-danger btn-sm",
+    onClick: onReset,
+    title: "Clear all uploaded files and start over"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    d: ICONS.trash,
+    size: 14
+  }), " Reset all")), /*#__PURE__*/React.createElement("div", {
+    className: "upload-grid"
+  }, /*#__PURE__*/React.createElement(UploadCard, {
+    stageNo: "1",
+    title: "Qualys Raw Report",
+    requirement: "Full vulnerability export, all severities",
+    accept: ".xlsx,.csv",
+    fileData: files.qualys,
+    onFile: d => setFile("qualys", d),
+    requiredFields: QUALYS_REQUIRED,
+    aliasDict: QUALYS_ALIASES
+  }), /*#__PURE__*/React.createElement(UploadCard, {
+    stageNo: "2",
+    title: "AWS Inventory Report",
+    requirement: "EC2 instance inventory export",
+    accept: ".xlsx,.csv",
+    fileData: files.aws,
+    onFile: d => setFile("aws", d),
+    requiredFields: AWS_REQUIRED,
+    aliasDict: AWS_ALIASES
+  }), /*#__PURE__*/React.createElement(UploadCard, {
+    stageNo: "3",
+    title: "Azure Inventory Report",
+    requirement: "VM inventory export",
+    accept: ".xlsx,.csv",
+    fileData: files.azure,
+    onFile: d => setFile("azure", d),
+    requiredFields: AZURE_REQUIRED,
+    aliasDict: AZURE_ALIASES
+  }), /*#__PURE__*/React.createElement(UploadCard, {
+    stageNo: "4",
+    title: "CMDB Report",
+    requirement: "Application ownership & classification data",
+    accept: ".xlsx,.csv",
+    fileData: files.cmdb,
+    onFile: d => setFile("cmdb", d)
+  }), /*#__PURE__*/React.createElement(UploadCard, {
+    stageNo: "5",
+    title: "Previous Week Final Outcome",
+    requirement: "Enables week-over-week New/Existing/Reopened comparison",
+    accept: ".xlsx,.csv",
+    fileData: files.previous,
+    onFile: d => setFile("previous", d),
+    optional: true
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "note-box",
+    style: {
+      marginTop: "16px"
+    }
+  }, "CMDB column names vary week to week, so mapping happens on the ", /*#__PURE__*/React.createElement("b", null, "Configure"), " tab once the CMDB file is uploaded — the system auto-guesses the mapping and you can override it. Qualys, AWS and Azure use fixed column names, matched automatically regardless of case or spacing. CMDB enrichment tries ", /*#__PURE__*/React.createElement("b", null, "IP"), " first, then the ", /*#__PURE__*/React.createElement("b", null, "5-digit correlation code"), " shared between the AWS Account Name / Azure Subscription and the CMDB's correlation field, then hostname as a last resort."));
+}
+
+/* ============================================================
+   VIEW: CONFIGURE
+   ============================================================ */
+
+function ConfigureView({
+  config,
+  setConfig,
+  cmdbMapping,
+  setCmdbMapping,
+  files,
+  result
+}) {
+  const [tab, setTab] = useState("cmdb");
+  const cmdbHeaders = files.cmdb ? files.cmdb.headers : [];
+  const updateSlaRule = (idx, key, val) => {
+    const rules = [...config.slaRules];
+    rules[idx] = {
+      ...rules[idx],
+      [key]: key === "days" || key === "risk" ? Number(val) : val
+    };
+    setConfig({
+      ...config,
+      slaRules: rules
+    });
+  };
+  const addSlaRule = () => setConfig({
+    ...config,
+    slaRules: [...config.slaRules, {
+      classification: "Non-IF/Non-PCI",
+      risk: 3,
+      days: 30
+    }]
+  });
+  const removeSlaRule = idx => setConfig({
+    ...config,
+    slaRules: config.slaRules.filter((_, i) => i !== idx)
+  });
+  const updateScanRule = (idx, key, val) => {
+    const rules = [...config.scanTypeRules];
+    rules[idx] = {
+      ...rules[idx],
+      [key]: val
+    };
+    setConfig({
+      ...config,
+      scanTypeRules: rules
+    });
+  };
+  const addScanRule = () => setConfig({
+    ...config,
+    scanTypeRules: [...config.scanTypeRules, {
+      match: "",
+      scanType: ""
+    }]
+  });
+  const removeScanRule = idx => setConfig({
+    ...config,
+    scanTypeRules: config.scanTypeRules.filter((_, i) => i !== idx)
+  });
+  const exportConfig = () => {
+    const payload = {
+      config,
+      cmdbMapping
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json"
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "vulnops-config.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+  const importRef = useRef(null);
+  const importConfig = async file => {
+    const text = await file.text();
+    try {
+      const payload = JSON.parse(text);
+      if (payload.config) setConfig(payload.config);
+      if (payload.cmdbMapping) setCmdbMapping(payload.cmdbMapping);
+    } catch (e) {
+      alert("Invalid config file");
+    }
+  };
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "pagehead"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "eyebrow"
+  }, "Stage 02 — Configure"), /*#__PURE__*/React.createElement("h1", null, "Business rules & column mapping"), /*#__PURE__*/React.createElement("p", null, "Nothing here is hard-coded. Adjust SLA thresholds, CMDB field mapping, scan-type logic and exception approvals to match this week's data, then export the configuration for reuse.")), /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: "8px"
+    }
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-ghost btn-sm",
+    onClick: () => importRef.current.click()
+  }, "Import JSON"), /*#__PURE__*/React.createElement("input", {
+    ref: importRef,
+    type: "file",
+    accept: ".json",
+    style: {
+      display: "none"
+    },
+    onChange: e => e.target.files[0] && importConfig(e.target.files[0])
+  }), /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-ghost btn-sm",
+    onClick: exportConfig
+  }, "Export JSON"))), /*#__PURE__*/React.createElement("div", {
+    className: "tabs"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "tab-btn" + (tab === "cmdb" ? " active" : ""),
+    onClick: () => setTab("cmdb")
+  }, "CMDB Mapping"), /*#__PURE__*/React.createElement("button", {
+    className: "tab-btn" + (tab === "sla" ? " active" : ""),
+    onClick: () => setTab("sla")
+  }, "SLA Rules"), /*#__PURE__*/React.createElement("button", {
+    className: "tab-btn" + (tab === "scan" ? " active" : ""),
+    onClick: () => setTab("scan")
+  }, "Scan Type Rules"), /*#__PURE__*/React.createElement("button", {
+    className: "tab-btn" + (tab === "exceptions" ? " active" : ""),
+    onClick: () => setTab("exceptions")
+  }, "Exception Approvals"), /*#__PURE__*/React.createElement("button", {
+    className: "tab-btn" + (tab === "general" ? " active" : ""),
+    onClick: () => setTab("general")
+  }, "General")), tab === "cmdb" && /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "card-title"
+  }, "CMDB field mapping"), /*#__PURE__*/React.createElement("div", {
+    className: "card-sub"
+  }, files.cmdb ? `${cmdbHeaders.length} columns detected in ${files.cmdb.fileName}` : "Upload a CMDB file first to map its columns"))), !files.cmdb ? /*#__PURE__*/React.createElement("div", {
+    className: "empty-state"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "glyph"
+  }, "◧"), /*#__PURE__*/React.createElement("h3", null, "No CMDB file yet"), /*#__PURE__*/React.createElement("p", null, "Go to Upload and add the CMDB report — mapping fields will appear here automatically.")) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
+    className: "note-box",
+    style: {
+      marginBottom: "16px"
+    }
+  }, "Match order: ", /*#__PURE__*/React.createElement("b", null, "1) IP"), " → ", /*#__PURE__*/React.createElement("b", null, "2) Correlation ID"), " (the 5-digit number shared between the AWS Account Name / Azure Subscription name and the CMDB correlation field) → ", /*#__PURE__*/React.createElement("b", null, "3) Hostname"), ". The first method that finds a record wins; multiple hits at any stage are flagged as a CMDB duplicate rather than silently picked."), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-2"
+  }, CMDB_TARGETS.map(t => /*#__PURE__*/React.createElement("div", {
+    className: "field",
+    key: t.key
+  }, /*#__PURE__*/React.createElement("label", null, t.label, t.required && /*#__PURE__*/React.createElement("span", {
+    style: {
+      color: "var(--crit)"
+    }
+  }, " *")), /*#__PURE__*/React.createElement("select", {
+    value: cmdbMapping[t.key] || "",
+    onChange: e => setCmdbMapping({
+      ...cmdbMapping,
+      [t.key]: e.target.value
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "— Not mapped —"), cmdbHeaders.map(h => /*#__PURE__*/React.createElement("option", {
+    key: h,
+    value: h
+  }, h)))))))), tab === "sla" && /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "card-title"
+  }, "SLA rules"), /*#__PURE__*/React.createElement("div", {
+    className: "card-sub"
+  }, "Days permitted to remediate, by IF/PCI classification and Risk Rating")), /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-ghost btn-sm",
+    onClick: addSlaRule
+  }, "+ Add rule")), /*#__PURE__*/React.createElement("div", {
+    className: "table-scroll"
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "config-table"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Classification"), /*#__PURE__*/React.createElement("th", null, "Risk Rating"), /*#__PURE__*/React.createElement("th", null, "SLA (days)"), /*#__PURE__*/React.createElement("th", null))), /*#__PURE__*/React.createElement("tbody", null, config.slaRules.map((r, idx) => /*#__PURE__*/React.createElement("tr", {
+    key: idx
+  }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("select", {
+    value: r.classification,
+    onChange: e => updateSlaRule(idx, "classification", e.target.value)
+  }, /*#__PURE__*/React.createElement("option", null, "IF"), /*#__PURE__*/React.createElement("option", null, "PCI"), /*#__PURE__*/React.createElement("option", null, "IF & PCI"), /*#__PURE__*/React.createElement("option", null, "Non-IF/Non-PCI"), /*#__PURE__*/React.createElement("option", null, "Unknown"))), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("select", {
+    value: r.risk,
+    onChange: e => updateSlaRule(idx, "risk", e.target.value)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "5"
+  }, "5 — Critical"), /*#__PURE__*/React.createElement("option", {
+    value: "4"
+  }, "4 — High"), /*#__PURE__*/React.createElement("option", {
+    value: "3"
+  }, "3 — Medium"))), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
+    type: "number",
+    min: "1",
+    value: r.days,
+    onChange: e => updateSlaRule(idx, "days", e.target.value)
+  })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-danger btn-sm",
+    onClick: () => removeSlaRule(idx)
+  }, "Remove")))))))), tab === "scan" && /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "card-title"
+  }, "Scan type rules"), /*#__PURE__*/React.createElement("div", {
+    className: "card-sub"
+  }, "Maps Qualys \"Tracking Method\" values to a normalized Scan Type. First match wins.")), /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-ghost btn-sm",
+    onClick: addScanRule
+  }, "+ Add rule")), /*#__PURE__*/React.createElement("div", {
+    className: "table-scroll"
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "config-table"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Tracking Method contains"), /*#__PURE__*/React.createElement("th", null, "Scan Type"), /*#__PURE__*/React.createElement("th", null))), /*#__PURE__*/React.createElement("tbody", null, config.scanTypeRules.map((r, idx) => /*#__PURE__*/React.createElement("tr", {
+    key: idx
+  }, /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    value: r.match,
+    onChange: e => updateScanRule(idx, "match", e.target.value)
+  })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    value: r.scanType,
+    onChange: e => updateScanRule(idx, "scanType", e.target.value)
+  })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-danger btn-sm",
+    onClick: () => removeScanRule(idx)
+  }, "Remove")))))))), tab === "exceptions" && /*#__PURE__*/React.createElement(ExceptionApprovalsTab, {
+    config: config,
+    setConfig: setConfig,
+    result: result
+  }), tab === "general" && /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title",
+    style: {
+      marginBottom: "14px"
+    }
+  }, "General settings"), /*#__PURE__*/React.createElement("div", {
+    className: "inline-fields"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "field"
+  }, /*#__PURE__*/React.createElement("label", null, "Report date"), /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: config.reportDate,
+    onChange: e => setConfig({
+      ...config,
+      reportDate: e.target.value
+    })
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "field"
+  }, /*#__PURE__*/React.createElement("label", null, "Minimum severity retained"), /*#__PURE__*/React.createElement("select", {
+    value: config.severityMin,
+    onChange: e => setConfig({
+      ...config,
+      severityMin: Number(e.target.value)
+    })
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "3"
+  }, "3 — Medium, High & Critical (mandatory minimum)"), /*#__PURE__*/React.createElement("option", {
+    value: "4"
+  }, "4 — High & Critical only"), /*#__PURE__*/React.createElement("option", {
+    value: "5"
+  }, "5 — Critical only")))), /*#__PURE__*/React.createElement("div", {
+    className: "note-box"
+  }, "Vulnerability Age is always ", /*#__PURE__*/React.createElement("b", null, "today's actual date − First Found date"), ", calculated at the moment you click Generate — it does not use the Report Date above. Report Date is only used for the export filename and as the reference point for the previous-week New/Existing comparison."), /*#__PURE__*/React.createElement("div", {
+    className: "note-box warn",
+    style: {
+      marginTop: "10px"
+    }
+  }, "Severity 1 and 2 are always excluded — this is a fixed business rule and cannot be lowered further.")));
+}
+function ExceptionApprovalsTab({
+  config,
+  setConfig,
+  result
+}) {
+  const finalRows = result ? result.finalRows : [];
+  const apmOptions = useMemo(() => Array.from(new Set(finalRows.map(r => r["APM ID"]).filter(Boolean))).sort(), [finalRows]);
+  const rules = config.exceptionApprovals || [];
+  const addRule = () => setConfig({
+    ...config,
+    exceptionApprovals: [...rules, {
+      apmId: "",
+      vulnNames: []
+    }]
+  });
+  const removeRule = idx => setConfig({
+    ...config,
+    exceptionApprovals: rules.filter((_, i) => i !== idx)
+  });
+  const updateRuleApm = (idx, apmId) => {
+    const next = [...rules];
+    next[idx] = {
+      ...next[idx],
+      apmId,
+      vulnNames: []
+    };
+    setConfig({
+      ...config,
+      exceptionApprovals: next
+    });
+  };
+  const toggleVuln = (idx, vulnName) => {
+    const next = [...rules];
+    const rule = next[idx];
+    const has = rule.vulnNames.includes(vulnName);
+    const vulnNames = has ? rule.vulnNames.filter(v => v !== vulnName) : [...rule.vulnNames, vulnName];
+    next[idx] = {
+      ...rule,
+      vulnNames
+    };
+    setConfig({
+      ...config,
+      exceptionApprovals: next
+    });
+  };
+  const totalSelected = rules.reduce((sum, r) => sum + (r.vulnNames ? r.vulnNames.length : 0), 0);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "card-title"
+  }, "Exception approvals"), /*#__PURE__*/React.createElement("div", {
+    className: "card-sub"
+  }, "Pick one or more APM IDs, then choose which of their vulnerabilities are formally accepted. Those rows get \"Vulnerability Status\" set to ", /*#__PURE__*/React.createElement("b", null, "Exception Approved"), " when you generate the report.")), /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-ghost btn-sm",
+    onClick: addRule
+  }, "+ Add APM ID")), !result && /*#__PURE__*/React.createElement("div", {
+    className: "note-box warn",
+    style: {
+      marginBottom: "14px"
+    }
+  }, "Run the pipeline once first so vulnerability names can be picked from your actual data — otherwise you'll need to type the APM ID manually and come back to select vulnerabilities after processing."), rules.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "kv-strip",
+    style: {
+      marginBottom: "14px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kv"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "k"
+  }, "APM IDs configured"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, rules.filter(r => r.apmId).length)), /*#__PURE__*/React.createElement("div", {
+    className: "kv"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "k"
+  }, "Vulnerabilities selected"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, totalSelected))), rules.length === 0 && /*#__PURE__*/React.createElement("div", {
+    className: "empty-state"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "glyph"
+  }, "☑"), /*#__PURE__*/React.createElement("h3", null, "No exception rules yet"), /*#__PURE__*/React.createElement("p", null, "Add an APM ID, then choose which of its vulnerabilities should be marked Exception Approved.")), rules.map((rule, idx) => /*#__PURE__*/React.createElement(ExceptionRuleCard, {
+    key: idx,
+    rule: rule,
+    idx: idx,
+    apmOptions: apmOptions,
+    finalRows: finalRows,
+    onApmChange: v => updateRuleApm(idx, v),
+    onToggleVuln: vn => toggleVuln(idx, vn),
+    onRemove: () => removeRule(idx)
+  })));
+}
+function ExceptionRuleCard({
+  rule,
+  idx,
+  apmOptions,
+  finalRows,
+  onApmChange,
+  onToggleVuln,
+  onRemove
+}) {
+  const [search, setSearch] = useState("");
+  const vulnOptions = useMemo(() => {
+    if (!rule.apmId) return [];
+    const names = finalRows.filter(r => r["APM ID"] === rule.apmId).map(r => r["Vulnerability Name"]);
+    return Array.from(new Set(names)).sort();
+  }, [finalRows, rule.apmId]);
+  const filteredOptions = vulnOptions.filter(v => v.toLowerCase().includes(search.toLowerCase()));
+  return /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      marginTop: idx === 0 ? 0 : "12px",
+      background: "var(--surface-2)"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      gap: "10px",
+      alignItems: "flex-end",
+      marginBottom: "10px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "field",
+    style: {
+      flex: 1,
+      marginBottom: 0
+    }
+  }, /*#__PURE__*/React.createElement("label", null, "APM ID"), apmOptions.length ? /*#__PURE__*/React.createElement("select", {
+    value: rule.apmId,
+    onChange: e => onApmChange(e.target.value)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: ""
+  }, "— Select APM ID —"), apmOptions.map(a => /*#__PURE__*/React.createElement("option", {
+    key: a,
+    value: a
+  }, a))) : /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    placeholder: "e.g. APM12345",
+    value: rule.apmId,
+    onChange: e => onApmChange(e.target.value)
+  })), /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-danger btn-sm",
+    onClick: onRemove
+  }, "Remove")), rule.apmId && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
+    style: {
+      display: "block",
+      fontSize: "11.5px",
+      color: "var(--text-dim)",
+      fontWeight: 600,
+      marginBottom: "8px"
+    }
+  }, "Vulnerabilities for ", rule.apmId, " (", rule.vulnNames.length, " selected)"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    placeholder: "Search vulnerabilities…",
+    value: search,
+    onChange: e => setSearch(e.target.value),
+    style: {
+      width: "100%",
+      background: "var(--surface-3)",
+      border: "1px solid var(--border-strong)",
+      borderRadius: "7px",
+      padding: "7px 10px",
+      color: "var(--text)",
+      fontSize: "12.5px",
+      marginBottom: "8px"
+    }
+  }), /*#__PURE__*/React.createElement("div", {
+    style: {
+      maxHeight: "220px",
+      overflow: "auto",
+      border: "1px solid var(--border)",
+      borderRadius: "8px",
+      padding: "6px"
+    }
+  }, filteredOptions.length === 0 && /*#__PURE__*/React.createElement("div", {
+    style: {
+      padding: "10px",
+      fontSize: "12px",
+      color: "var(--text-faint)"
+    }
+  }, "No vulnerabilities found for this APM ID."), filteredOptions.map(vn => /*#__PURE__*/React.createElement("label", {
+    key: vn,
+    style: {
+      display: "flex",
+      alignItems: "center",
+      gap: "8px",
+      padding: "5px 6px",
+      fontSize: "12px",
+      color: "var(--text-dim)",
+      cursor: "pointer",
+      borderRadius: "5px"
+    }
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "checkbox",
+    checked: rule.vulnNames.includes(vn),
+    onChange: () => onToggleVuln(vn)
+  }), /*#__PURE__*/React.createElement("span", null, vn))))));
+}
+
+/* ============================================================
+   VIEW: PROCESS (pipeline rail + run)
+   ============================================================ */
+
+function PipelineRail({
+  stats,
+  running
+}) {
+  const stages = [{
+    no: "01",
+    label: "Qualys Ingest",
+    val: stats ? stats.qualysTotal : "—"
+  }, {
+    no: "02",
+    label: "Severity Filter",
+    val: stats ? stats.afterSeverityFilter : "—"
+  }, {
+    no: "03",
+    label: "Cloud Match",
+    val: stats ? stats.awsRunningMatches + stats.azureRunningMatches : "—"
+  }, {
+    no: "04",
+    label: "CMDB Enrich",
+    val: stats ? stats.cmdbMatches : "—"
+  }, {
+    no: "05",
+    label: "SLA Engine",
+    val: stats ? stats.finalOutcome : "—"
+  }, {
+    no: "06",
+    label: "Vuln Age",
+    val: stats ? stats.finalOutcome : "—"
+  }, {
+    no: "07",
+    label: "Weekly Metrics",
+    val: stats ? stats.finalOutcome : "—"
+  }, {
+    no: "08",
+    label: "Final Report",
+    val: stats ? stats.finalOutcome : "—"
+  }];
+  return /*#__PURE__*/React.createElement("div", {
+    className: "pipeline-rail"
+  }, stages.map((s, i) => /*#__PURE__*/React.createElement(React.Fragment, {
+    key: s.no
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "stage-block" + (stats ? " done" : "")
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "sno"
+  }, s.no), /*#__PURE__*/React.createElement("div", {
+    className: "slabel"
+  }, s.label), /*#__PURE__*/React.createElement("div", {
+    className: "sval"
+  }, running ? /*#__PURE__*/React.createElement("span", {
+    className: "spinner",
+    style: {
+      borderTopColor: "var(--accent)"
+    }
+  }) : typeof s.val === "number" ? s.val.toLocaleString() : s.val)), i < stages.length - 1 && /*#__PURE__*/React.createElement("div", {
+    className: "stage-arrow"
+  }, "›"))));
+}
+function ProcessView({
+  files,
+  config,
+  cmdbMapping,
+  result,
+  onRun,
+  running,
+  canRun
+}) {
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "pagehead"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "eyebrow"
+  }, "Stage 03 — Process"), /*#__PURE__*/React.createElement("h1", null, "Run the vulnerability pipeline"), /*#__PURE__*/React.createElement("p", null, "Filters severity, matches running cloud assets by private IP, enriches with CMDB, applies SLA rules, and produces the final outcome dataset.")), /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-primary",
+    disabled: !canRun || running,
+    onClick: onRun
+  }, running ? /*#__PURE__*/React.createElement("span", {
+    className: "spinner"
+  }) : /*#__PURE__*/React.createElement(Icon, {
+    d: ICONS.play,
+    size: 14
+  }), running ? "Processing…" : "Generate Final Report")), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-head"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title"
+  }, "Pipeline")), /*#__PURE__*/React.createElement(PipelineRail, {
+    stats: result ? result.stats : null,
+    running: running
+  })), !canRun && /*#__PURE__*/React.createElement("div", {
+    className: "note-box warn",
+    style: {
+      marginTop: "16px"
+    }
+  }, "Upload the Qualys report at minimum to run processing. AWS, Azure and CMDB are optional but strongly recommended for full enrichment — unmatched records still appear in the final report with ", /*#__PURE__*/React.createElement("code", {
+    className: "inline"
+  }, "CSP = Unknown"), " and are logged to Exceptions."), result && /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      marginTop: "16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-head"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title"
+  }, "Processing preview"), /*#__PURE__*/React.createElement("div", {
+    className: "card-sub"
+  }, "Full funnel from raw Qualys records to final outcome")), /*#__PURE__*/React.createElement("div", {
+    className: "table-scroll"
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "data"
+  }, /*#__PURE__*/React.createElement("tbody", null, result.processingSummary.map((row, i) => /*#__PURE__*/React.createElement("tr", {
+    key: i
+  }, /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--text)"
+    }
+  }, row.Metric), /*#__PURE__*/React.createElement("td", {
+    style: {
+      textAlign: "right",
+      color: "var(--accent)"
+    }
+  }, typeof row.Value === 'number' ? row.Value.toLocaleString() : row.Value))))))));
+}
+
+/* ============================================================
+   VIEW: REPORT (final outcome table)
+   ============================================================ */
+
+function ReportView({
+  result,
+  onRefresh,
+  running
+}) {
+  const [search, setSearch] = useState("");
+  const [sevFilter, setSevFilter] = useState("all");
+  const [slaFilter, setSlaFilter] = useState("all");
+  const [cspFilter, setCspFilter] = useState("all");
+  const [wkFilter, setWkFilter] = useState("all");
+  const [page, setPage] = useState(0);
+  const pageSize = 40;
+  const rows = result ? result.finalRows : [];
+  const filtered = useMemo(() => {
+    let r = rows;
+    if (sevFilter !== "all") r = r.filter(x => String(x["Risk Rating"]) === sevFilter);
+    if (slaFilter !== "all") r = r.filter(x => x["Within SLA/Past due SLA"] === slaFilter);
+    if (cspFilter !== "all") r = r.filter(x => x["CSP"] === cspFilter);
+    if (wkFilter !== "all") r = r.filter(x => x["Weekly Metrics"] === wkFilter);
+    if (search.trim()) {
+      const s = search.trim().toLowerCase();
+      r = r.filter(x => (x["IP"] || "").toLowerCase().includes(s) || (x["Application Name"] || "").toLowerCase().includes(s) || (x["Vulnerability Name"] || "").toLowerCase().includes(s) || (x["CVE ID"] || "").toLowerCase().includes(s) || (x["Unique id"] || "").toLowerCase().includes(s));
+    }
+    return r;
+  }, [rows, search, sevFilter, slaFilter, cspFilter, wkFilter]);
+  useEffect(() => {
+    setPage(0);
+  }, [search, sevFilter, slaFilter, cspFilter, wkFilter]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageRows = filtered.slice(page * pageSize, page * pageSize + pageSize);
+  if (!result) {
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "pagehead"
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+      className: "eyebrow"
+    }, "Stage 04 — Report"), /*#__PURE__*/React.createElement("h1", null, "Final outcome report"))), /*#__PURE__*/React.createElement("div", {
+      className: "card"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "empty-state"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "glyph"
+    }, "▤"), /*#__PURE__*/React.createElement("h3", null, "No report generated yet"), /*#__PURE__*/React.createElement("p", null, "Run the pipeline from the Process tab to see the final outcome dataset here."))));
+  }
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "pagehead"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "eyebrow"
+  }, "Stage 04 — Report"), /*#__PURE__*/React.createElement("h1", null, "Final outcome report"), /*#__PURE__*/React.createElement("p", null, filtered.length.toLocaleString(), " of ", rows.length.toLocaleString(), " records shown")), /*#__PURE__*/React.createElement(RefreshButton, {
+    onRefresh: onRefresh,
+    running: running
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "searchbar"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    placeholder: "Search IP, app, CVE, vulnerability, unique id…",
+    value: search,
+    onChange: e => setSearch(e.target.value)
+  }), /*#__PURE__*/React.createElement("select", {
+    value: sevFilter,
+    onChange: e => setSevFilter(e.target.value)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "all"
+  }, "All severities"), /*#__PURE__*/React.createElement("option", {
+    value: "5"
+  }, "Critical (5)"), /*#__PURE__*/React.createElement("option", {
+    value: "4"
+  }, "High (4)"), /*#__PURE__*/React.createElement("option", {
+    value: "3"
+  }, "Medium (3)")), /*#__PURE__*/React.createElement("select", {
+    value: slaFilter,
+    onChange: e => setSlaFilter(e.target.value)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "all"
+  }, "All SLA states"), /*#__PURE__*/React.createElement("option", {
+    value: "Within SLA"
+  }, "Within SLA"), /*#__PURE__*/React.createElement("option", {
+    value: "Past Due SLA"
+  }, "Past Due SLA"), /*#__PURE__*/React.createElement("option", {
+    value: "Fixed"
+  }, "Fixed")), /*#__PURE__*/React.createElement("select", {
+    value: cspFilter,
+    onChange: e => setCspFilter(e.target.value)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "all"
+  }, "All CSP"), /*#__PURE__*/React.createElement("option", {
+    value: "AWS"
+  }, "AWS"), /*#__PURE__*/React.createElement("option", {
+    value: "Azure"
+  }, "Azure"), /*#__PURE__*/React.createElement("option", {
+    value: "Unknown"
+  }, "Unknown / On-Prem")), /*#__PURE__*/React.createElement("select", {
+    value: wkFilter,
+    onChange: e => setWkFilter(e.target.value)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "all"
+  }, "New & Old (all)"), /*#__PURE__*/React.createElement("option", {
+    value: "New"
+  }, "New only"), /*#__PURE__*/React.createElement("option", {
+    value: "Existing"
+  }, "Existing (old) only"), /*#__PURE__*/React.createElement("option", {
+    value: "Reopened"
+  }, "Reopened"), /*#__PURE__*/React.createElement("option", {
+    value: "Fixed"
+  }, "Fixed"))), /*#__PURE__*/React.createElement("div", {
+    className: "table-scroll",
+    style: {
+      maxHeight: "600px"
+    }
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "data"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "App"), /*#__PURE__*/React.createElement("th", null, "APM ID"), /*#__PURE__*/React.createElement("th", null, "IP"), /*#__PURE__*/React.createElement("th", null, "Vulnerability"), /*#__PURE__*/React.createElement("th", null, "CVE"), /*#__PURE__*/React.createElement("th", null, "Risk"), /*#__PURE__*/React.createElement("th", null, "CSP"), /*#__PURE__*/React.createElement("th", null, "Age (d)"), /*#__PURE__*/React.createElement("th", null, "SLA (d)"), /*#__PURE__*/React.createElement("th", null, "SLA Status"), /*#__PURE__*/React.createElement("th", null, "IF/PCI"), /*#__PURE__*/React.createElement("th", null, "Owner"), /*#__PURE__*/React.createElement("th", null, "New/Old"))), /*#__PURE__*/React.createElement("tbody", null, pageRows.map((r, i) => /*#__PURE__*/React.createElement("tr", {
+    key: i
+  }, /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--text)"
+    }
+  }, r["Application Name"] || "—"), /*#__PURE__*/React.createElement("td", null, r["APM ID"] || "—"), /*#__PURE__*/React.createElement("td", null, r["IP"]), /*#__PURE__*/React.createElement("td", {
+    style: {
+      maxWidth: "260px",
+      overflow: "hidden",
+      textOverflow: "ellipsis"
+    }
+  }, r["Vulnerability Name"]), /*#__PURE__*/React.createElement("td", null, r["CVE ID"] || "—"), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(SevBadge, {
+    sev: r["Risk Rating"]
+  })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(CspBadge, {
+    v: r["CSP"]
+  })), /*#__PURE__*/React.createElement("td", null, r["Vulnerability Age"]), /*#__PURE__*/React.createElement("td", null, r["SLA"]), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(SlaBadge, {
+    v: r["Within SLA/Past due SLA"]
+  })), /*#__PURE__*/React.createElement("td", null, r["IF or PCI"]), /*#__PURE__*/React.createElement("td", null, r["App Owner"] || "—"), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
+    className: "badge " + (r["Weekly Metrics"] === "New" ? "badge-info" : r["Weekly Metrics"] === "Reopened" ? "badge-med" : r["Weekly Metrics"] === "Fixed" ? "badge-ok" : "badge-neutral")
+  }, r["Weekly Metrics"] || "—"))))))), /*#__PURE__*/React.createElement("div", {
+    className: "pager"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setPage(p => Math.max(0, p - 1)),
+    disabled: page === 0
+  }, "← Prev"), /*#__PURE__*/React.createElement("span", null, "Page ", page + 1, " of ", totalPages), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setPage(p => Math.min(totalPages - 1, p + 1)),
+    disabled: page >= totalPages - 1
+  }, "Next →"))));
+}
+
+/* ============================================================
+   VIEW: INSIGHTS
+   ============================================================ */
+
+function topN(rows, keyFn, n, extra) {
+  const map = new Map();
+  rows.forEach(r => {
+    const k = keyFn(r);
+    if (!k) return;
+    if (!map.has(k)) map.set(k, {
+      key: k,
+      count: 0,
+      sev5: 0,
+      sev4: 0,
+      sev3: 0,
+      ageSum: 0,
+      ageCount: 0
+    });
+    const g = map.get(k);
+    g.count++;
+    if (r["Risk Rating"] === 5) g.sev5++;
+    if (r["Risk Rating"] === 4) g.sev4++;
+    if (r["Risk Rating"] === 3) g.sev3++;
+    if (typeof r["Vulnerability Age"] === "number") {
+      g.ageSum += r["Vulnerability Age"];
+      g.ageCount++;
+    }
+    if (extra) extra(g, r);
+  });
+  return Array.from(map.values()).sort((a, b) => b.count - a.count).slice(0, n);
+}
+function AGE_BUCKETS(rows) {
+  const buckets = [{
+    label: "0–7 days",
+    min: 0,
+    max: 7,
+    count: 0
+  }, {
+    label: "8–30 days",
+    min: 8,
+    max: 30,
+    count: 0
+  }, {
+    label: "31–60 days",
+    min: 31,
+    max: 60,
+    count: 0
+  }, {
+    label: "61–90 days",
+    min: 61,
+    max: 90,
+    count: 0
+  }, {
+    label: "90+ days",
+    min: 91,
+    max: Infinity,
+    count: 0
+  }];
+  rows.forEach(r => {
+    const age = r["Vulnerability Age"];
+    if (typeof age !== "number") return;
+    const b = buckets.find(x => age >= x.min && age <= x.max);
+    if (b) b.count++;
+  });
+  return buckets;
+}
+function InsightsView({
+  result,
+  onRefresh,
+  running
+}) {
+  const insights = useMemo(() => {
+    if (!result) return null;
+    const rows = result.finalRows;
+    const total = rows.length || 1;
+    const uniqueCves = new Set(rows.map(r => r["CVE ID"]).filter(Boolean)).size;
+    const uniqueTitles = new Set(rows.map(r => r["Vulnerability Name"]).filter(Boolean)).size;
+    const agesKnown = rows.filter(r => typeof r["Vulnerability Age"] === "number");
+    const avgAge = agesKnown.length ? Math.round(agesKnown.reduce((s, r) => s + r["Vulnerability Age"], 0) / agesKnown.length) : 0;
+    const pastDuePct = Math.round(rows.filter(r => r["Within SLA/Past due SLA"] === "Past Due SLA").length / total * 1000) / 10;
+    const reopenedCount = rows.filter(r => Number(r["Times Reopened"]) > 0).length;
+    const topVulns = topN(rows, r => r["Vulnerability Name"], 10);
+    const topCves = topN(rows, r => r["CVE ID"], 10);
+    const topApps = topN(rows, r => r["Application Name"] || null, 10, (g, r) => {
+      if (r["Within SLA/Past due SLA"] === "Past Due SLA") g.pastDue = (g.pastDue || 0) + 1;
+    });
+    const topCategories = topN(rows, r => r["Vulnerability Category"], 10);
+    const topOS = topN(rows, r => r["OS"], 8);
+    const ageBuckets = AGE_BUCKETS(rows);
+    const exploitable = rows.filter(r => {
+      const ex = normTextLower(r["Exploitability"]);
+      return ex && ex !== "n/a" && ex !== "none" && ex !== "0";
+    }).length;
+    const envMap = new Map();
+    rows.forEach(r => {
+      const env = r["Environment"] || "Unknown";
+      if (!envMap.has(env)) envMap.set(env, {
+        env,
+        total: 0,
+        critical: 0,
+        pastDue: 0
+      });
+      const g = envMap.get(env);
+      g.total++;
+      if (r["Risk Rating"] === 5) g.critical++;
+      if (r["Within SLA/Past due SLA"] === "Past Due SLA") g.pastDue++;
+    });
+    const envRows = Array.from(envMap.values()).sort((a, b) => b.total - a.total);
+    return {
+      total,
+      uniqueCves,
+      uniqueTitles,
+      avgAge,
+      pastDuePct,
+      reopenedCount,
+      topVulns,
+      topCves,
+      topApps,
+      topCategories,
+      topOS,
+      ageBuckets,
+      exploitable,
+      envRows
+    };
+  }, [result]);
+  if (!result || !insights) {
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "pagehead"
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+      className: "eyebrow"
+    }, "Stage 05 — Insights"), /*#__PURE__*/React.createElement("h1", null, "Vulnerability insights"))), /*#__PURE__*/React.createElement("div", {
+      className: "card"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "empty-state"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "glyph"
+    }, "◈"), /*#__PURE__*/React.createElement("h3", null, "No insights yet"), /*#__PURE__*/React.createElement("p", null, "Run the pipeline to see cross-cutting analysis of the final outcome dataset — top vulnerabilities, aging, exploitability, and risk concentration."))));
+  }
+  const maxAgeBucket = Math.max(1, ...insights.ageBuckets.map(b => b.count));
+  const maxTopApp = Math.max(1, ...insights.topApps.map(v => v.count));
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "pagehead"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "eyebrow"
+  }, "Stage 05 — Insights"), /*#__PURE__*/React.createElement("h1", null, "Vulnerability insights"), /*#__PURE__*/React.createElement("p", null, "Cross-cutting analysis of the final outcome dataset — what's most common, oldest, and most concentrated.")), /*#__PURE__*/React.createElement(RefreshButton, {
+    onRefresh: onRefresh,
+    running: running
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-4"
+  }, /*#__PURE__*/React.createElement(StatCard, {
+    label: "Unique CVEs",
+    value: insights.uniqueCves.toLocaleString(),
+    tone: "accent"
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "Unique vulnerability titles",
+    value: insights.uniqueTitles.toLocaleString()
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "Avg vulnerability age",
+    value: insights.avgAge + "d"
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "Past due rate",
+    value: insights.pastDuePct + "%",
+    tone: insights.pastDuePct > 25 ? "danger" : "ok"
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "Reopened vulnerabilities",
+    value: insights.reopenedCount.toLocaleString(),
+    tone: "med"
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "Likely exploitable",
+    value: insights.exploitable.toLocaleString(),
+    tone: "crit",
+    sub: `${Math.round(insights.exploitable / insights.total * 1000) / 10}% of total`
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "Applications represented",
+    value: insights.topApps.length ? new Set(result.finalRows.map(r => r["Application Name"]).filter(Boolean)).size : 0
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "Categories represented",
+    value: new Set(result.finalRows.map(r => r["Vulnerability Category"]).filter(Boolean)).size
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      marginTop: "16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title",
+    style: {
+      marginBottom: "14px"
+    }
+  }, "Vulnerability age distribution"), insights.ageBuckets.map(b => /*#__PURE__*/React.createElement(Bar, {
+    key: b.label,
+    label: b.label,
+    value: b.count,
+    max: maxAgeBucket,
+    color: "var(--accent)"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-2",
+    style: {
+      marginTop: "16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "card-title"
+  }, "Top 10 most common vulnerabilities"), /*#__PURE__*/React.createElement("div", {
+    className: "card-sub"
+  }, "By occurrence across all matched assets"))), /*#__PURE__*/React.createElement("div", {
+    className: "table-scroll",
+    style: {
+      maxHeight: "420px"
+    }
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "data"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Vulnerability"), /*#__PURE__*/React.createElement("th", null, "Count"), /*#__PURE__*/React.createElement("th", null, "Sev 5"), /*#__PURE__*/React.createElement("th", null, "Sev 4"), /*#__PURE__*/React.createElement("th", null, "Sev 3"), /*#__PURE__*/React.createElement("th", null, "Avg Age"))), /*#__PURE__*/React.createElement("tbody", null, insights.topVulns.map((v, i) => /*#__PURE__*/React.createElement("tr", {
+    key: i
+  }, /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--text)",
+      whiteSpace: "normal",
+      maxWidth: "260px"
+    }
+  }, v.key), /*#__PURE__*/React.createElement("td", null, v.count), /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--crit)"
+    }
+  }, v.sev5), /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--high)"
+    }
+  }, v.sev4), /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--med)"
+    }
+  }, v.sev3), /*#__PURE__*/React.createElement("td", null, v.ageCount ? Math.round(v.ageSum / v.ageCount) + "d" : "—"))))))), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "card-title"
+  }, "Top 10 CVEs"), /*#__PURE__*/React.createElement("div", {
+    className: "card-sub"
+  }, "By occurrence across all matched assets"))), /*#__PURE__*/React.createElement("div", {
+    className: "table-scroll",
+    style: {
+      maxHeight: "420px"
+    }
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "data"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "CVE ID"), /*#__PURE__*/React.createElement("th", null, "Count"), /*#__PURE__*/React.createElement("th", null, "Sev 5"), /*#__PURE__*/React.createElement("th", null, "Sev 4"), /*#__PURE__*/React.createElement("th", null, "Sev 3"))), /*#__PURE__*/React.createElement("tbody", null, insights.topCves.map((v, i) => /*#__PURE__*/React.createElement("tr", {
+    key: i
+  }, /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--text)"
+    }
+  }, v.key), /*#__PURE__*/React.createElement("td", null, v.count), /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--crit)"
+    }
+  }, v.sev5), /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--high)"
+    }
+  }, v.sev4), /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--med)"
+    }
+  }, v.sev3)))))))), /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      marginTop: "16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "card-title"
+  }, "Top 10 applications by vulnerability volume"), /*#__PURE__*/React.createElement("div", {
+    className: "card-sub"
+  }, "Includes past-due count per application"))), insights.topApps.map(a => /*#__PURE__*/React.createElement("div", {
+    key: a.key,
+    style: {
+      marginBottom: "4px"
+    }
+  }, /*#__PURE__*/React.createElement(Bar, {
+    label: a.key,
+    value: a.count,
+    max: maxTopApp,
+    color: "var(--accent)"
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-2",
+    style: {
+      marginTop: "16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title",
+    style: {
+      marginBottom: "14px"
+    }
+  }, "Top vulnerability categories"), insights.topCategories.map(c => /*#__PURE__*/React.createElement(Bar, {
+    key: c.key,
+    label: c.key,
+    value: c.count,
+    max: insights.topCategories[0] ? insights.topCategories[0].count : 1,
+    color: "var(--onprem)"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title",
+    style: {
+      marginBottom: "14px"
+    }
+  }, "Top operating systems"), insights.topOS.map(o => /*#__PURE__*/React.createElement(Bar, {
+    key: o.key,
+    label: o.key,
+    value: o.count,
+    max: insights.topOS[0] ? insights.topOS[0].count : 1,
+    color: "var(--azure)"
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      marginTop: "16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "card-title"
+  }, "Risk concentration by environment"), /*#__PURE__*/React.createElement("div", {
+    className: "card-sub"
+  }, "Where critical and past-due exposure actually sits"))), /*#__PURE__*/React.createElement("div", {
+    className: "table-scroll"
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "data"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Environment"), /*#__PURE__*/React.createElement("th", null, "Total"), /*#__PURE__*/React.createElement("th", null, "Critical"), /*#__PURE__*/React.createElement("th", null, "Past Due"), /*#__PURE__*/React.createElement("th", null, "Past Due Share"))), /*#__PURE__*/React.createElement("tbody", null, insights.envRows.map((e, i) => /*#__PURE__*/React.createElement("tr", {
+    key: i
+  }, /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--text)"
+    }
+  }, e.env), /*#__PURE__*/React.createElement("td", null, e.total), /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--crit)"
+    }
+  }, e.critical), /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--danger)"
+    }
+  }, e.pastDue), /*#__PURE__*/React.createElement("td", null, Math.round(e.pastDue / e.total * 1000) / 10, "%"))))))));
+}
+
+/* ============================================================
+   VIEW: METRICS
+   ============================================================ */
+
+function MetricsView({
+  result,
+  onRefresh,
+  running
+}) {
+  if (!result) {
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "pagehead"
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+      className: "eyebrow"
+    }, "Stage 06 — Metrics"), /*#__PURE__*/React.createElement("h1", null, "Weekly metrics"))), /*#__PURE__*/React.createElement("div", {
+      className: "card"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "empty-state"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "glyph"
+    }, "◫"), /*#__PURE__*/React.createElement("h3", null, "No metrics yet"), /*#__PURE__*/React.createElement("p", null, "Run the pipeline to compute weekly and application-level metrics."))));
+  }
+  const wm = result.weeklyMetrics;
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "pagehead"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "eyebrow"
+  }, "Stage 06 — Metrics"), /*#__PURE__*/React.createElement("h1", null, "Weekly metrics")), /*#__PURE__*/React.createElement(RefreshButton, {
+    onRefresh: onRefresh,
+    running: running
+  })), result.weekOverWeek && /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title",
+    style: {
+      marginBottom: "12px"
+    }
+  }, "Week-over-week"), /*#__PURE__*/React.createElement("div", {
+    className: "kv-strip"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kv"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "k"
+  }, "Previous week"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, result.weekOverWeek.prevTotal.toLocaleString())), /*#__PURE__*/React.createElement("div", {
+    className: "kv"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "k"
+  }, "Current week"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, result.weekOverWeek.curTotal.toLocaleString())), /*#__PURE__*/React.createElement("div", {
+    className: "kv"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "k"
+  }, "Change"), /*#__PURE__*/React.createElement("div", {
+    className: "v",
+    style: {
+      color: result.weekOverWeek.change <= 0 ? "var(--ok)" : "var(--danger)"
+    }
+  }, result.weekOverWeek.change > 0 ? "+" : "", result.weekOverWeek.change.toLocaleString())), /*#__PURE__*/React.createElement("div", {
+    className: "kv"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "k"
+  }, "Percent change"), /*#__PURE__*/React.createElement("div", {
+    className: "v",
+    style: {
+      color: result.weekOverWeek.pct <= 0 ? "var(--ok)" : "var(--danger)"
+    }
+  }, result.weekOverWeek.pct.toFixed(2), "%")))), result.fixedComparison && result.fixedComparison.total > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "card-title"
+  }, result.fixedComparison.hasPreviousWeek ? "Fixed vulnerabilities vs previous week" : "Fixed vulnerabilities (this week)"), /*#__PURE__*/React.createElement("div", {
+    className: "card-sub"
+  }, result.fixedComparison.total.toLocaleString(), " ", result.fixedComparison.hasPreviousWeek ? "vulnerabilities remediated or closed since last week's report" : "vulnerabilities Qualys marks Fixed in this week's report", !result.fixedComparison.hasPreviousWeek && " — upload a previous week's Final Outcome file to also catch remediated (disappeared) vulnerabilities"))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-3",
+    style: {
+      marginBottom: "16px"
+    }
+  }, result.fixedComparison.byRisk.map(r => /*#__PURE__*/React.createElement(StatCard, {
+    key: r.risk,
+    label: `${r.label} (Sev ${r.risk}) fixed`,
+    value: r.Fixed.toLocaleString(),
+    tone: r.risk === 5 ? "crit" : r.risk === 4 ? "high" : "med"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-2"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "card-sub",
+    style: {
+      marginBottom: "8px",
+      fontWeight: 600,
+      color: "var(--text-dim)"
+    }
+  }, "By CSP"), result.fixedComparison.byCSP.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "note-box"
+  }, "No fixed records") : result.fixedComparison.byCSP.map(r => /*#__PURE__*/React.createElement(Bar, {
+    key: r.CSP,
+    label: r.CSP,
+    value: r.Fixed,
+    max: result.fixedComparison.byCSP[0].Fixed,
+    color: "var(--ok)"
+  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "card-sub",
+    style: {
+      marginBottom: "8px",
+      fontWeight: 600,
+      color: "var(--text-dim)"
+    }
+  }, "By Application"), /*#__PURE__*/React.createElement("div", {
+    className: "table-scroll",
+    style: {
+      maxHeight: "260px"
+    }
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "data"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Application"), /*#__PURE__*/React.createElement("th", null, "Fixed"))), /*#__PURE__*/React.createElement("tbody", null, result.fixedComparison.byApp.map((r, i) => /*#__PURE__*/React.createElement("tr", {
+    key: i
+  }, /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--text)"
+    }
+  }, r.Application), /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--ok)"
+    }
+  }, r.Fixed))))))))), result.newVulnComparison && /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "card-title"
+  }, "New vs Existing vulnerabilities"), /*#__PURE__*/React.createElement("div", {
+    className: "card-sub"
+  }, "Comparing this week's report against last week's, matched by Vulnerability ID (IP/QID)"))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-2",
+    style: {
+      marginBottom: "16px"
+    }
+  }, /*#__PURE__*/React.createElement(StatCard, {
+    label: "New (not in last week)",
+    value: result.newVulnComparison.newTotal.toLocaleString(),
+    tone: "accent"
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "Existing (also in last week)",
+    value: result.newVulnComparison.existingTotal.toLocaleString(),
+    tone: "ok"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-3",
+    style: {
+      marginBottom: "16px"
+    }
+  }, result.newVulnComparison.byRisk.map(r => /*#__PURE__*/React.createElement(StatCard, {
+    key: r.risk,
+    label: `${r.label} (Sev ${r.risk}) new`,
+    value: r.Count.toLocaleString(),
+    tone: r.risk === 5 ? "crit" : r.risk === 4 ? "high" : "med"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-2"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "card-sub",
+    style: {
+      marginBottom: "8px",
+      fontWeight: 600,
+      color: "var(--text-dim)"
+    }
+  }, "New — By CSP"), result.newVulnComparison.byCSP.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "note-box"
+  }, "No new records") : result.newVulnComparison.byCSP.map(r => /*#__PURE__*/React.createElement(Bar, {
+    key: r.CSP,
+    label: r.CSP,
+    value: r.Count,
+    max: result.newVulnComparison.byCSP[0].Count,
+    color: "var(--accent)"
+  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "card-sub",
+    style: {
+      marginBottom: "8px",
+      fontWeight: 600,
+      color: "var(--text-dim)"
+    }
+  }, "New — By Application"), /*#__PURE__*/React.createElement("div", {
+    className: "table-scroll",
+    style: {
+      maxHeight: "260px"
+    }
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "data"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Application"), /*#__PURE__*/React.createElement("th", null, "New"))), /*#__PURE__*/React.createElement("tbody", null, result.newVulnComparison.byApp.map((r, i) => /*#__PURE__*/React.createElement("tr", {
+    key: i
+  }, /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--text)"
+    }
+  }, r.Application), /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "#FF4D6A"
+    }
+  }, r.Count))))))))), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title",
+    style: {
+      marginBottom: "12px"
+    }
+  }, "Overall"), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-4"
+  }, /*#__PURE__*/React.createElement(StatCard, {
+    label: "Total",
+    value: wm["Total Vulnerabilities"].toLocaleString(),
+    tone: "accent"
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "New",
+    value: wm["New Vulnerabilities"].toLocaleString()
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "Existing",
+    value: wm["Existing Vulnerabilities"].toLocaleString()
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "Reopened",
+    value: wm["Reopened Vulnerabilities"].toLocaleString(),
+    tone: "med"
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "Fixed",
+    value: wm["Fixed Vulnerabilities"].toLocaleString(),
+    tone: "ok"
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "Past Due SLA",
+    value: wm["Past Due Vulnerabilities"].toLocaleString(),
+    tone: "danger"
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "Within SLA",
+    value: wm["Within SLA"].toLocaleString(),
+    tone: "ok"
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "IF Vulnerabilities",
+    value: wm["IF Vulnerabilities"].toLocaleString()
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title",
+    style: {
+      marginBottom: "14px"
+    }
+  }, "By severity"), /*#__PURE__*/React.createElement(Bar, {
+    label: "Critical (5)",
+    value: wm["Severity 5"],
+    max: wm["Total Vulnerabilities"],
+    color: "var(--crit)"
+  }), /*#__PURE__*/React.createElement(Bar, {
+    label: "High (4)",
+    value: wm["Severity 4"],
+    max: wm["Total Vulnerabilities"],
+    color: "var(--high)"
+  }), /*#__PURE__*/React.createElement(Bar, {
+    label: "Medium (3)",
+    value: wm["Severity 3"],
+    max: wm["Total Vulnerabilities"],
+    color: "var(--med)"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title",
+    style: {
+      marginBottom: "14px"
+    }
+  }, "By cloud provider"), /*#__PURE__*/React.createElement(Bar, {
+    label: "AWS",
+    value: wm["AWS Vulnerabilities"],
+    max: wm["Total Vulnerabilities"],
+    color: "var(--aws)"
+  }), /*#__PURE__*/React.createElement(Bar, {
+    label: "Azure",
+    value: wm["Azure Vulnerabilities"],
+    max: wm["Total Vulnerabilities"],
+    color: "var(--azure)"
+  }), /*#__PURE__*/React.createElement(Bar, {
+    label: "On-Prem / Unknown",
+    value: wm["Total Vulnerabilities"] - wm["AWS Vulnerabilities"] - wm["Azure Vulnerabilities"],
+    max: wm["Total Vulnerabilities"],
+    color: "var(--onprem)"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "card-title"
+  }, "Application metrics"), /*#__PURE__*/React.createElement("div", {
+    className: "card-sub"
+  }, result.appMetrics.length, " applications represented"))), /*#__PURE__*/React.createElement("div", {
+    className: "table-scroll",
+    style: {
+      maxHeight: "420px"
+    }
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "data"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Application"), /*#__PURE__*/React.createElement("th", null, "APM ID"), /*#__PURE__*/React.createElement("th", null, "Owner"), /*#__PURE__*/React.createElement("th", null, "Total"), /*#__PURE__*/React.createElement("th", null, "Sev 5"), /*#__PURE__*/React.createElement("th", null, "Sev 4"), /*#__PURE__*/React.createElement("th", null, "Sev 3"), /*#__PURE__*/React.createElement("th", null, "Past Due"))), /*#__PURE__*/React.createElement("tbody", null, result.appMetrics.map((a, i) => /*#__PURE__*/React.createElement("tr", {
+    key: i
+  }, /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--text)"
+    }
+  }, a.Application), /*#__PURE__*/React.createElement("td", null, a["APM ID"]), /*#__PURE__*/React.createElement("td", null, a["App Owner"] || "—"), /*#__PURE__*/React.createElement("td", null, a.Total), /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--crit)"
+    }
+  }, a.Sev5), /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--high)"
+    }
+  }, a.Sev4), /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--med)"
+    }
+  }, a.Sev3), /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--danger)"
+    }
+  }, a.PastDue))))))));
+}
+
+/* ============================================================
+   VIEW: DASHBOARD
+   ============================================================ */
+
+function DashboardView({
+  result,
+  onRefresh,
+  running
+}) {
+  const [vulnStatusFilter, setVulnStatusFilter] = useState("all");
+  const [sevFilter, setSevFilter] = useState("all");
+  const [slaFilter, setSlaFilter] = useState("all");
+  if (!result) {
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "pagehead"
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+      className: "eyebrow"
+    }, "Overview"), /*#__PURE__*/React.createElement("h1", null, "Dashboard"))), /*#__PURE__*/React.createElement("div", {
+      className: "card"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "empty-state"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "glyph"
+    }, "◱"), /*#__PURE__*/React.createElement("h3", null, "Nothing to show yet"), /*#__PURE__*/React.createElement("p", null, "Upload your weekly files and run the pipeline to populate this dashboard."))));
+  }
+  const s = result.stats;
+  const vulnStatuses = Array.from(new Set(result.finalRows.map(r => r["Vulnerability Status"]).filter(Boolean))).sort();
+  const filteredRows = result.finalRows.filter(r => {
+    if (vulnStatusFilter !== "all" && r["Vulnerability Status"] !== vulnStatusFilter) return false;
+    if (sevFilter !== "all" && String(r["Risk Rating"]) !== sevFilter) return false;
+    if (slaFilter !== "all" && r["Within SLA/Past due SLA"] !== slaFilter) return false;
+    return true;
+  });
+  const wm = computeWeeklyMetricsFromRows(filteredRows);
+  const ifCount = filteredRows.filter(r => r["IF"] === "Yes" && r["PCI"] !== "Yes").length;
+  const pciCount = filteredRows.filter(r => r["PCI"] === "Yes" && r["IF"] !== "Yes").length;
+  const bothCount = filteredRows.filter(r => r["IF"] === "Yes" && r["PCI"] === "Yes").length;
+  const noneCount = filteredRows.length - ifCount - pciCount - bothCount;
+  const apps = new Set(filteredRows.map(r => r["Application Name"]).filter(Boolean)).size;
+  const apmIds = new Set(filteredRows.map(r => r["APM ID"]).filter(Boolean)).size;
+  const owners = new Set(filteredRows.map(r => r["App Owner"]).filter(Boolean)).size;
+  const orgs = new Set(filteredRows.map(r => r["Organization"]).filter(Boolean)).size;
+  const filtersActive = vulnStatusFilter !== "all" || sevFilter !== "all" || slaFilter !== "all";
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "pagehead"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "eyebrow"
+  }, "Overview"), /*#__PURE__*/React.createElement("h1", null, "Security operations dashboard"), /*#__PURE__*/React.createElement("p", null, "Report date ", result.processingSummary.find(p => p.Metric === "Report Date").Value)), /*#__PURE__*/React.createElement(RefreshButton, {
+    onRefresh: onRefresh,
+    running: running
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "card-title"
+  }, "Filters"), /*#__PURE__*/React.createElement("div", {
+    className: "card-sub"
+  }, filtersActive ? `Showing ${filteredRows.length.toLocaleString()} of ${result.finalRows.length.toLocaleString()} records` : "Showing all records — narrow by status, severity, or SLA state"))), /*#__PURE__*/React.createElement("div", {
+    className: "searchbar",
+    style: {
+      marginBottom: 0
+    }
+  }, /*#__PURE__*/React.createElement("select", {
+    value: vulnStatusFilter,
+    onChange: e => setVulnStatusFilter(e.target.value)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "all"
+  }, "All vulnerability statuses"), vulnStatuses.map(v => /*#__PURE__*/React.createElement("option", {
+    key: v,
+    value: v
+  }, v))), /*#__PURE__*/React.createElement("select", {
+    value: sevFilter,
+    onChange: e => setSevFilter(e.target.value)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "all"
+  }, "All severities"), /*#__PURE__*/React.createElement("option", {
+    value: "5"
+  }, "Critical (5)"), /*#__PURE__*/React.createElement("option", {
+    value: "4"
+  }, "High (4)"), /*#__PURE__*/React.createElement("option", {
+    value: "3"
+  }, "Medium (3)")), /*#__PURE__*/React.createElement("select", {
+    value: slaFilter,
+    onChange: e => setSlaFilter(e.target.value)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "all"
+  }, "All SLA states"), /*#__PURE__*/React.createElement("option", {
+    value: "Within SLA"
+  }, "Within SLA"), /*#__PURE__*/React.createElement("option", {
+    value: "Past Due SLA"
+  }, "Past Due SLA"), /*#__PURE__*/React.createElement("option", {
+    value: "Fixed"
+  }, "Fixed")), filtersActive && /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-ghost btn-sm",
+    onClick: () => {
+      setVulnStatusFilter("all");
+      setSevFilter("all");
+      setSlaFilter("all");
+    }
+  }, "Clear filters"))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-4",
+    style: {
+      marginTop: "16px"
+    }
+  }, /*#__PURE__*/React.createElement(StatCard, {
+    label: "Raw Qualys records",
+    value: s.qualysTotal.toLocaleString()
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "Sev 1/2 removed",
+    value: (s.sev1Removed + s.sev2Removed).toLocaleString(),
+    tone: "med"
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "After severity filter",
+    value: s.afterSeverityFilter.toLocaleString()
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: filtersActive ? "Filtered vulnerabilities" : "Final vulnerabilities",
+    value: filteredRows.length.toLocaleString(),
+    tone: "accent"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-2",
+    style: {
+      marginTop: "16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title",
+    style: {
+      marginBottom: "14px"
+    }
+  }, "Risk distribution"), /*#__PURE__*/React.createElement(Bar, {
+    label: "Critical",
+    value: wm["Severity 5"],
+    max: wm["Total Vulnerabilities"],
+    color: "var(--crit)"
+  }), /*#__PURE__*/React.createElement(Bar, {
+    label: "High",
+    value: wm["Severity 4"],
+    max: wm["Total Vulnerabilities"],
+    color: "var(--high)"
+  }), /*#__PURE__*/React.createElement(Bar, {
+    label: "Medium",
+    value: wm["Severity 3"],
+    max: wm["Total Vulnerabilities"],
+    color: "var(--med)"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title",
+    style: {
+      marginBottom: "14px"
+    }
+  }, "SLA compliance"), /*#__PURE__*/React.createElement(Bar, {
+    label: "Within SLA",
+    value: wm["Within SLA"],
+    max: wm["Total Vulnerabilities"],
+    color: "var(--ok)"
+  }), /*#__PURE__*/React.createElement(Bar, {
+    label: "Past Due",
+    value: wm["Past Due Vulnerabilities"],
+    max: wm["Total Vulnerabilities"],
+    color: "var(--danger)"
+  }), /*#__PURE__*/React.createElement(Bar, {
+    label: "Fixed",
+    value: wm["Fixed Vulnerabilities"],
+    max: wm["Total Vulnerabilities"],
+    color: "var(--text-faint)"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-2",
+    style: {
+      marginTop: "16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title",
+    style: {
+      marginBottom: "14px"
+    }
+  }, "Cloud footprint"), /*#__PURE__*/React.createElement(Bar, {
+    label: "AWS",
+    value: wm["AWS Vulnerabilities"],
+    max: wm["Total Vulnerabilities"],
+    color: "var(--aws)"
+  }), /*#__PURE__*/React.createElement(Bar, {
+    label: "Azure",
+    value: wm["Azure Vulnerabilities"],
+    max: wm["Total Vulnerabilities"],
+    color: "var(--azure)"
+  }), /*#__PURE__*/React.createElement(Bar, {
+    label: "On-Prem / Unknown",
+    value: wm["Total Vulnerabilities"] - wm["AWS Vulnerabilities"] - wm["Azure Vulnerabilities"],
+    max: wm["Total Vulnerabilities"],
+    color: "var(--onprem)"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title",
+    style: {
+      marginBottom: "14px"
+    }
+  }, "IF / PCI classification"), /*#__PURE__*/React.createElement(Bar, {
+    label: "IF only",
+    value: ifCount,
+    max: filteredRows.length || 1,
+    color: "var(--crit)"
+  }), /*#__PURE__*/React.createElement(Bar, {
+    label: "PCI only",
+    value: pciCount,
+    max: filteredRows.length || 1,
+    color: "var(--high)"
+  }), /*#__PURE__*/React.createElement(Bar, {
+    label: "IF & PCI",
+    value: bothCount,
+    max: filteredRows.length || 1,
+    color: "var(--med)"
+  }), /*#__PURE__*/React.createElement(Bar, {
+    label: "Non-IF/Non-PCI",
+    value: noneCount,
+    max: filteredRows.length || 1,
+    color: "var(--text-faint)"
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      marginTop: "16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title",
+    style: {
+      marginBottom: "12px"
+    }
+  }, "Business coverage"), /*#__PURE__*/React.createElement("div", {
+    className: "kv-strip"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kv"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "k"
+  }, "Applications"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, apps)), /*#__PURE__*/React.createElement("div", {
+    className: "kv"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "k"
+  }, "APM IDs"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, apmIds)), /*#__PURE__*/React.createElement("div", {
+    className: "kv"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "k"
+  }, "App owners"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, owners)), /*#__PURE__*/React.createElement("div", {
+    className: "kv"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "k"
+  }, "Organizations"), /*#__PURE__*/React.createElement("div", {
+    className: "v"
+  }, orgs)))));
+}
+
+/* ============================================================
+   VIEW: EXCEPTIONS
+   ============================================================ */
+
+function ExceptionsView({
+  result,
+  onRefresh,
+  running
+}) {
+  const [reasonFilter, setReasonFilter] = useState("all");
+  const [page, setPage] = useState(0);
+  const pageSize = 50;
+  if (!result) {
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "pagehead"
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+      className: "eyebrow"
+    }, "Stage 07 — Exceptions"), /*#__PURE__*/React.createElement("h1", null, "Exception log"))), /*#__PURE__*/React.createElement("div", {
+      className: "card"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "empty-state"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "glyph"
+    }, "⚠"), /*#__PURE__*/React.createElement("h3", null, "No exceptions yet"), /*#__PURE__*/React.createElement("p", null, "Run the pipeline — every unmatched, duplicate, or invalid record is logged here so nothing is silently dropped."))));
+  }
+  const reasons = Array.from(new Set(result.exceptions.map(e => e.Reason))).sort();
+  const filtered = reasonFilter === "all" ? result.exceptions : result.exceptions.filter(e => e.Reason === reasonFilter);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageRows = filtered.slice(page * pageSize, page * pageSize + pageSize);
+  const counts = {};
+  result.exceptions.forEach(e => {
+    counts[e.Reason] = (counts[e.Reason] || 0) + 1;
+  });
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "pagehead"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "eyebrow"
+  }, "Stage 07 — Exceptions"), /*#__PURE__*/React.createElement("h1", null, "Exception log"), /*#__PURE__*/React.createElement("p", null, result.exceptions.length.toLocaleString(), " entries — every excluded, duplicate, or unmatched record, with reason.")), /*#__PURE__*/React.createElement(RefreshButton, {
+    onRefresh: onRefresh,
+    running: running
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title",
+    style: {
+      marginBottom: "12px"
+    }
+  }, "By reason"), /*#__PURE__*/React.createElement("div", {
+    className: "chip-row"
+  }, Object.keys(counts).sort((a, b) => counts[b] - counts[a]).map(r => /*#__PURE__*/React.createElement("span", {
+    key: r,
+    className: "mini-chip",
+    style: {
+      cursor: "pointer",
+      borderColor: reasonFilter === r ? "var(--accent)" : undefined,
+      color: reasonFilter === r ? "var(--accent)" : undefined
+    },
+    onClick: () => {
+      setReasonFilter(reasonFilter === r ? "all" : r);
+      setPage(0);
+    }
+  }, r, " · ", counts[r])))), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "table-scroll",
+    style: {
+      maxHeight: "560px"
+    }
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "data"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "IP"), /*#__PURE__*/React.createElement("th", null, "QID"), /*#__PURE__*/React.createElement("th", null, "Reason"), /*#__PURE__*/React.createElement("th", null, "Source"), /*#__PURE__*/React.createElement("th", null, "Details"))), /*#__PURE__*/React.createElement("tbody", null, pageRows.map((e, i) => /*#__PURE__*/React.createElement("tr", {
+    key: i
+  }, /*#__PURE__*/React.createElement("td", null, e.IP), /*#__PURE__*/React.createElement("td", null, e.QID), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
+    className: "badge badge-neutral"
+  }, e.Reason)), /*#__PURE__*/React.createElement("td", null, e.Source), /*#__PURE__*/React.createElement("td", {
+    style: {
+      whiteSpace: "normal",
+      maxWidth: "420px"
+    }
+  }, e.Details)))))), /*#__PURE__*/React.createElement("div", {
+    className: "pager"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setPage(p => Math.max(0, p - 1)),
+    disabled: page === 0
+  }, "← Prev"), /*#__PURE__*/React.createElement("span", null, "Page ", page + 1, " of ", totalPages), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setPage(p => Math.min(totalPages - 1, p + 1)),
+    disabled: page >= totalPages - 1
+  }, "Next →"))));
+}
+
+/* ============================================================
+   VIEW: EXPORT + AUDIT TRAIL
+   ============================================================ */
+
+function ExportView({
+  result,
+  config,
+  auditTrail
+}) {
+  const [busy, setBusy] = useState(false);
+  const doXlsx = () => {
+    if (!result) return;
+    setBusy(true);
+    setTimeout(() => {
+      const wb = buildWorkbook(result, config.reportDate);
+      downloadWorkbookXLSX(wb, `Weekly_Vulnerability_Outcome_${config.reportDate}.xlsx`);
+      setBusy(false);
+    }, 30);
+  };
+  const doCsv = () => {
+    if (!result) return;
+    downloadFinalCSV(result, `Weekly_Vulnerability_Outcome_${config.reportDate}.csv`);
+  };
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "pagehead"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "eyebrow"
+  }, "Stage 08 — Export"), /*#__PURE__*/React.createElement("h1", null, "Export & audit trail"), /*#__PURE__*/React.createElement("p", null, "Generate the downloadable weekly outcome files, and review the run history for this browser."))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title",
+    style: {
+      marginBottom: "6px"
+    }
+  }, "Excel workbook"), /*#__PURE__*/React.createElement("div", {
+    className: "card-sub",
+    style: {
+      marginBottom: "14px"
+    }
+  }, "7 sheets: Final Outcome, Weekly Metrics, Application Metrics, AWS, Azure, Exceptions, Processing Summary"), /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-primary",
+    disabled: !result || busy,
+    onClick: doXlsx
+  }, busy ? /*#__PURE__*/React.createElement("span", {
+    className: "spinner"
+  }) : /*#__PURE__*/React.createElement(Icon, {
+    d: ICONS.download,
+    size: 14
+  }), " Download .xlsx")), /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title",
+    style: {
+      marginBottom: "6px"
+    }
+  }, "CSV export"), /*#__PURE__*/React.createElement("div", {
+    className: "card-sub",
+    style: {
+      marginBottom: "14px"
+    }
+  }, "Complete Final Outcome dataset, UTF-8, comma-safe, IPs and dates preserved as text"), /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-ghost",
+    disabled: !result,
+    onClick: doCsv
+  }, /*#__PURE__*/React.createElement(Icon, {
+    d: ICONS.download,
+    size: 14
+  }), " Download .csv"))), !result && /*#__PURE__*/React.createElement("div", {
+    className: "note-box warn",
+    style: {
+      marginTop: "4px"
+    }
+  }, "Run the pipeline from the Process tab before exporting."), /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      marginTop: "16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "card-title"
+  }, "Processing audit trail"), /*#__PURE__*/React.createElement("div", {
+    className: "card-sub"
+  }, "Stored locally per browser — persists across sessions"))), auditTrail.length === 0 ? /*#__PURE__*/React.createElement("div", {
+    className: "empty-state"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "glyph"
+  }, "◷"), /*#__PURE__*/React.createElement("h3", null, "No runs yet"), /*#__PURE__*/React.createElement("p", null, "Every time you generate a report, a record of the run is kept here.")) : /*#__PURE__*/React.createElement("div", {
+    className: "table-scroll",
+    style: {
+      maxHeight: "360px"
+    }
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "data"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Run ID"), /*#__PURE__*/React.createElement("th", null, "Report Date"), /*#__PURE__*/React.createElement("th", null, "Run At"), /*#__PURE__*/React.createElement("th", null, "Qualys"), /*#__PURE__*/React.createElement("th", null, "Final Records"), /*#__PURE__*/React.createElement("th", null, "Exceptions"), /*#__PURE__*/React.createElement("th", null, "Duration"))), /*#__PURE__*/React.createElement("tbody", null, auditTrail.slice().reverse().map(run => /*#__PURE__*/React.createElement("tr", {
+    key: run.runId
+  }, /*#__PURE__*/React.createElement("td", null, run.runId), /*#__PURE__*/React.createElement("td", null, run.reportDate), /*#__PURE__*/React.createElement("td", null, run.runAt), /*#__PURE__*/React.createElement("td", null, run.qualysFile), /*#__PURE__*/React.createElement("td", null, run.finalCount), /*#__PURE__*/React.createElement("td", null, run.exceptionCount), /*#__PURE__*/React.createElement("td", null, run.durationMs, " ms"))))))));
+}
+
+/* ============================================================
+   ROOT APP
+   ============================================================ */
+
+function HowStep({
+  no,
+  title,
+  children
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "card"
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      display: "flex",
+      alignItems: "flex-start",
+      gap: "14px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      flexShrink: 0,
+      width: 34,
+      height: 34,
+      borderRadius: 9,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      background: "linear-gradient(160deg, rgba(225,18,44,0.18), rgba(225,18,44,0.06))",
+      border: "1px solid rgba(225,18,44,0.3)",
+      fontFamily: "var(--disp)",
+      fontWeight: 700,
+      color: "#FF4D6A",
+      fontSize: 14
+    }
+  }, no), /*#__PURE__*/React.createElement("div", {
+    style: {
+      flex: 1
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title",
+    style: {
+      marginBottom: "6px"
+    }
+  }, title), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: "var(--text-dim)",
+      fontSize: "12.5px",
+      lineHeight: 1.65
+    }
+  }, children))));
+}
+function HowItWorksView() {
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "pagehead"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "eyebrow"
+  }, "Reference"), /*#__PURE__*/React.createElement("h1", null, "How this tool works"), /*#__PURE__*/React.createElement("p", null, "A plain-English walkthrough of the pipeline — what happens to your data from upload to final report, and where to look for what."))), /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      marginBottom: "16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title",
+    style: {
+      marginBottom: "8px"
+    }
+  }, "The short version"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: "var(--text-dim)",
+      fontSize: "12.5px",
+      lineHeight: 1.7
+    }
+  }, "Everything runs ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: "var(--text)"
+    }
+  }, "entirely in your browser"), " — there's no server and no database. When you click ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: "var(--text)"
+    }
+  }, "Generate Final Report"), ", the app filters your Qualys export, matches each vulnerability to a running AWS or Azure asset by IP, enriches it with CMDB ownership data, applies your configured SLA rules, and produces a searchable report plus dashboards. Nothing is ever silently dropped — anything excluded or ambiguous is logged to the Exceptions tab with a reason.")), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-2"
+  }, /*#__PURE__*/React.createElement(HowStep, {
+    no: "1",
+    title: "Severity filter"
+  }, "Severity 1 and 2 are always removed — this is a fixed rule. Rows below your configured minimum severity (default: 3) are dropped too. Rows with a missing or invalid severity, IP, or QID are excluded and logged to Exceptions rather than silently skipped."), /*#__PURE__*/React.createElement(HowStep, {
+    no: "2",
+    title: "Unique ID & Vulnerability ID"
+  }, "Every surviving row gets ", /*#__PURE__*/React.createElement("code", {
+    className: "inline"
+  }, "IP/QID"), " as both its Unique id and Vulnerability ID — deterministic, so the same vulnerability gets the same ID every week. This is what makes week-over-week comparison possible."), /*#__PURE__*/React.createElement(HowStep, {
+    no: "3",
+    title: "Cloud matching (AWS → Azure)"
+  }, "The app builds an instant lookup of every AWS/Azure private IP up front, then checks: is this IP a ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: "var(--text)"
+    }
+  }, "running"), " instance? If yes, ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: "var(--text)"
+    }
+  }, "CSP"), ", ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: "var(--text)"
+    }
+  }, "Cloud Account Name"), " and ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: "var(--text)"
+    }
+  }, "Impacted Asset"), " (the IP itself) are filled in. Stopped/terminated instances don't count as a match — they're logged as \"IP Not Running\" instead."), /*#__PURE__*/React.createElement(HowStep, {
+    no: "4",
+    title: "CMDB enrichment — 3 tiers"
+  }, "To fill Application Name, APM ID, IF/PCI and ownership, the app tries ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: "var(--text)"
+    }
+  }, "IP"), " first, then the", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: "var(--text)"
+    }
+  }, " 5-digit correlation code"), " shared between the cloud Account/Subscription name and the CMDB's correlation field, then hostname as a last resort. First match wins; duplicates are flagged, never silently picked."), /*#__PURE__*/React.createElement(HowStep, {
+    no: "5",
+    title: "Vulnerability Category — self-decided"
+  }, "No CMDB mapping needed: each vulnerability is automatically classified as ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: "var(--text)"
+    }
+  }, "Operating System"), " or ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: "var(--text)"
+    }
+  }, "Application"), "by scanning Qualys's own Category, Title and OS fields for keyword signals (Windows/Linux/kernel → OS; Apache/database/browser → Application)."), /*#__PURE__*/React.createElement(HowStep, {
+    no: "6",
+    title: "SLA & Vulnerability Age"
+  }, "SLA days come from your configurable table (Critical/High/Medium × IF/PCI classification). Vulnerability Age is always", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: "var(--text)"
+    }
+  }, " today's actual date minus First Found date"), " — recalculated fresh every time you generate, regardless of the Report Date field. Past the SLA? It's flagged ", /*#__PURE__*/React.createElement("span", {
+    className: "badge badge-danger",
+    style: {
+      marginLeft: 4
+    }
+  }, "Past Due SLA"), ".")), /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      marginTop: "16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title",
+    style: {
+      marginBottom: "10px"
+    }
+  }, "Nothing gets silently dropped"), /*#__PURE__*/React.createElement("p", {
+    style: {
+      color: "var(--text-dim)",
+      fontSize: "12.5px",
+      lineHeight: 1.7,
+      margin: "0 0 10px"
+    }
+  }, "Every exclusion or ambiguity — an invalid IP, a duplicate CMDB match, a stopped instance, a missing SLA rule — is written to the ", /*#__PURE__*/React.createElement("b", {
+    style: {
+      color: "var(--text)"
+    }
+  }, "Exceptions"), " log with the record's IP/QID, a reason, the source system, and a plain-language detail. A row landing in Exceptions doesn't necessarily mean it's missing from the Final Report — severity/IP/QID failures are hard exclusions, everything else is a data-quality flag on a row that still appears in your report."), /*#__PURE__*/React.createElement("div", {
+    className: "chip-row"
+  }, ["Invalid Severity", "Invalid IP", "Missing QID", "AWS/Azure IP Not Running", "Duplicate AWS/Azure IP", "No Cloud Inventory Match", "CMDB Duplicate Match", "CMDB Match Missing", "Missing SLA Config"].map(r => /*#__PURE__*/React.createElement("span", {
+    key: r,
+    className: "mini-chip"
+  }, r)))), /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      marginTop: "16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-title",
+    style: {
+      marginBottom: "12px"
+    }
+  }, "Where to look"), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kv-strip",
+    style: {
+      flexDirection: "column",
+      alignItems: "stretch",
+      gap: "10px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kv"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "k"
+  }, "Report"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: "12px",
+      color: "var(--text-dim)",
+      marginTop: "4px"
+    }
+  }, "The full 57-column table — searchable, filterable, paginated.")), /*#__PURE__*/React.createElement("div", {
+    className: "kv"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "k"
+  }, "Insights"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: "12px",
+      color: "var(--text-dim)",
+      marginTop: "4px"
+    }
+  }, "Top vulnerabilities, top CVEs, aging, exploitability, risk concentration by environment."))), /*#__PURE__*/React.createElement("div", {
+    className: "kv-strip",
+    style: {
+      flexDirection: "column",
+      alignItems: "stretch",
+      gap: "10px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "kv"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "k"
+  }, "Metrics & Dashboard"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: "12px",
+      color: "var(--text-dim)",
+      marginTop: "4px"
+    }
+  }, "Weekly totals, SLA/severity/cloud breakdowns, fixed-vs-last-week by CSP and Application. Dashboard has live filters by status, severity and SLA state.")), /*#__PURE__*/React.createElement("div", {
+    className: "kv"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "k"
+  }, "Exceptions & Export"), /*#__PURE__*/React.createElement("div", {
+    style: {
+      fontSize: "12px",
+      color: "var(--text-dim)",
+      marginTop: "4px"
+    }
+  }, "Full data-quality log, plus the 7-sheet XLSX and CSV downloads and the run audit trail."))))), /*#__PURE__*/React.createElement("div", {
+    className: "note-box",
+    style: {
+      marginTop: "16px"
+    }
+  }, "Every tab has a ", /*#__PURE__*/React.createElement("b", null, "Refresh"), " button — if you tweak something on Configure after your first run (an SLA rule, a CMDB mapping), hit Refresh on any data tab to re-run the pipeline with the current files instead of going back to Process."));
+}
+function FixedVulnerabilitiesView({
+  result,
+  onRefresh,
+  running
+}) {
+  const [apmFilter, setApmFilter] = useState("");
+  const [ipFilter, setIpFilter] = useState("");
+  const [qidFilter, setQidFilter] = useState("");
+  const [sevFilter, setSevFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [page, setPage] = useState(0);
+  const pageSize = 40;
+  const fc = result ? result.fixedComparison : null;
+  const records = fc ? fc.records || [] : [];
+  const ipList = useMemo(() => ipFilter.split(/[,\n\s]+/).map(s => s.trim()).filter(Boolean), [ipFilter]);
+  const filtered = useMemo(() => {
+    let r = records;
+    if (apmFilter.trim()) {
+      const s = apmFilter.trim().toLowerCase();
+      r = r.filter(x => (x["APM ID"] || "").toLowerCase().includes(s));
+    }
+    if (ipList.length) {
+      const set = new Set(ipList.map(x => x.toLowerCase()));
+      r = r.filter(x => set.has((x["IP"] || "").toLowerCase()));
+    }
+    if (qidFilter.trim()) {
+      const s = qidFilter.trim().toLowerCase();
+      r = r.filter(x => (x.__qid || "").toLowerCase().includes(s));
+    }
+    if (sevFilter !== "all") {
+      r = r.filter(x => String(x["Risk Rating"]) === sevFilter);
+    }
+    if (dateFrom) {
+      const from = parseDateFlexible(dateFrom);
+      if (from) r = r.filter(x => {
+        const d = parseDateFlexible(x["Last Detected"]);
+        return d && d >= from;
+      });
+    }
+    if (dateTo) {
+      const to = parseDateFlexible(dateTo);
+      if (to) r = r.filter(x => {
+        const d = parseDateFlexible(x["Last Detected"]);
+        return d && d <= to;
+      });
+    }
+    return r;
+  }, [records, apmFilter, ipList, qidFilter, sevFilter, dateFrom, dateTo]);
+  useEffect(() => {
+    setPage(0);
+  }, [apmFilter, ipFilter, qidFilter, sevFilter, dateFrom, dateTo]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageRows = filtered.slice(page * pageSize, page * pageSize + pageSize);
+  const filtersActive = !!(apmFilter || ipFilter || qidFilter || sevFilter !== "all" || dateFrom || dateTo);
+  const clearFilters = () => {
+    setApmFilter("");
+    setIpFilter("");
+    setQidFilter("");
+    setSevFilter("all");
+    setDateFrom("");
+    setDateTo("");
+  };
+  if (!result) {
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "pagehead"
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+      className: "eyebrow"
+    }, "Reference"), /*#__PURE__*/React.createElement("h1", null, "Fixed vulnerabilities"))), /*#__PURE__*/React.createElement("div", {
+      className: "card"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "empty-state"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "glyph"
+    }, "✓"), /*#__PURE__*/React.createElement("h3", null, "No data yet"), /*#__PURE__*/React.createElement("p", null, "Run the pipeline from the Process tab first."))));
+  }
+  if (!fc || fc.total === 0) {
+    const hadPrevWeek = fc && fc.hasPreviousWeek;
+    return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+      className: "pagehead"
+    }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+      className: "eyebrow"
+    }, "Reference"), /*#__PURE__*/React.createElement("h1", null, "Fixed vulnerabilities")), /*#__PURE__*/React.createElement(RefreshButton, {
+      onRefresh: onRefresh,
+      running: running
+    })), /*#__PURE__*/React.createElement("div", {
+      className: "card"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "empty-state"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "glyph"
+    }, "✓"), /*#__PURE__*/React.createElement("h3", null, "No fixed vulnerabilities to show"), /*#__PURE__*/React.createElement("p", null, hadPrevWeek ? "Nothing in this week's report is marked Fixed by Qualys, and nothing from last week's report has disappeared from this week's — so there's genuinely nothing to show yet." : "Nothing in the current report is marked Fixed by Qualys (checked both the Vuln Status column and Date Last Fixed). Many Qualys \u201craw\u201d exports only list currently-open vulnerabilities, so an empty result here is often expected on a Qualys-only run."), !hadPrevWeek && /*#__PURE__*/React.createElement("p", {
+      style: {
+        marginTop: "10px"
+      }
+    }, "Upload last week's Final Outcome file in the optional \"Previous Week Final Outcome\" slot on the Upload tab, then hit Refresh — that also catches vulnerabilities that simply disappeared between last week and this week (remediated)."))));
+  }
+  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "pagehead"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "eyebrow"
+  }, "Reference"), /*#__PURE__*/React.createElement("h1", null, "Fixed vulnerabilities"), /*#__PURE__*/React.createElement("p", null, filtered.length.toLocaleString(), " of ", records.length.toLocaleString(), " fixed records shown", fc.hasPreviousWeek ? " — compared against last week's Final Outcome." : " — from this week's Qualys-marked-Fixed status only.")), /*#__PURE__*/React.createElement(RefreshButton, {
+    onRefresh: onRefresh,
+    running: running
+  })), !fc.hasPreviousWeek && /*#__PURE__*/React.createElement("div", {
+    className: "note-box warn",
+    style: {
+      marginBottom: "16px"
+    }
+  }, "No previous week's Final Outcome file was uploaded, so this list only reflects vulnerabilities Qualys itself marks Fixed in the current report (Method 1 — works from the Qualys raw report alone). Upload last week's Final Outcome in the optional \"Previous Week Final Outcome\" slot on the Upload tab and refresh to also catch vulnerabilities that simply disappeared between last week and this week (remediated)."), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-3"
+  }, /*#__PURE__*/React.createElement(StatCard, {
+    label: "Total fixed",
+    value: fc.total.toLocaleString(),
+    tone: "ok"
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "Remediated (no longer present)",
+    value: records.filter(r => r.__fixReason.startsWith("Remediated")).length.toLocaleString(),
+    tone: "accent"
+  }), /*#__PURE__*/React.createElement(StatCard, {
+    label: "Marked Fixed in Qualys",
+    value: records.filter(r => r.__fixReason === "Marked Fixed in Qualys").length.toLocaleString()
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      marginTop: "16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "card-title"
+  }, "Fixed count by severity"), /*#__PURE__*/React.createElement("div", {
+    className: "card-sub"
+  }, fc.hasPreviousWeek ? "Comparing last week's report against this week's" : "From this week's report"))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-3"
+  }, fc.byRisk.map(r => /*#__PURE__*/React.createElement(StatCard, {
+    key: r.risk,
+    label: `${r.label} (Sev ${r.risk})`,
+    value: r.Fixed.toLocaleString(),
+    tone: r.risk === 5 ? "crit" : r.risk === 4 ? "high" : "med"
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      marginTop: "16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "card-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    className: "card-title"
+  }, "Filters"), /*#__PURE__*/React.createElement("div", {
+    className: "card-sub"
+  }, "Narrow by APM ID, one or more IPs, QID, severity, or a Last Detected date range")), filtersActive && /*#__PURE__*/React.createElement("button", {
+    className: "btn btn-ghost btn-sm",
+    onClick: clearFilters
+  }, "Clear filters")), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-2"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "field"
+  }, /*#__PURE__*/React.createElement("label", null, "APM ID"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    placeholder: "e.g. APM12345",
+    value: apmFilter,
+    onChange: e => setApmFilter(e.target.value)
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "field"
+  }, /*#__PURE__*/React.createElement("label", null, "QID"), /*#__PURE__*/React.createElement("input", {
+    type: "text",
+    placeholder: "e.g. 123456",
+    value: qidFilter,
+    onChange: e => setQidFilter(e.target.value)
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "field",
+    style: {
+      gridColumn: "1 / -1"
+    }
+  }, /*#__PURE__*/React.createElement("label", null, "IP — one or more (comma, space, or newline separated)"), /*#__PURE__*/React.createElement("textarea", {
+    rows: "2",
+    placeholder: "10.20.30.40, 10.20.30.41\n10.20.30.42",
+    value: ipFilter,
+    onChange: e => setIpFilter(e.target.value)
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "field"
+  }, /*#__PURE__*/React.createElement("label", null, "Severity"), /*#__PURE__*/React.createElement("select", {
+    value: sevFilter,
+    onChange: e => setSevFilter(e.target.value)
+  }, /*#__PURE__*/React.createElement("option", {
+    value: "all"
+  }, "All severities"), /*#__PURE__*/React.createElement("option", {
+    value: "5"
+  }, "Critical (5)"), /*#__PURE__*/React.createElement("option", {
+    value: "4"
+  }, "High (4)"), /*#__PURE__*/React.createElement("option", {
+    value: "3"
+  }, "Medium (3)"))), /*#__PURE__*/React.createElement("div", null), /*#__PURE__*/React.createElement("div", {
+    className: "field"
+  }, /*#__PURE__*/React.createElement("label", null, "Last Detected — from"), /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: dateFrom,
+    onChange: e => setDateFrom(e.target.value)
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "field"
+  }, /*#__PURE__*/React.createElement("label", null, "Last Detected — to"), /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: dateTo,
+    onChange: e => setDateTo(e.target.value)
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "card",
+    style: {
+      marginTop: "16px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "table-scroll",
+    style: {
+      maxHeight: "560px"
+    }
+  }, /*#__PURE__*/React.createElement("table", {
+    className: "data"
+  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "APM ID"), /*#__PURE__*/React.createElement("th", null, "Application"), /*#__PURE__*/React.createElement("th", null, "IP"), /*#__PURE__*/React.createElement("th", null, "QID"), /*#__PURE__*/React.createElement("th", null, "CSP"), /*#__PURE__*/React.createElement("th", null, "Risk"), /*#__PURE__*/React.createElement("th", null, "Last Detected"), /*#__PURE__*/React.createElement("th", null, "Fix Reason"))), /*#__PURE__*/React.createElement("tbody", null, pageRows.map((r, i) => /*#__PURE__*/React.createElement("tr", {
+    key: i
+  }, /*#__PURE__*/React.createElement("td", null, r["APM ID"] || "—"), /*#__PURE__*/React.createElement("td", {
+    style: {
+      color: "var(--text)"
+    }
+  }, r["Application Name"] || "—"), /*#__PURE__*/React.createElement("td", null, r["IP"]), /*#__PURE__*/React.createElement("td", null, r.__qid || "—"), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(CspBadge, {
+    v: r["CSP"]
+  })), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement(SevBadge, {
+    sev: r["Risk Rating"]
+  })), /*#__PURE__*/React.createElement("td", null, r["Last Detected"] || "—"), /*#__PURE__*/React.createElement("td", null, /*#__PURE__*/React.createElement("span", {
+    className: "badge " + (r.__fixReason.startsWith("Remediated") ? "badge-ok" : "badge-neutral")
+  }, r.__fixReason)))))), pageRows.length === 0 && /*#__PURE__*/React.createElement("div", {
+    className: "empty-state",
+    style: {
+      padding: "36px 20px"
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "glyph"
+  }, "◌"), /*#__PURE__*/React.createElement("h3", null, "No matches"), /*#__PURE__*/React.createElement("p", null, "No fixed vulnerabilities match the current filters."))), /*#__PURE__*/React.createElement("div", {
+    className: "pager"
+  }, /*#__PURE__*/React.createElement("button", {
+    onClick: () => setPage(p => Math.max(0, p - 1)),
+    disabled: page === 0
+  }, "← Prev"), /*#__PURE__*/React.createElement("span", null, "Page ", page + 1, " of ", totalPages), /*#__PURE__*/React.createElement("button", {
+    onClick: () => setPage(p => Math.min(totalPages - 1, p + 1)),
+    disabled: page >= totalPages - 1
+  }, "Next →"))));
+}
+function App() {
+  const [activeTab, setActiveTab] = useState("upload");
+  const [files, setFiles] = useState({
+    qualys: null,
+    aws: null,
+    azure: null,
+    cmdb: null,
+    previous: null
+  });
+  const [cmdbMapping, setCmdbMapping] = useState({});
+  const [config, setConfig] = useState({
+    reportDate: todayISO(),
+    severityMin: 3,
+    slaRules: DEFAULT_SLA_RULES.map(r => ({
+      ...r
+    })),
+    scanTypeRules: DEFAULT_SCAN_TYPE_RULES.map(r => ({
+      ...r
+    })),
+    exceptionApprovals: []
+  });
+  const [result, setResult] = useState(null);
+  const [running, setRunning] = useState(false);
+  const [auditTrail, setAuditTrail] = useState([]);
+  const [toast, setToast] = useState(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        const stored = await window.storage.get("vulnops-audit-trail");
+        if (stored && stored.value) setAuditTrail(JSON.parse(stored.value));
+      } catch (e) {/* no history yet */}
+      try {
+        const cfgStored = await window.storage.get("vulnops-config");
+        if (cfgStored && cfgStored.value) {
+          const parsed = JSON.parse(cfgStored.value);
+          if (parsed.config) setConfig(c => ({
+            ...c,
+            ...parsed.config,
+            reportDate: todayISO()
+          }));
+          if (parsed.cmdbMapping) setCmdbMapping(parsed.cmdbMapping);
+        }
+      } catch (e) {/* no saved config yet */}
+    })();
+  }, []);
+  const setFile = (key, data) => {
+    setFiles(f => ({
+      ...f,
+      [key]: data
+    }));
+    if (key === "cmdb" && data) {
+      setCmdbMapping(autoGuessCmdbMapping(data.headers));
+    }
+    setResult(null);
+  };
+  const showToast = (msg, type) => {
+    setToast({
+      msg,
+      type
+    });
+    setTimeout(() => setToast(null), 3500);
+  };
+  const resetAll = () => {
+    setFiles({
+      qualys: null,
+      aws: null,
+      azure: null,
+      cmdb: null,
+      previous: null
+    });
+    setCmdbMapping({});
+    setResult(null);
+    showToast("All uploaded files cleared.");
+  };
+  const runPipelineNow = () => {
+    if (!files.qualys) {
+      showToast("Upload the Qualys report first.", "err");
+      return;
+    }
+    setRunning(true);
+    setTimeout(() => {
+      try {
+        const previousFinalRows = files.previous ? files.previous.rows : null;
+        const t0 = performance.now();
+        const res = runPipeline({
+          qualysData: files.qualys,
+          awsData: files.aws,
+          azureData: files.azure,
+          cmdbData: files.cmdb,
+          cmdbMapping,
+          config,
+          previousFinalRows
+        });
+        const durationMs = Math.round(performance.now() - t0);
+        setResult(res);
+        const run = {
+          runId: "RUN-" + uid().toUpperCase(),
+          reportDate: config.reportDate,
+          runAt: new Date().toLocaleString(),
+          qualysFile: files.qualys.fileName,
+          finalCount: res.finalRows.length,
+          exceptionCount: res.exceptions.length,
+          durationMs
+        };
+        const newTrail = [...auditTrail, run];
+        setAuditTrail(newTrail);
+        window.storage.set("vulnops-audit-trail", JSON.stringify(newTrail), false).catch(() => {});
+        window.storage.set("vulnops-config", JSON.stringify({
+          config,
+          cmdbMapping
+        }), false).catch(() => {});
+        showToast(`Report generated: ${res.finalRows.length.toLocaleString()} final records.`);
+      } catch (e) {
+        console.error(e);
+        showToast("Processing failed: " + e.message, "err");
+      }
+      setRunning(false);
+    }, 40);
+  };
+  const canRun = !!files.qualys;
+  const navItems = [{
+    key: "upload",
+    label: "Upload",
+    icon: ICONS.upload
+  }, {
+    key: "configure",
+    label: "Configure",
+    icon: ICONS.cog
+  }, {
+    key: "process",
+    label: "Process",
+    icon: ICONS.play
+  }, {
+    key: "report",
+    label: "Report",
+    icon: ICONS.table,
+    badge: result ? result.finalRows.length : null
+  }, {
+    key: "insights",
+    label: "Insights",
+    icon: ICONS.spark
+  }, {
+    key: "metrics",
+    label: "Metrics",
+    icon: ICONS.chart
+  }, {
+    key: "dashboard",
+    label: "Dashboard",
+    icon: ICONS.grid
+  }, {
+    key: "exceptions",
+    label: "Exceptions",
+    icon: ICONS.alert,
+    badge: result ? result.exceptions.length : null
+  }, {
+    key: "fixed",
+    label: "Fixed Vulns",
+    icon: ICONS.check,
+    badge: result && result.fixedComparison ? result.fixedComparison.total : null
+  }, {
+    key: "export",
+    label: "Export",
+    icon: ICONS.download
+  }];
+  const helpItems = [{
+    key: "howitworks",
+    label: "How It Works",
+    icon: ICONS.book
+  }];
+  return /*#__PURE__*/React.createElement("div", {
+    className: "app-shell"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "sidebar"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "brand"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "brand-mark"
+  }, "V"), /*#__PURE__*/React.createElement("div", {
+    className: "brand-text"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "t1"
+  }, "VulnOps"), /*#__PURE__*/React.createElement("div", {
+    className: "t2"
+  }, "Reporting Engine"))), /*#__PURE__*/React.createElement("div", {
+    className: "nav-section-label"
+  }, "Pipeline"), /*#__PURE__*/React.createElement("div", {
+    className: "nav"
+  }, navItems.map(n => /*#__PURE__*/React.createElement(Nav, {
+    key: n.key,
+    icon: n.icon,
+    label: n.label,
+    badge: n.badge,
+    active: activeTab === n.key,
+    onClick: () => setActiveTab(n.key)
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "nav-section-label"
+  }, "Help"), /*#__PURE__*/React.createElement("div", {
+    className: "nav"
+  }, helpItems.map(n => /*#__PURE__*/React.createElement(Nav, {
+    key: n.key,
+    icon: n.icon,
+    label: n.label,
+    badge: n.badge,
+    active: activeTab === n.key,
+    onClick: () => setActiveTab(n.key)
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "sidebar-foot"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "report-date-mini"
+  }, "Report date · ", config.reportDate), /*#__PURE__*/React.createElement("div", {
+    className: "credit"
+  }, "Built by Barathraj V"))), /*#__PURE__*/React.createElement("div", {
+    className: "main"
+  }, activeTab === "upload" && /*#__PURE__*/React.createElement(UploadView, {
+    files: files,
+    setFile: setFile,
+    onReset: resetAll
+  }), activeTab === "configure" && /*#__PURE__*/React.createElement(ConfigureView, {
+    config: config,
+    setConfig: setConfig,
+    cmdbMapping: cmdbMapping,
+    setCmdbMapping: setCmdbMapping,
+    files: files,
+    result: result
+  }), activeTab === "process" && /*#__PURE__*/React.createElement(ProcessView, {
+    files: files,
+    config: config,
+    cmdbMapping: cmdbMapping,
+    result: result,
+    onRun: runPipelineNow,
+    running: running,
+    canRun: canRun
+  }), activeTab === "report" && /*#__PURE__*/React.createElement(ReportView, {
+    result: result,
+    onRefresh: runPipelineNow,
+    running: running
+  }), activeTab === "insights" && /*#__PURE__*/React.createElement(InsightsView, {
+    result: result,
+    onRefresh: runPipelineNow,
+    running: running
+  }), activeTab === "metrics" && /*#__PURE__*/React.createElement(MetricsView, {
+    result: result,
+    onRefresh: runPipelineNow,
+    running: running
+  }), activeTab === "dashboard" && /*#__PURE__*/React.createElement(DashboardView, {
+    result: result,
+    onRefresh: runPipelineNow,
+    running: running
+  }), activeTab === "exceptions" && /*#__PURE__*/React.createElement(ExceptionsView, {
+    result: result,
+    onRefresh: runPipelineNow,
+    running: running
+  }), activeTab === "fixed" && /*#__PURE__*/React.createElement(FixedVulnerabilitiesView, {
+    result: result,
+    onRefresh: runPipelineNow,
+    running: running
+  }), activeTab === "export" && /*#__PURE__*/React.createElement(ExportView, {
+    result: result,
+    config: config,
+    auditTrail: auditTrail
+  }), activeTab === "howitworks" && /*#__PURE__*/React.createElement(HowItWorksView, null)), /*#__PURE__*/React.createElement(Toast, {
+    toast: toast,
+    onClose: () => setToast(null)
+  }));
+}
+ReactDOM.createRoot(document.getElementById("root")).render(/*#__PURE__*/React.createElement(App, null));
+</script>
+</body>
+</html>

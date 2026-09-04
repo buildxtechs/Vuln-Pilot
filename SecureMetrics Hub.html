@@ -1,0 +1,1463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SecureMetrics Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pptxgenjs/3.12.0/pptxgen.bundle.min.js"></script>
+<style>
+:root{
+  --bg:#0A1120; --surface:#101A2E; --surface2:#141F38; --border:#1E2C48;
+  --text:#E7ECF6; --text-dim:#8C9AB8; --text-faint:#5C6A88;
+  --accent:#2DD4BF; --accent-dim:#0F766E; --accent-glow:rgba(45,212,191,.18);
+  --crit:#FB4570; --high:#FB923C; --med:#FBBF24; --low:#38BDF8;
+  --ok:#34D399; --warn:#FBBF24; --bad:#FB4570;
+  --font-display:'Space Grotesk',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --radius:10px; --radius-sm:6px;
+  --shadow:0 8px 24px rgba(0,0,0,.35);
+}
+[data-theme="light"]{
+  --bg:#F3F5F9; --surface:#FFFFFF; --surface2:#F7F9FC; --border:#E2E8F2;
+  --text:#101728; --text-dim:#586179; --text-faint:#9AA3B8;
+  --accent:#0D9488; --accent-dim:#CCFBF1; --accent-glow:rgba(13,148,136,.12);
+  --shadow:0 8px 20px rgba(20,30,60,.08);
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  background:var(--bg); color:var(--text); font-family:var(--font-body);
+  min-height:100vh; -webkit-font-smoothing:antialiased; transition:background .25s ease,color .25s ease;
+}
+::-webkit-scrollbar{width:10px;height:10px;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+a{color:inherit;}
+button{font-family:inherit;cursor:pointer;}
+input,select,textarea{font-family:inherit;}
+
+/* ---------- Shell layout ---------- */
+#shell{display:grid; grid-template-columns:220px 1fr; grid-template-rows:64px auto 1fr; grid-template-areas:"topbar topbar" "nav filters" "nav main"; min-height:100vh;}
+#topbar{grid-area:topbar; display:flex; align-items:center; justify-content:space-between; padding:0 22px; border-bottom:1px solid var(--border); background:var(--surface); position:sticky; top:0; z-index:40;}
+.brand{display:flex; align-items:baseline; gap:12px;}
+.brand-mark{display:flex; align-items:center; gap:10px;}
+.brand-icon{width:30px;height:30px; border-radius:8px; background:linear-gradient(135deg,var(--accent),var(--accent-dim)); display:flex;align-items:center;justify-content:center; box-shadow:0 0 0 1px var(--border), 0 6px 16px var(--accent-glow);}
+.brand-icon svg{width:16px;height:16px;}
+.brand h1{font-family:var(--font-display); font-size:19px; font-weight:700; letter-spacing:-.01em;}
+.brand .tagline{font-size:12px; color:var(--text-dim); font-weight:500; letter-spacing:.02em;}
+.topbar-right{display:flex; align-items:center; gap:14px;}
+.global-search{display:flex;align-items:center;gap:8px;background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:7px 14px;min-width:230px;}
+.global-search input{background:transparent;border:none;outline:none;color:var(--text);font-size:13px;width:100%;}
+.global-search svg{width:14px;height:14px;color:var(--text-faint);flex-shrink:0;}
+.icon-btn{width:36px;height:36px;border-radius:9px;border:1px solid var(--border);background:var(--surface2);display:flex;align-items:center;justify-content:center;color:var(--text-dim);transition:.15s;}
+.icon-btn:hover{color:var(--accent);border-color:var(--accent-dim);}
+.icon-btn svg{width:16px;height:16px;}
+.watermark{position:relative; font-size:11px; color:var(--text-faint); font-family:var(--font-mono); letter-spacing:.03em; cursor:default; padding:4px 2px;}
+.watermark .credit-pop{position:absolute; top:130%; right:0; background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; white-space:nowrap; font-size:11.5px; color:var(--text); opacity:0; transform:translateY(-4px); pointer-events:none; transition:.15s; box-shadow:var(--shadow); font-family:var(--font-body);}
+.watermark:hover .credit-pop{opacity:1; transform:translateY(0);}
+
+#nav{grid-area:nav; border-right:1px solid var(--border); background:var(--surface); padding:16px 10px; display:flex; flex-direction:column; gap:2px; position:sticky; top:64px; align-self:start; height:calc(100vh - 64px); overflow-y:auto;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:var(--text-dim);font-size:13px;font-weight:500;border:1px solid transparent;transition:.12s;}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;}
+.nav-item:hover{background:var(--surface2);color:var(--text);}
+.nav-item.active{background:var(--accent-glow);color:var(--accent);border-color:var(--accent-dim);}
+.nav-sep{height:1px;background:var(--border);margin:10px 4px;}
+.nav-label{font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-faint); padding:10px 12px 4px;}
+.nav-count{margin-left:auto;font-family:var(--font-mono);font-size:10.5px;background:var(--surface2);border-radius:5px;padding:1px 6px;color:var(--text-faint);}
+
+#filters{grid-area:filters; background:var(--surface); border-bottom:1px solid var(--border); padding:0;}
+#main{grid-area:main; padding:24px 28px 60px; max-width:1500px; width:100%;}
+
+/* ---------- Filter bar ---------- */
+.filterbar-head{display:flex;align-items:center;justify-content:space-between;padding:10px 22px;cursor:pointer;}
+.filterbar-head .ttl{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--text-dim);}
+.filterbar-head svg{width:14px;height:14px;}
+.chevron{transition:transform .15s;}
+.filterbar-body{display:none;padding:4px 22px 16px;flex-wrap:wrap;gap:10px;align-items:flex-end;}
+.filterbar-body.open{display:flex;}
+.filterbar-head.open .chevron{transform:rotate(180deg);}
+.filter-group{display:flex;flex-direction:column;gap:5px;min-width:150px;}
+.filter-group label{font-size:10.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;font-weight:600;}
+.msel{position:relative;}
+.msel-btn{display:flex;align-items:center;justify-content:space-between;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:12.5px;min-width:150px;color:var(--text);}
+.msel-btn .count-pill{background:var(--accent);color:#06231F;border-radius:10px;padding:0 6px;font-size:10.5px;font-weight:700;}
+.msel-panel{position:absolute;top:110%;left:0;background:var(--surface);border:1px solid var(--border);border-radius:9px;box-shadow:var(--shadow);padding:8px;z-index:60;min-width:210px;max-height:260px;overflow-y:auto;display:none;}
+.msel-panel.open{display:block;}
+.msel-search{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px;color:var(--text);margin-bottom:6px;outline:none;}
+.msel-opt{display:flex;align-items:center;gap:8px;padding:6px 6px;border-radius:5px;font-size:12.5px;}
+.msel-opt:hover{background:var(--surface2);}
+.msel-opt input{accent-color:var(--accent);}
+.txt-input{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:12.5px;color:var(--text);min-width:150px;outline:none;}
+.txt-input:focus{border-color:var(--accent);}
+.filter-actions{display:flex;gap:8px;margin-left:auto;align-items:center;}
+.btn{border:1px solid var(--border);background:var(--surface2);color:var(--text);border-radius:7px;padding:7px 13px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:6px;transition:.12s;}
+.btn:hover{border-color:var(--accent-dim);color:var(--accent);}
+.btn.primary{background:var(--accent);color:#06231F;border-color:var(--accent);}
+.btn.primary:hover{filter:brightness(1.08);color:#06231F;}
+.btn svg{width:13px;height:13px;}
+.chips-row{display:flex;flex-wrap:wrap;gap:6px;padding:0 22px 12px;}
+.chip{display:flex;align-items:center;gap:6px;background:var(--accent-glow);color:var(--accent);border:1px solid var(--accent-dim);border-radius:20px;padding:4px 10px;font-size:11.5px;font-weight:600;}
+.chip button{background:none;border:none;color:inherit;font-size:13px;line-height:1;}
+
+/* ---------- Page header ---------- */
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px;}
+.page-head h2{font-family:var(--font-display);font-size:22px;font-weight:700;}
+.page-head p{font-size:12.5px;color:var(--text-dim);margin-top:4px;}
+
+/* ---------- KPI cards ---------- */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px;margin-bottom:26px;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 16px 14px;position:relative;overflow:hidden;cursor:pointer;transition:.15s;}
+.kpi-card:hover{border-color:var(--accent-dim);transform:translateY(-1px);}
+.kpi-card .bar{position:absolute;top:0;left:0;width:3px;height:100%;}
+.kpi-label{font-size:11px;color:var(--text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px;}
+.kpi-val{font-family:var(--font-mono);font-size:26px;font-weight:600;letter-spacing:-.01em;}
+.kpi-sub{font-size:11px;color:var(--text-faint);margin-top:5px;}
+
+/* ---------- Panels / cards ---------- */
+.grid-2{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-bottom:16px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:16px;}
+@media(max-width:1100px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;}
+.panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.panel-head h3{font-size:14px;font-weight:700;font-family:var(--font-display);}
+.panel-head .hint{font-size:11px;color:var(--text-faint);}
+
+/* ---------- Tables ---------- */
+.tbl-wrap{overflow-x:auto;}
+table.data{width:100%;border-collapse:collapse;font-size:12.5px;}
+table.data th{text-align:left;padding:9px 12px;color:var(--text-faint);font-weight:600;text-transform:uppercase;font-size:10.5px;letter-spacing:.04em;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;}
+table.data th:hover{color:var(--accent);}
+table.data td{padding:9px 12px;border-bottom:1px solid var(--border);white-space:nowrap;}
+table.data tbody tr:hover{background:var(--surface2);}
+.sort-arrow{opacity:.5;font-size:9px;margin-left:4px;}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:700;}
+.badge::before{content:'';width:6px;height:6px;border-radius:50%;background:currentColor;}
+.badge.crit{background:rgba(251,69,112,.14);color:var(--crit);}
+.badge.high{background:rgba(251,146,60,.14);color:var(--high);}
+.badge.med{background:rgba(251,191,36,.14);color:var(--med);}
+.badge.low{background:rgba(56,189,248,.14);color:var(--low);}
+.badge.ok{background:rgba(52,211,153,.14);color:var(--ok);}
+.badge.bad{background:rgba(251,69,112,.14);color:var(--bad);}
+.badge.neu{background:var(--surface2);color:var(--text-dim);}
+.pager{display:flex;align-items:center;justify-content:space-between;margin-top:12px;font-size:12px;color:var(--text-dim);}
+.pager .pbtns{display:flex;gap:6px;}
+.pager button{background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:5px 10px;font-size:12px;}
+.pager button:disabled{opacity:.35;cursor:not-allowed;}
+.tbl-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:10px;flex-wrap:wrap;}
+.tbl-search{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:6px 10px;font-size:12.5px;color:var(--text);outline:none;min-width:200px;}
+
+/* ---------- Charts ---------- */
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:9px;}
+.bar-row .lbl{width:120px;font-size:11.5px;color:var(--text-dim);flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.bar-row .track{flex:1;height:16px;background:var(--surface2);border-radius:4px;overflow:hidden;position:relative;}
+.bar-row .fill{height:100%;border-radius:4px;transition:width .4s ease;}
+.bar-row .val{width:48px;text-align:right;font-family:var(--font-mono);font-size:11.5px;color:var(--text-dim);flex-shrink:0;}
+.legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:12px;justify-content:center;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-dim);}
+.legend-dot{width:9px;height:9px;border-radius:50%;}
+.heat-grid{display:grid;gap:3px;}
+.heat-cell{border-radius:4px;font-size:10px;display:flex;align-items:center;justify-content:center;color:#06231F;font-weight:700;min-height:26px;}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text-dim);}
+.empty-state svg{width:44px;height:44px;color:var(--text-faint);margin-bottom:14px;}
+.empty-state h3{font-family:var(--font-display);font-size:16px;margin-bottom:6px;color:var(--text);}
+.empty-state p{font-size:13px;}
+
+/* ---------- Upload page ---------- */
+.dropzone{border:2px dashed var(--border);border-radius:14px;padding:50px 30px;text-align:center;background:var(--surface);transition:.15s;cursor:pointer;}
+.dropzone.drag{border-color:var(--accent);background:var(--accent-glow);}
+.dropzone svg{width:40px;height:40px;color:var(--accent);margin-bottom:14px;}
+.dropzone h3{font-family:var(--font-display);font-size:17px;margin-bottom:6px;}
+.dropzone p{font-size:12.5px;color:var(--text-dim);}
+.dropzone input{display:none;}
+.upload-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-top:20px;}
+.meta-box{background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:14px 16px;}
+.meta-box .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-faint);margin-bottom:6px;}
+.meta-box .v{font-family:var(--font-mono);font-size:16px;font-weight:600;}
+.missing-cols{background:rgba(251,69,112,.08);border:1px solid rgba(251,69,112,.3);border-radius:9px;padding:14px 16px;margin-top:16px;}
+.missing-cols h4{color:var(--crit);font-size:13px;margin-bottom:8px;}
+.missing-cols ul{padding-left:18px;font-size:12.5px;color:var(--text-dim);}
+.col-check{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px;}
+.col-tag{font-size:11px;padding:4px 9px;border-radius:6px;font-family:var(--font-mono);}
+.col-tag.found{background:rgba(52,211,153,.1);color:var(--ok);border:1px solid rgba(52,211,153,.25);}
+.col-tag.missing{background:rgba(251,69,112,.1);color:var(--crit);border:1px solid rgba(251,69,112,.25);}
+
+/* ---------- Insights ---------- */
+.insight-card{display:flex;gap:12px;padding:14px 16px;border-radius:9px;background:var(--surface2);border:1px solid var(--border);margin-bottom:10px;}
+.insight-card .ic{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.insight-card .ic svg{width:16px;height:16px;}
+.insight-card h4{font-size:13px;font-weight:700;margin-bottom:3px;}
+.insight-card p{font-size:12.5px;color:var(--text-dim);line-height:1.5;}
+
+/* ---------- Export page ---------- */
+.export-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;}
+.export-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:left;}
+.export-card .xi{width:38px;height:38px;border-radius:9px;background:var(--accent-glow);color:var(--accent);display:flex;align-items:center;justify-content:center;margin-bottom:12px;}
+.export-card .xi svg{width:19px;height:19px;}
+.export-card h4{font-family:var(--font-display);font-size:15px;margin-bottom:6px;}
+.export-card p{font-size:12px;color:var(--text-dim);margin-bottom:14px;line-height:1.5;}
+.preset-row{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;margin-bottom:8px;font-size:12.5px;}
+.preset-row button{background:none;border:none;color:var(--text-faint);}
+.preset-row button:hover{color:var(--crit);}
+
+/* Toast */
+#toast{position:fixed;bottom:22px;right:22px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:8px;padding:12px 16px;font-size:12.5px;box-shadow:var(--shadow);z-index:200;display:none;max-width:320px;}
+#toast.show{display:block;animation:slidein .2s ease;}
+@keyframes slidein{from{transform:translateY(8px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+
+.footer-note{text-align:center;padding:26px 0 10px;font-size:11px;color:var(--text-faint);}
+
+/* ---------- Loading overlay ---------- */
+#loadingOverlay{position:fixed;inset:0;background:rgba(6,10,20,.72);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;z-index:500;}
+[data-theme="light"] #loadingOverlay{background:rgba(240,243,248,.82);}
+#loadingOverlay.show{display:flex;}
+.loader-box{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:34px 40px;text-align:center;min-width:280px;box-shadow:var(--shadow);}
+.spinner{width:44px;height:44px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--accent);margin:0 auto 18px;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+#loadingText{font-family:var(--font-display);font-size:14px;font-weight:600;margin-bottom:14px;}
+.loader-progress{width:220px;height:5px;background:var(--surface2);border-radius:3px;overflow:hidden;margin:0 auto;}
+#loaderBar{height:100%;width:0%;background:linear-gradient(90deg,var(--accent-dim),var(--accent));border-radius:3px;transition:width .3s ease;}
+.loader-pct{font-family:var(--font-mono);font-size:10.5px;color:var(--text-faint);margin-top:8px;}
+
+/* ---------- Avg age page ---------- */
+.gauge-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:18px;}
+.gauge-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;text-align:center;}
+.gauge-card .g-label{font-size:11.5px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+.gauge-card .g-sub{font-size:11px;color:var(--text-faint);margin-top:6px;}
+.threshold-legend{display:flex;flex-wrap:wrap;gap:14px;padding:12px 16px;background:var(--surface2);border:1px solid var(--border);border-radius:9px;margin-bottom:18px;font-size:11.5px;color:var(--text-dim);}
+.threshold-legend b{color:var(--text);}
+.tabs-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
+.tab-btn{background:var(--surface2);border:1px solid var(--border);color:var(--text-dim);border-radius:20px;padding:7px 15px;font-size:12.5px;font-weight:600;}
+.tab-btn.active{background:var(--accent-glow);color:var(--accent);border-color:var(--accent-dim);}
+.copy-toolbar{display:flex;gap:8px;align-items:center;}
+.copy-flash{color:var(--ok)!important;border-color:var(--ok)!important;}
+
+/* ---------- How it works ---------- */
+.hiw-step{display:flex;gap:16px;margin-bottom:22px;}
+.hiw-num{width:34px;height:34px;border-radius:9px;background:var(--accent-glow);color:var(--accent);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-weight:700;font-size:14px;flex-shrink:0;}
+.hiw-step h4{font-size:14.5px;font-weight:700;margin-bottom:5px;font-family:var(--font-display);}
+.hiw-step p{font-size:12.5px;color:var(--text-dim);line-height:1.6;}
+.sla-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:6px;}
+.sla-table th,.sla-table td{padding:8px 12px;border-bottom:1px solid var(--border);text-align:left;}
+.sla-table th{color:var(--text-faint);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;}
+
+@media(max-width:900px){
+  #shell{grid-template-columns:1fr;grid-template-areas:"topbar" "filters" "main";}
+  #nav{display:none;}
+}
+</style>
+</head>
+<body data-theme="dark">
+<div id="shell">
+  <div id="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <div class="brand-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#06231F" stroke-width="2.4"><path d="M12 2l8 3v6c0 5-3.4 8.7-8 11-4.6-2.3-8-6-8-11V5l8-3z"/><path d="M9 12l2 2 4-4"/></svg></div>
+        <div>
+          <h1>SecureMetrics Hub</h1>
+          <div class="tagline">Measure. Analyze. Remediate.</div>
+        </div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="global-search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input id="globalSearch" placeholder="Search app, owner, CVE, asset…" />
+      </div>
+      <button class="icon-btn" id="themeToggle" title="Toggle theme">
+        <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v1M12 20v1M4.2 4.2l.7.7M19.1 19.1l.7.7M3 12h1M20 12h1M4.2 19.8l.7-.7M19.1 4.9l.7-.7"/><circle cx="12" cy="12" r="4"/></svg>
+      </button>
+      <div class="watermark">Built by Team IVM
+        <div class="credit-pop">Barath &amp; Dhinakaran</div>
+      </div>
+    </div>
+  </div>
+
+  <nav id="nav"></nav>
+  <div id="filters"></div>
+  <main id="main"></main>
+</div>
+<div id="toast"></div>
+<div id="loadingOverlay">
+  <div class="loader-box">
+    <div class="spinner"></div>
+    <div id="loadingText">Reading file…</div>
+    <div class="loader-progress"><div id="loaderBar"></div></div>
+    <div class="loader-pct" id="loaderPct">0%</div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   SecureMetrics Hub — single-file vulnerability analytics tool
+   ============================================================ */
+
+/* ---------- Column schema ---------- */
+const CANON_COLUMNS = ["Index","APM ID","Application Name","Vulnerability ID","Vulnerability Name","Vulnerability Age","Vulnerability Status","Risk Rating","IF","PCI","IF or PCI","IF-PCI","Scan Type","Vulnerability Category","App Owner","First Found Date","Due Date","SLA Status","Impacted Asset","Cloud Account Name","CSP","Environment","Recommendation"];
+const MANDATORY_COLUMNS = ["APM ID","Application Name","Vulnerability ID","Vulnerability Name","Vulnerability Age","Vulnerability Status","Risk Rating","IF or PCI","Scan Type","Vulnerability Category","App Owner","First Found Date","SLA Status","Impacted Asset","CSP","Environment"];
+
+function norm(s){ return String(s==null?'':s).toLowerCase().replace(/[^a-z0-9]/g,''); }
+const CANON_NORM_MAP = {}; CANON_COLUMNS.forEach(c=>CANON_NORM_MAP[norm(c)]=c);
+
+/* ---------- Global state ---------- */
+const APP = {
+  rows: [], fileInfo: null, headerReport: null,
+  filters: { ifpci:[], sla:[], status:[], category:[], scan:[], risk:[], env:[], csp:[], appName:'', appOwner:[] },
+  search: '',
+  page: 'upload',
+  sort: {}, pageState: {},
+  presets: safeParse(localStorage.getItem('smh_presets'), []),
+  bookmarks: safeParse(localStorage.getItem('smh_bookmarks'), []),
+};
+function safeParse(s,f){ try{ return s? JSON.parse(s): f; }catch(e){ return f; } }
+function saveLS(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+
+/* ---------- Utilities ---------- */
+function parseDate(v){
+  if(v==null || v==='') return null;
+  if(v instanceof Date) return isNaN(v)?null:v;
+  if(typeof v === 'number'){ const d = XLSX.SSF ? XLSX.SSF.parse_date_code(v) : null; if(d) return new Date(d.y,d.m-1,d.d); }
+  const s = String(v).trim();
+  let d = new Date(s);
+  if(!isNaN(d)) return d;
+  const m = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+  if(m){ let a=+m[1],b=+m[2],y=+m[3]; if(y<100) y+=2000; d = new Date(y,a-1,b); if(!isNaN(d)) return d; }
+  return null;
+}
+function fmtDate(d){ if(!d) return '—'; return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}); }
+function daysBetween(a,b){ return Math.round((b-a)/86400000); }
+function todayMid(){ const d=new Date(); d.setHours(0,0,0,0); return d; }
+function numOr(v,f){ const n = parseFloat(v); return isNaN(n)? f : n; }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function uniq(arr){ return [...new Set(arr.filter(v=>v!=null && v!==''))]; }
+function showLoading(text,pct){ const o=document.getElementById('loadingOverlay'); o.classList.add('show'); updateLoading(text,pct); }
+function updateLoading(text,pct){ document.getElementById('loadingText').textContent=text; document.getElementById('loaderBar').style.width=(pct||0)+'%'; document.getElementById('loaderPct').textContent=Math.round(pct||0)+'%'; }
+function hideLoading(){ document.getElementById('loadingOverlay').classList.remove('show'); }
+function copyToClipboard(text, btn){
+  const done = ()=>{ if(btn){ const orig=btn.textContent; btn.textContent='Copied ✓'; btn.classList.add('copy-flash'); setTimeout(()=>{ btn.textContent=orig; btn.classList.remove('copy-flash'); },1400); } toast('Copied to clipboard'); };
+  if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text,done)); }
+  else fallbackCopy(text,done);
+}
+function fallbackCopy(text,done){
+  const ta=document.createElement('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select();
+  try{ document.execCommand('copy'); done(); }catch(e){ toast('Copy failed — please select and copy manually.'); }
+  document.body.removeChild(ta);
+}
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(window._toastT); window._toastT=setTimeout(()=>t.classList.remove('show'),3200); }
+function riskClass(r){ r=(r||'').toLowerCase(); if(r.startsWith('crit'))return 'crit'; if(r.startsWith('high'))return 'high'; if(r.startsWith('med'))return 'med'; if(r.startsWith('low'))return 'low'; return 'neu'; }
+function slaClass(s){ s=(s||'').toLowerCase(); if(s.includes('breach'))return 'bad'; if(s.includes('within'))return 'ok'; if(s.includes('due'))return 'med'; return 'neu'; }
+const RISK_COLOR = {crit:'var(--crit)',high:'var(--high)',med:'var(--med)',low:'var(--low)',neu:'var(--text-faint)'};
+const CSP_COLORS = ['#2DD4BF','#FB923C','#38BDF8','#A78BFA','#FBBF24','#FB4570'];
+
+/* ---------- Header canonicalization ---------- */
+function canonicalizeHeaders(rawHeaders){
+  const mapping = {}; const found = []; const unmatched = [];
+  rawHeaders.forEach(h=>{
+    const n = norm(h);
+    if(CANON_NORM_MAP[n]){ mapping[h]=CANON_NORM_MAP[n]; found.push(CANON_NORM_MAP[n]); }
+    else{
+      // fuzzy contains match
+      let match = null;
+      for(const c of CANON_COLUMNS){ const cn=norm(c); if(n.includes(cn)||cn.includes(n)){ match=c; break; } }
+      if(match){ mapping[h]=match; found.push(match); } else unmatched.push(h);
+    }
+  });
+  const missing = MANDATORY_COLUMNS.filter(c=>!found.includes(c));
+  return { mapping, found: uniq(found), missing, unmatched };
+}
+
+/* ---------- File ingestion ---------- */
+function handleFile(file){
+  showLoading('Reading '+file.name+'…', 8);
+  const reader = new FileReader();
+  reader.onerror = function(){ hideLoading(); toast('Could not read this file.'); };
+  reader.onload = function(e){
+    updateLoading('Parsing spreadsheet…', 25);
+    setTimeout(()=>{
+      let wb, sheet, json;
+      try{
+        const data = e.target.result;
+        wb = XLSX.read(data, {type:'array', cellDates:true});
+        sheet = wb.Sheets[wb.SheetNames[0]];
+        json = XLSX.utils.sheet_to_json(sheet, {defval:'', raw:true});
+      }catch(err){ console.error(err); hideLoading(); toast('Could not parse this file. Please check the format.'); return; }
+      if(!json.length){ hideLoading(); toast('The file has no data rows.'); return; }
+
+      updateLoading('Matching columns to the schema…', 45);
+      setTimeout(()=>{
+        const rawHeaders = Object.keys(json[0]);
+        const { mapping, found, missing, unmatched } = canonicalizeHeaders(rawHeaders);
+
+        updateLoading('Calculating vulnerability ages…', 65);
+        setTimeout(()=>{
+          const rows = json.map((r,i)=>{
+            const o = {};
+            rawHeaders.forEach(h=>{ o[mapping[h]||h] = r[h]; });
+            o.__id = i;
+            o['Vulnerability Age'] = (function(){
+              let age = numOr(o['Vulnerability Age'], null);
+              if(age==null){
+                const ff = parseDate(o['First Found Date']);
+                if(ff) age = daysBetween(ff, todayMid());
+              }
+              return age==null? 0 : Math.max(0, Math.round(age));
+            })();
+            return o;
+          });
+          APP.rows = rows;
+          APP.fileInfo = { name:file.name, size:file.size, uploadedAt:new Date(), records: rows.length };
+          APP.headerReport = { found, missing, unmatched, mandatoryTotal: MANDATORY_COLUMNS.length };
+          resetFilters();
+
+          updateLoading('Building KPIs, aging & risk models…', 85);
+          setTimeout(()=>{
+            if(missing.length===0) APP.page='summary';
+            render();
+            updateLoading('Rendering dashboards…', 100);
+            setTimeout(()=>{
+              hideLoading();
+              toast(`Loaded ${rows.length.toLocaleString()} records from ${file.name}`);
+            }, 280);
+          }, 220);
+        }, 200);
+      }, 180);
+    }, 160);
+  };
+  reader.readAsArrayBuffer(file);
+}
+function resetFilters(){ APP.filters = { ifpci:[], sla:[], status:[], category:[], scan:[], risk:[], env:[], csp:[], appName:'', appOwner:[] }; APP.search=''; }
+
+/* ---------- Filtering ---------- */
+function getFilteredRows(){
+  const f = APP.filters, s = norm(APP.search);
+  return APP.rows.filter(r=>{
+    if(f.ifpci.length && !f.ifpci.includes(r['IF or PCI'])) return false;
+    if(f.sla.length && !f.sla.includes(r['SLA Status'])) return false;
+    if(f.status.length && !f.status.includes(r['Vulnerability Status'])) return false;
+    if(f.category.length && !f.category.includes(r['Vulnerability Category'])) return false;
+    if(f.scan.length && !f.scan.includes(r['Scan Type'])) return false;
+    if(f.risk.length && !f.risk.includes(r['Risk Rating'])) return false;
+    if(f.env.length && !f.env.includes(r['Environment'])) return false;
+    if(f.csp.length && !f.csp.includes(r['CSP'])) return false;
+    if(f.appName && !norm(r['Application Name']).includes(norm(f.appName))) return false;
+    if(f.appOwner.length && !f.appOwner.includes(r['App Owner'])) return false;
+    if(s){
+      const hay = norm([r['Application Name'],r['App Owner'],r['Vulnerability ID'],r['Vulnerability Name'],r['Impacted Asset'],r['APM ID']].join(' '));
+      if(!hay.includes(s)) return false;
+    }
+    return true;
+  });
+}
+function filterCount(){ const f=APP.filters; return f.ifpci.length+f.sla.length+f.status.length+f.category.length+f.scan.length+f.risk.length+f.env.length+f.csp.length+f.appOwner.length+(f.appName?1:0); }
+
+/* ---------- Metrics ---------- */
+function calcKPIs(rows){
+  const ages = rows.map(r=>r['Vulnerability Age']).filter(n=>typeof n==='number');
+  return {
+    total: rows.length,
+    apps: uniq(rows.map(r=>r['Application Name'])).length,
+    assets: uniq(rows.map(r=>r['Impacted Asset'])).length,
+    critical: rows.filter(r=>riskClass(r['Risk Rating'])==='crit').length,
+    high: rows.filter(r=>riskClass(r['Risk Rating'])==='high').length,
+    medium: rows.filter(r=>riskClass(r['Risk Rating'])==='med').length,
+    low: rows.filter(r=>riskClass(r['Risk Rating'])==='low').length,
+    breached: rows.filter(r=>slaClass(r['SLA Status'])==='bad').length,
+    withinSla: rows.filter(r=>slaClass(r['SLA Status'])==='ok').length,
+    ifCount: rows.filter(r=>r['IF or PCI']==='IF').length,
+    pciCount: rows.filter(r=>r['IF or PCI']==='PCI').length,
+    ifpciCount: rows.filter(r=>r['IF or PCI']==='IF-PCI').length,
+    avgAge: ages.length? Math.round(ages.reduce((a,b)=>a+b,0)/ages.length):0,
+    maxAge: ages.length? Math.max(...ages):0,
+    minAge: ages.length? Math.min(...ages):0,
+  };
+}
+const AGE_BUCKETS = [ ['0-30 Days',0,30], ['31-60 Days',31,60], ['61-90 Days',61,90], ['91-180 Days',91,180], ['181-365 Days',181,365], ['365+ Days',366,Infinity] ];
+function bucketOf(age){ for(const b of AGE_BUCKETS){ if(age>=b[1] && age<=b[2]) return b[0]; } return AGE_BUCKETS[0][0]; }
+function calcAging(rows){
+  const counts = {}; AGE_BUCKETS.forEach(b=>counts[b[0]]=0);
+  rows.forEach(r=>{ counts[bucketOf(r['Vulnerability Age'])]++; });
+  const byApp = groupAvgAge(rows,'Application Name');
+  const byOwner = groupAvgAge(rows,'App Owner');
+  const byEnv = groupAvgAge(rows,'Environment');
+  const byCsp = groupAvgAge(rows,'CSP');
+  const byRisk = groupAvgAge(rows,'Risk Rating');
+  const oldest10 = [...rows].sort((a,b)=>b['Vulnerability Age']-a['Vulnerability Age']).slice(0,10);
+  const oldestByApp = Object.values(rows.reduce((acc,r)=>{
+    const k=r['Application Name']; if(!acc[k] || acc[k]['Vulnerability Age']<r['Vulnerability Age']) acc[k]=r; return acc;
+  },{})).sort((a,b)=>b['Vulnerability Age']-a['Vulnerability Age']).slice(0,10);
+  return { counts, byApp, byOwner, byEnv, byCsp, byRisk, oldest10, oldestByApp };
+}
+function groupAvgAge(rows, key){
+  const acc = {};
+  rows.forEach(r=>{ const k=r[key]||'Unspecified'; (acc[k]=acc[k]||[]).push(r['Vulnerability Age']); });
+  return Object.entries(acc).map(([k,v])=>({ key:k, count:v.length, avg: Math.round(v.reduce((a,b)=>a+b,0)/v.length), min: Math.min(...v), max: Math.max(...v) })).sort((a,b)=>b.avg-a.avg);
+}
+function ageColor(v){ return v<=90? 'var(--ok)' : v<=180? 'var(--med)' : 'var(--crit)'; }
+function svgProgressRing(value, refMax, color, unitLabel){
+  const size=148, stroke=13, r=(size-stroke)/2, c=2*Math.PI*r;
+  const pct = Math.max(0.02, Math.min(1, refMax? value/refMax : 0));
+  const len = pct*c;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="var(--border)" stroke-width="${stroke}"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="${stroke}" stroke-dasharray="${len} ${c-len}" stroke-linecap="round" transform="rotate(-90 ${size/2} ${size/2})" style="transition:stroke-dasharray .5s ease;"/>
+    <text x="50%" y="46%" text-anchor="middle" fill="var(--text)" font-size="25" font-weight="700" font-family="var(--font-mono)">${value}</text>
+    <text x="50%" y="61%" text-anchor="middle" fill="var(--text-faint)" font-size="10.5">${esc(unitLabel||'days')}</text>
+  </svg>`;
+}
+function calcProductivity(rows){
+  const closed = rows.filter(r=>/closed/i.test(r['Vulnerability Status']||''));
+  const open = rows.filter(r=>!/closed/i.test(r['Vulnerability Status']||''));
+  const withinCount = rows.filter(r=>slaClass(r['SLA Status'])==='ok').length;
+  const breachedCount = rows.filter(r=>slaClass(r['SLA Status'])==='bad').length;
+  const slaBase = withinCount+breachedCount;
+  const remTimes = closed.map(r=>{ const ff=parseDate(r['First Found Date']); const due=parseDate(r['Due Date']); if(ff&&due) return Math.abs(daysBetween(ff,due)); return null; }).filter(v=>v!=null);
+  const byOwnerOpen = countBy(open,'App Owner');
+  const byOwnerClosed = countBy(closed,'App Owner');
+  const byApp = countBy(rows,'Application Name');
+  const byEnv = countBy(rows,'Environment');
+  const byCsp = countBy(rows,'CSP');
+  const agingByApp = groupAvgAge(rows,'Application Name').slice(0,10);
+  return {
+    opened: open.length, closed: closed.length,
+    closurePct: rows.length? Math.round(closed.length/rows.length*1000)/10 : 0,
+    slaCompliancePct: slaBase? Math.round(withinCount/slaBase*1000)/10 : 0,
+    avgAge: rows.length? Math.round(rows.reduce((a,r)=>a+r['Vulnerability Age'],0)/rows.length):0,
+    avgRemediation: remTimes.length? Math.round(remTimes.reduce((a,b)=>a+b,0)/remTimes.length):0,
+    byOwnerOpen, byOwnerClosed, byApp, byEnv, byCsp, agingByApp,
+    topAppsVuln: Object.entries(byApp).sort((a,b)=>b[1]-a[1]).slice(0,10),
+    topOwnersOpen: Object.entries(byOwnerOpen).sort((a,b)=>b[1]-a[1]).slice(0,10),
+    topOwnersClosed: Object.entries(byOwnerClosed).sort((a,b)=>b[1]-a[1]).slice(0,10),
+  };
+}
+function countBy(rows,key){ const acc={}; rows.forEach(r=>{ const k=r[key]||'Unspecified'; acc[k]=(acc[k]||0)+1; }); return acc; }
+function calcRisk(rows){
+  const dist = { Critical:0, High:0, Medium:0, Low:0 };
+  rows.forEach(r=>{ const c=riskClass(r['Risk Rating']); if(c==='crit')dist.Critical++; else if(c==='high')dist.High++; else if(c==='med')dist.Medium++; else if(c==='low')dist.Low++; });
+  const critOver90 = rows.filter(r=>riskClass(r['Risk Rating'])==='crit' && r['Vulnerability Age']>90).length;
+  const critOver180 = rows.filter(r=>riskClass(r['Risk Rating'])==='crit' && r['Vulnerability Age']>180).length;
+  const highOver90 = rows.filter(r=>riskClass(r['Risk Rating'])==='high' && r['Vulnerability Age']>90).length;
+  const highOver180 = rows.filter(r=>riskClass(r['Risk Rating'])==='high' && r['Vulnerability Age']>180).length;
+  const byEnv = {}; const byCsp = {};
+  ['Critical','High','Medium','Low'].forEach(()=>{});
+  rows.forEach(r=>{
+    const env=r['Environment']||'Unspecified'; byEnv[env]=byEnv[env]||{Critical:0,High:0,Medium:0,Low:0};
+    const csp=r['CSP']||'Unspecified'; byCsp[csp]=byCsp[csp]||{Critical:0,High:0,Medium:0,Low:0};
+    const rc = riskClass(r['Risk Rating']); const label = rc==='crit'?'Critical':rc==='high'?'High':rc==='med'?'Medium':'Low';
+    byEnv[env][label]++; byCsp[csp][label]++;
+  });
+  return { dist, critOver90, critOver180, highOver90, highOver180, byEnv, byCsp };
+}
+function genInsights(rows){
+  const list = [];
+  const risk = calcRisk(rows); const aging = calcAging(rows);
+  if(risk.critOver180>0) list.push({ tone:'bad', title:`${risk.critOver180} critical findings aged past 180 days`, body:`These represent the highest exposure window and should be prioritized for immediate remediation ahead of the next SLA review.` });
+  if(risk.highOver180>0) list.push({ tone:'warn', title:`${risk.highOver180} high-severity findings aged past 180 days`, body:`Extended aging on high-severity issues increases breach exposure — recommend escalation to owning teams.` });
+  const repeatOffenders = groupBreach(rows);
+  if(repeatOffenders.length) list.push({ tone:'warn', title:`${repeatOffenders[0].key} has the most SLA breaches (${repeatOffenders[0].count})`, body:`${repeatOffenders.slice(0,3).map(o=>o.key).join(', ')} account for the largest share of repeated SLA breaches in the current view.` });
+  const envRisk = Object.entries(calcRisk(rows).byEnv).map(([k,v])=>({k,total:v.Critical+v.High})).sort((a,b)=>b.total-a.total);
+  if(envRisk.length) list.push({ tone:'info', title:`${envRisk[0].k} is the highest-risk environment`, body:`${envRisk[0].total} combined Critical/High findings currently sit in ${envRisk[0].k}, more than any other environment in scope.` });
+  const cspRisk = Object.entries(calcRisk(rows).byCsp).map(([k,v])=>({k,total:v.Critical+v.High})).sort((a,b)=>b.total-a.total);
+  if(cspRisk.length) list.push({ tone:'info', title:`${cspRisk[0].k} carries the largest CSP risk exposure`, body:`${cspRisk[0].total} Critical/High findings are attributed to ${cspRisk[0].k} infrastructure in the current filter scope.` });
+  const ifpci = rows.filter(r=>r['IF or PCI']==='IF' || r['IF or PCI']==='PCI' || r['IF or PCI']==='IF-PCI');
+  if(ifpci.length) list.push({ tone:'bad', title:`${ifpci.length} findings touch IF/PCI-scoped assets`, body:`Of these, ${ifpci.filter(r=>slaClass(r['SLA Status'])==='bad').length} are currently SLA-breached and carry compliance exposure.` });
+  if(aging.oldest10.length) list.push({ tone:'warn', title:`Oldest open finding is ${aging.oldest10[0]['Vulnerability Age']} days old`, body:`${aging.oldest10[0]['Vulnerability Name']||'This finding'} on ${aging.oldest10[0]['Application Name']||'an unspecified app'} is the longest-standing item in scope and is a top remediation priority.` });
+  const apps = groupAvgAge(rows,'Application Name');
+  if(apps.length) list.push({ tone:'info', title:`${apps[0].key} needs immediate remediation attention`, body:`Average finding age of ${apps[0].avg} days across ${apps[0].count} findings makes this the most aged application in the current view.` });
+  return list;
+}
+function groupBreach(rows){
+  const acc={}; rows.filter(r=>slaClass(r['SLA Status'])==='bad').forEach(r=>{ const k=r['Application Name']||'Unspecified'; acc[k]=(acc[k]||0)+1; });
+  return Object.entries(acc).map(([key,count])=>({key,count})).sort((a,b)=>b.count-a.count);
+}
+
+/* ---------- SVG chart builders ---------- */
+function svgBarList(data, opts){
+  opts = opts||{}; const max = Math.max(1, ...data.map(d=>d.value));
+  return data.map(d=>{
+    const pct = Math.max(2, Math.round(d.value/max*100));
+    const color = d.color || 'var(--accent)';
+    return `<div class="bar-row" data-drill="${esc(d.drillKey||'')}" data-drillval="${esc(d.key)}" style="${d.drillKey?'cursor:pointer':''}">
+      <div class="lbl" title="${esc(d.key)}">${esc(d.key)}</div>
+      <div class="track"><div class="fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="val">${d.value.toLocaleString()}</div>
+    </div>`;
+  }).join('') || emptyMini();
+}
+function emptyMini(){ return `<div style="padding:20px;text-align:center;color:var(--text-faint);font-size:12px;">No data in current filter scope</div>`; }
+function svgDonut(segments, opts){
+  opts = opts||{}; const size=opts.size||160; const stroke=opts.stroke||22; const r=(size-stroke)/2; const c=2*Math.PI*r;
+  const total = segments.reduce((a,s)=>a+s.value,0) || 1;
+  let offset=0;
+  const arcs = segments.map(s=>{
+    const frac = s.value/total; const len = frac*c;
+    const el = `<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${s.color}" stroke-width="${stroke}" stroke-dasharray="${len} ${c-len}" stroke-dashoffset="${-offset}" transform="rotate(-90 ${size/2} ${size/2})" stroke-linecap="butt"/>`;
+    offset += len; return el;
+  }).join('');
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${arcs}
+    <text x="50%" y="47%" text-anchor="middle" fill="var(--text)" font-size="22" font-weight="700" font-family="var(--font-mono)">${total.toLocaleString()}</text>
+    <text x="50%" y="60%" text-anchor="middle" fill="var(--text-faint)" font-size="10.5">total</text>
+  </svg>`;
+}
+function heatmapHTML(rowsKey, colsKey, matrix, maxVal){
+  const cols = matrix.cols, rows = matrix.rows;
+  let html = `<div class="heat-grid" style="grid-template-columns:120px repeat(${cols.length},1fr);">`;
+  html += `<div></div>` + cols.map(c=>`<div style="font-size:10px;color:var(--text-faint);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(c)}</div>`).join('');
+  rows.forEach(r=>{
+    html += `<div style="font-size:11px;color:var(--text-dim);display:flex;align-items:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(r)}</div>`;
+    cols.forEach(c=>{
+      const v = matrix.data[r][c]||0;
+      const intensity = maxVal? v/maxVal : 0;
+      const bg = `rgba(45,212,191,${0.08+intensity*0.85})`;
+      html += `<div class="heat-cell" style="background:${bg};color:${intensity>0.5?'#06231F':'var(--text-dim)'}">${v||''}</div>`;
+    });
+  });
+  html += `</div>`;
+  return html;
+}
+
+/* ---------- Sortable / paginated table ---------- */
+function renderDataTable(id, rows, columns, opts){
+  opts = opts||{};
+  const st = APP.pageState[id] || (APP.pageState[id]={page:1,pageSize:opts.pageSize||10,search:''});
+  const sortKey = APP.sort[id];
+  let filtered = rows;
+  if(st.search){ const s=norm(st.search); filtered = rows.filter(r=> columns.some(c=>norm(r[c.key]).includes(s))); }
+  if(sortKey){
+    filtered = [...filtered].sort((a,b)=>{
+      let av=a[sortKey.key], bv=b[sortKey.key];
+      if(typeof av==='number'||typeof bv==='number'){ av=numOr(av,0); bv=numOr(bv,0); return sortKey.dir*(av-bv); }
+      return sortKey.dir*String(av||'').localeCompare(String(bv||''));
+    });
+  }
+  const total = filtered.length; const pages = Math.max(1, Math.ceil(total/st.pageSize));
+  st.page = Math.min(st.page, pages);
+  const pageRows = filtered.slice((st.page-1)*st.pageSize, st.page*st.pageSize);
+  const thead = columns.map(c=>{
+    const active = sortKey && sortKey.key===c.key;
+    return `<th data-tbl="${id}" data-col="${c.key}">${esc(c.label)}${active?`<span class="sort-arrow">${sortKey.dir>0?'▲':'▼'}</span>`:''}</th>`;
+  }).join('');
+  const tbody = pageRows.map(r=>`<tr>${columns.map(c=> `<td>${c.render? c.render(r): esc(r[c.key])}</td>`).join('')}</tr>`).join('') || `<tr><td colspan="${columns.length}" style="text-align:center;color:var(--text-faint);padding:24px;">No records match the current filters</td></tr>`;
+  return `
+  <div class="tbl-toolbar">
+    <input class="tbl-search" data-tbl-search="${id}" placeholder="Search this table…" value="${esc(st.search)}"/>
+    <span style="font-size:11.5px;color:var(--text-faint);">${total.toLocaleString()} record${total===1?'':'s'}</span>
+  </div>
+  <div class="tbl-wrap"><table class="data"><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table></div>
+  <div class="pager">
+    <span>Page ${st.page} of ${pages}</span>
+    <div class="pbtns">
+      <button data-tbl-page="${id}" data-dir="first" ${st.page<=1?'disabled':''}>First</button>
+      <button data-tbl-page="${id}" data-dir="prev" ${st.page<=1?'disabled':''}>Prev</button>
+      <button data-tbl-page="${id}" data-dir="next" ${st.page>=pages?'disabled':''}>Next</button>
+      <button data-tbl-page="${id}" data-dir="last" ${st.page>=pages?'disabled':''}>Last</button>
+    </div>
+  </div>`;
+}
+
+/* ---------- Nav / Filters / Layout render ---------- */
+const NAV_ITEMS = [
+  {id:'upload', label:'Upload Data', icon:'M12 16V4M12 4l-4 4M12 4l4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2'},
+  {sep:true, label:'Dashboards'},
+  {id:'summary', label:'Summary', icon:'M4 19h16M6 15v4M11 11v8M16 6v13M21 3v16'},
+  {id:'aging', label:'Vulnerability Aging', icon:'M12 8v4l3 3M12 21a9 9 0 100-18 9 9 0 000 18z'},
+  {id:'avgage', label:'Age Averages', icon:'M4 19h4v-6H4v6zm6 0h4V9h-4v10zm6 0h4V5h-4v14z'},
+  {id:'productivity', label:'Productivity', icon:'M3 3v18h18M7 15l4-6 3 4 5-8'},
+  {id:'risk', label:'Risk Analytics', icon:'M12 2l9 5v6c0 5-3.8 8.7-9 9-5.2-.3-9-4-9-9V7l9-5z'},
+  {sep:true, label:'Data'},
+  {id:'records', label:'Detailed Records', icon:'M4 6h16M4 12h16M4 18h10'},
+  {id:'mailsummary', label:'Owner Mail Summary', icon:'M3 5h18v14H3zM3 5l9 7 9-7'},
+  {id:'insights', label:'Insights', icon:'M9 18h6M10 22h4M12 2a7 7 0 00-4 12.7c.6.5 1 1.3 1 2.1v.2h6v-.2c0-.8.4-1.6 1-2.1A7 7 0 0012 2z'},
+  {id:'export', label:'Export', icon:'M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2'},
+  {sep:true, label:'Help'},
+  {id:'howitworks', label:'How It Works', icon:'M9.1 9a3 3 0 115.8 1c0 2-3 2-3 4M12 17h.01M12 22a10 10 0 100-20 10 10 0 000 20z'},
+];
+function renderNav(){
+  const nav = document.getElementById('nav');
+  const hasData = APP.rows.length>0;
+  nav.innerHTML = NAV_ITEMS.map(it=>{
+    if(it.sep) return `<div class="nav-label">${it.label}</div>`;
+    const disabled = !hasData && it.id!=='upload' && it.id!=='howitworks';
+    return `<a class="nav-item ${APP.page===it.id?'active':''}" data-nav="${it.id}" style="${disabled?'opacity:.4;pointer-events:none;':''}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="${it.icon}"/></svg>
+      ${it.label}
+    </a>`;
+  }).join('');
+}
+function multiSelectDef(key,label,options){ return {key,label,options}; }
+function renderFilters(){
+  const el = document.getElementById('filters');
+  if(!APP.rows.length){ el.innerHTML=''; return; }
+  const rows = APP.rows;
+  const opt = k=>uniq(rows.map(r=>r[k])).sort();
+  const defs = [
+    multiSelectDef('ifpci','IF or PCI', opt('IF or PCI')),
+    multiSelectDef('sla','SLA Status', opt('SLA Status')),
+    multiSelectDef('status','Vulnerability Status', opt('Vulnerability Status')),
+    multiSelectDef('category','Vulnerability Category', opt('Vulnerability Category')),
+    multiSelectDef('scan','Scan Type', opt('Scan Type')),
+    multiSelectDef('risk','Risk Rating', ['Critical','High','Medium','Low'].filter(x=>opt('Risk Rating').some(v=>riskClass(v)===riskClass(x)))),
+    multiSelectDef('env','Environment', opt('Environment')),
+    multiSelectDef('csp','CSP', opt('CSP')),
+    multiSelectDef('appOwner','App Owner', opt('App Owner')),
+  ];
+  const fCount = filterCount();
+  el.innerHTML = `
+    <div class="filterbar-head ${APP._filtersOpen?'open':''}" id="filterToggle">
+      <div class="ttl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4"/></svg> Filters ${fCount?`<span class="nav-count">${fCount} active</span>`:''}</div>
+      <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+    <div class="filterbar-body ${APP._filtersOpen?'open':''}">
+      ${defs.map(d=>renderMsel(d)).join('')}
+      <div class="filter-group"><label>Application Name</label><input class="txt-input" data-ftext="appName" placeholder="Search app…" value="${esc(APP.filters.appName)}"/></div>
+      <div class="filter-actions">
+        <button class="btn" id="clearFilters"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg>Clear</button>
+        <button class="btn" id="savePreset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/></svg>Save preset</button>
+        <button class="btn" id="bookmarkView"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>Bookmark</button>
+      </div>
+    </div>
+    ${fCount? `<div class="chips-row">${renderChips()}</div>` : ''}
+  `;
+}
+function renderMsel(def){
+  const selected = APP.filters[def.key];
+  return `<div class="filter-group">
+    <label>${esc(def.label)}</label>
+    <div class="msel">
+      <button class="msel-btn" data-msel-toggle="${def.key}">${esc(def.label)}${selected.length? `<span class="count-pill">${selected.length}</span>`:''}</button>
+      <div class="msel-panel" data-msel-panel="${def.key}">
+        <input class="msel-search" data-msel-search="${def.key}" placeholder="Search…"/>
+        <div data-msel-opts="${def.key}">
+          ${def.options.map(o=>`<label class="msel-opt"><input type="checkbox" data-msel-cb="${def.key}" value="${esc(o)}" ${selected.includes(o)?'checked':''}/> ${esc(o)}</label>`).join('') || '<div style="padding:8px;color:var(--text-faint);font-size:12px;">No values</div>'}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+function renderChips(){
+  const f = APP.filters; const chips = [];
+  ['ifpci','sla','status','category','scan','risk','env','csp','appOwner'].forEach(k=>{ f[k].forEach(v=>chips.push({k,v})); });
+  if(f.appName) chips.push({k:'appName',v:f.appName});
+  return chips.map(c=>`<div class="chip">${esc(c.v)}<button data-chip-remove data-k="${c.k}" data-v="${esc(c.v)}">×</button></div>`).join('');
+}
+
+/* ---------- Page renderers ---------- */
+function renderMain(){
+  const main = document.getElementById('main');
+  if(APP.page==='howitworks') return main.innerHTML = pageHowItWorks();
+  if(APP.page==='upload' || !APP.rows.length) return main.innerHTML = pageUpload();
+  const rows = getFilteredRows();
+  if(APP.page==='summary') return main.innerHTML = pageSummary(rows);
+  if(APP.page==='aging') return main.innerHTML = pageAging(rows);
+  if(APP.page==='avgage') return main.innerHTML = pageAvgAge(rows);
+  if(APP.page==='productivity') return main.innerHTML = pageProductivity(rows);
+  if(APP.page==='risk') return main.innerHTML = pageRisk(rows);
+  if(APP.page==='records') return main.innerHTML = pageRecords(rows);
+  if(APP.page==='mailsummary') return main.innerHTML = pageMailSummary(rows);
+  if(APP.page==='insights') return main.innerHTML = pageInsights(rows);
+  if(APP.page==='export') return main.innerHTML = pageExport(rows);
+}
+
+function pageUpload(){
+  const fi = APP.fileInfo, hr = APP.headerReport;
+  return `
+  <div class="page-head"><div><h2>Upload vulnerability data</h2><p>Drop a Qualys-style CSV or XLSX export to build the dashboard. Processing happens entirely in your browser.</p></div></div>
+  <div class="dropzone" id="dropzone">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 16V4M12 4l-4 4M12 4l4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+    <h3>Drag &amp; drop your file here</h3>
+    <p>or click to browse — .csv, .xlsx supported${fi? ' · a dataset is already loaded, this will replace it':''}</p>
+    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls"/>
+  </div>
+  ${fi? `
+  <div class="upload-meta">
+    <div class="meta-box"><div class="k">File</div><div class="v" style="font-size:13px;overflow:hidden;text-overflow:ellipsis;">${esc(fi.name)}</div></div>
+    <div class="meta-box"><div class="k">Total records</div><div class="v">${fi.records.toLocaleString()}</div></div>
+    <div class="meta-box"><div class="k">Uploaded</div><div class="v" style="font-size:13px;">${fi.uploadedAt.toLocaleString()}</div></div>
+    <div class="meta-box"><div class="k">Mandatory columns</div><div class="v">${hr.mandatoryTotal-hr.missing.length}/${hr.mandatoryTotal}</div></div>
+  </div>
+  ${hr.missing.length? `<div class="missing-cols"><h4>Missing mandatory columns (${hr.missing.length})</h4><ul>${hr.missing.map(m=>`<li>${esc(m)}</li>`).join('')}</ul></div>` : `<div class="missing-cols" style="background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.3);"><h4 style="color:var(--ok);">All mandatory columns found — dashboards are ready</h4></div>`}
+  <div class="col-check">
+    ${MANDATORY_COLUMNS.map(c=>`<span class="col-tag ${hr.found.includes(c)?'found':'missing'}">${hr.found.includes(c)?'✓':'✕'} ${esc(c)}</span>`).join('')}
+  </div>
+  <div style="margin-top:20px;"><button class="btn primary" id="goSummary">Open Summary Dashboard →</button></div>
+  ` : ''}
+  `;
+}
+
+function pageSummary(rows){
+  const k = calcKPIs(rows);
+  const risk = calcRisk(rows);
+  const aging = calcAging(rows);
+  const cards = [
+    ['Total Vulnerabilities',k.total,'var(--accent)','records in current filter scope'],
+    ['Total Applications',k.apps,'#38BDF8','distinct applications'],
+    ['Total Assets',k.assets,'#A78BFA','distinct impacted assets'],
+    ['Critical',k.critical,'var(--crit)',pct(k.critical,k.total)+' of total'],
+    ['High',k.high,'var(--high)',pct(k.high,k.total)+' of total'],
+    ['Medium',k.medium,'var(--med)',pct(k.medium,k.total)+' of total'],
+    ['Low',k.low,'var(--low)',pct(k.low,k.total)+' of total'],
+    ['Breached SLA',k.breached,'var(--bad)',pct(k.breached,k.total)+' of total'],
+    ['Within SLA',k.withinSla,'var(--ok)',pct(k.withinSla,k.total)+' of total'],
+    ['IF Vulnerabilities',k.ifCount,'#FBBF24','IF-scoped findings'],
+    ['PCI Vulnerabilities',k.pciCount,'#FB923C','PCI-scoped findings'],
+    ['IF-PCI Vulnerabilities',k.ifpciCount,'var(--crit)','dual-scoped findings'],
+    ['Average Age',k.avgAge+'d','var(--accent)','mean days open'],
+    ['Maximum Age',k.maxAge+'d','var(--crit)','oldest finding'],
+    ['Minimum Age',k.minAge+'d','var(--ok)','newest finding'],
+  ];
+  return `
+  <div class="page-head"><div><h2>Summary Dashboard</h2><p>Power-BI style overview across every scope currently selected in the filter bar.</p></div></div>
+  <div class="kpi-grid">${cards.map(c=>`<div class="kpi-card"><div class="bar" style="background:${c[2]}"></div><div class="kpi-label">${c[0]}</div><div class="kpi-val">${c[1].toLocaleString?c[1].toLocaleString():c[1]}</div><div class="kpi-sub">${c[3]}</div></div>`).join('')}</div>
+  <div class="grid-2">
+    <div class="panel"><div class="panel-head"><h3>Risk distribution</h3><span class="hint">by Risk Rating</span></div>
+      <div style="display:flex;align-items:center;gap:26px;flex-wrap:wrap;">
+        ${svgDonut([{value:risk.dist.Critical,color:'var(--crit)'},{value:risk.dist.High,color:'var(--high)'},{value:risk.dist.Medium,color:'var(--med)'},{value:risk.dist.Low,color:'var(--low)'}])}
+        <div class="legend" style="flex-direction:column;align-items:flex-start;margin-top:0;">
+          <div class="legend-item"><span class="legend-dot" style="background:var(--crit)"></span>Critical — ${risk.dist.Critical}</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--high)"></span>High — ${risk.dist.High}</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--med)"></span>Medium — ${risk.dist.Medium}</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--low)"></span>Low — ${risk.dist.Low}</div>
+        </div>
+      </div>
+    </div>
+    <div class="panel"><div class="panel-head"><h3>Age bucket distribution</h3><span class="hint">days open</span></div>
+      ${svgBarList(AGE_BUCKETS.map(b=>({key:b[0],value:aging.counts[b[0]]})))}
+    </div>
+  </div>
+  <div class="grid-3">
+    <div class="panel"><div class="panel-head"><h3>By Environment</h3></div>${svgBarList(Object.entries(countBy(rows,'Environment')).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({key:k,value:v})))}</div>
+    <div class="panel"><div class="panel-head"><h3>By CSP</h3></div>${svgBarList(Object.entries(countBy(rows,'CSP')).sort((a,b)=>b[1]-a[1]).map(([k,v],i)=>({key:k,value:v,color:CSP_COLORS[i%CSP_COLORS.length]})))}</div>
+    <div class="panel"><div class="panel-head"><h3>By IF / PCI</h3></div>${svgBarList(Object.entries(countBy(rows,'IF or PCI')).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({key:k,value:v})))}</div>
+  </div>
+  `;
+}
+function pct(n,total){ return total? Math.round(n/total*1000)/10+'%' : '0%'; }
+
+function pageAging(rows){
+  const a = calcAging(rows);
+  const maxCell = Math.max(1,...Object.values(a.counts));
+  const heatSource = a.byApp.slice(0,8);
+  const heatCols = AGE_BUCKETS.map(b=>b[0]);
+  const heatData = {}; heatSource.forEach(app=>{ heatData[app.key]={}; heatCols.forEach(c=>heatData[app.key][c]=0); });
+  rows.forEach(r=>{ const app=r['Application Name']; if(heatData[app]) heatData[app][bucketOf(r['Vulnerability Age'])]++; });
+  return `
+  <div class="page-head"><div><h2>Vulnerability Aging Dashboard</h2><p>How long findings have been open, broken down by application, owner, environment and CSP.</p></div></div>
+  <div class="grid-2">
+    <div class="panel"><div class="panel-head"><h3>Aging distribution</h3><span class="hint">count by bucket</span></div>${svgBarList(AGE_BUCKETS.map(b=>({key:b[0],value:a.counts[b[0]]})),{})}</div>
+    <div class="panel"><div class="panel-head"><h3>Age bucket share</h3></div>
+      <div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap;">
+        ${svgDonut(AGE_BUCKETS.map((b,i)=>({value:a.counts[b[0]],color:['#2DD4BF','#38BDF8','#FBBF24','#FB923C','#FB4570','#A78BFA'][i]})))}
+        <div class="legend" style="flex-direction:column;align-items:flex-start;">
+          ${AGE_BUCKETS.map((b,i)=>`<div class="legend-item"><span class="legend-dot" style="background:${['#2DD4BF','#38BDF8','#FBBF24','#FB923C','#FB4570','#A78BFA'][i]}"></span>${b[0]} — ${a.counts[b[0]]}</div>`).join('')}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="panel" style="margin-bottom:16px;"><div class="panel-head"><h3>Aging heat map</h3><span class="hint">top 8 applications × age bucket</span></div>
+    ${heatSource.length? heatmapHTML('app','bucket',{cols:heatCols, rows:heatSource.map(h=>h.key), data:heatData}, maxCell) : emptyMini()}
+  </div>
+  <div class="grid-2">
+    <div class="panel"><div class="panel-head"><h3>Aging by application</h3><span class="hint">avg days, top 10</span></div>${svgBarList(a.byApp.slice(0,10).map(x=>({key:x.key,value:x.avg})))}</div>
+    <div class="panel"><div class="panel-head"><h3>Aging by owner</h3><span class="hint">avg days, top 10</span></div>${svgBarList(a.byOwner.slice(0,10).map(x=>({key:x.key,value:x.avg})))}</div>
+    <div class="panel"><div class="panel-head"><h3>Aging by environment</h3></div>${svgBarList(a.byEnv.map(x=>({key:x.key,value:x.avg})))}</div>
+    <div class="panel"><div class="panel-head"><h3>Aging by CSP</h3></div>${svgBarList(a.byCsp.map((x,i)=>({key:x.key,value:x.avg,color:CSP_COLORS[i%CSP_COLORS.length]})))}</div>
+    <div class="panel"><div class="panel-head"><h3>Aging by risk rating</h3></div>${svgBarList(a.byRisk.map(x=>({key:x.key,value:x.avg,color:RISK_COLOR[riskClass(x.key)]})))}</div>
+    <div class="panel"><div class="panel-head"><h3>Oldest vulnerability per application</h3><span class="hint">top 10</span></div>
+      <div class="tbl-wrap"><table class="data"><thead><tr><th>Application</th><th>Age</th><th>Risk</th></tr></thead><tbody>
+      ${a.oldestByApp.map(r=>`<tr><td>${esc(r['Application Name'])}</td><td>${r['Vulnerability Age']}d</td><td><span class="badge ${riskClass(r['Risk Rating'])}">${esc(r['Risk Rating'])}</span></td></tr>`).join('') || `<tr><td colspan="3" style="text-align:center;color:var(--text-faint);">No data</td></tr>`}
+      </tbody></table></div>
+    </div>
+  </div>
+  <div class="panel"><div class="panel-head"><h3>Top 10 oldest vulnerabilities</h3></div>
+    <div class="tbl-wrap"><table class="data"><thead><tr><th>Vulnerability</th><th>Application</th><th>Owner</th><th>Age</th><th>Risk</th><th>SLA</th></tr></thead><tbody>
+    ${a.oldest10.map(r=>`<tr><td>${esc(r['Vulnerability Name'])}</td><td>${esc(r['Application Name'])}</td><td>${esc(r['App Owner'])}</td><td>${r['Vulnerability Age']}d</td><td><span class="badge ${riskClass(r['Risk Rating'])}">${esc(r['Risk Rating'])}</span></td><td><span class="badge ${slaClass(r['SLA Status'])}">${esc(r['SLA Status'])}</span></td></tr>`).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--text-faint);">No data</td></tr>`}
+    </tbody></table></div>
+  </div>
+  `;
+}
+
+function pageProductivity(rows){
+  const p = calcProductivity(rows);
+  return `
+  <div class="page-head"><div><h2>Productivity Dashboard</h2><p>Closure velocity, SLA compliance, and workload distribution across owners and applications.</p></div></div>
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="bar" style="background:var(--accent)"></div><div class="kpi-label">Opened</div><div class="kpi-val">${p.opened.toLocaleString()}</div><div class="kpi-sub">status not closed</div></div>
+    <div class="kpi-card"><div class="bar" style="background:var(--ok)"></div><div class="kpi-label">Closed</div><div class="kpi-val">${p.closed.toLocaleString()}</div><div class="kpi-sub">remediated findings</div></div>
+    <div class="kpi-card"><div class="bar" style="background:#38BDF8"></div><div class="kpi-label">Closure %</div><div class="kpi-val">${p.closurePct}%</div><div class="kpi-sub">closed / total</div></div>
+    <div class="kpi-card"><div class="bar" style="background:var(--ok)"></div><div class="kpi-label">SLA Compliance %</div><div class="kpi-val">${p.slaCompliancePct}%</div><div class="kpi-sub">within SLA / (within+breached)</div></div>
+    <div class="kpi-card"><div class="bar" style="background:var(--high)"></div><div class="kpi-label">Average Age</div><div class="kpi-val">${p.avgAge}d</div><div class="kpi-sub">across current scope</div></div>
+    <div class="kpi-card"><div class="bar" style="background:#A78BFA"></div><div class="kpi-label">Avg Remediation Time</div><div class="kpi-val">${p.avgRemediation}d</div><div class="kpi-sub">First Found → Due, closed items</div></div>
+  </div>
+  <div class="grid-3">
+    <div class="panel"><div class="panel-head"><h3>By Owner</h3></div>${svgBarList(Object.entries(p.byOwnerOpen).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,v])=>({key:k,value:v})))}</div>
+    <div class="panel"><div class="panel-head"><h3>By Application</h3></div>${svgBarList(p.topAppsVuln.slice(0,10).map(([k,v])=>({key:k,value:v})))}</div>
+    <div class="panel"><div class="panel-head"><h3>By Environment</h3></div>${svgBarList(Object.entries(p.byEnv).sort((a,b)=>b[1]-a[1]).map(([k,v])=>({key:k,value:v})))}</div>
+  </div>
+  <div class="grid-2">
+    <div class="panel"><div class="panel-head"><h3>Top applications — highest vulnerabilities</h3></div>
+      <div class="tbl-wrap"><table class="data"><thead><tr><th>#</th><th>Application</th><th>Count</th></tr></thead><tbody>
+      ${p.topAppsVuln.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r[0])}</td><td>${r[1]}</td></tr>`).join('') || rowless()}
+      </tbody></table></div>
+    </div>
+    <div class="panel"><div class="panel-head"><h3>Top owners — most open</h3></div>
+      <div class="tbl-wrap"><table class="data"><thead><tr><th>#</th><th>Owner</th><th>Open</th></tr></thead><tbody>
+      ${p.topOwnersOpen.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r[0])}</td><td>${r[1]}</td></tr>`).join('') || rowless()}
+      </tbody></table></div>
+    </div>
+    <div class="panel"><div class="panel-head"><h3>Top owners — most closed</h3></div>
+      <div class="tbl-wrap"><table class="data"><thead><tr><th>#</th><th>Owner</th><th>Closed</th></tr></thead><tbody>
+      ${p.topOwnersClosed.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r[0])}</td><td>${r[1]}</td></tr>`).join('') || rowless()}
+      </tbody></table></div>
+    </div>
+    <div class="panel"><div class="panel-head"><h3>Top aging applications</h3></div>
+      <div class="tbl-wrap"><table class="data"><thead><tr><th>#</th><th>Application</th><th>Avg age</th></tr></thead><tbody>
+      ${p.agingByApp.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.key)}</td><td>${r.avg}d</td></tr>`).join('') || rowless()}
+      </tbody></table></div>
+    </div>
+  </div>
+  `;
+}
+function rowless(){ return `<tr><td colspan="3" style="text-align:center;color:var(--text-faint);">No data</td></tr>`; }
+
+function pageRisk(rows){
+  const r = calcRisk(rows);
+  const envRows = Object.keys(r.byEnv); const cspRows = Object.keys(r.byCsp);
+  return `
+  <div class="page-head"><div><h2>Risk Analytics</h2><p>Severity concentration and aging exposure across environments and cloud providers.</p></div></div>
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="bar" style="background:var(--crit)"></div><div class="kpi-label">Critical &gt; 90d</div><div class="kpi-val">${r.critOver90}</div></div>
+    <div class="kpi-card"><div class="bar" style="background:var(--crit)"></div><div class="kpi-label">Critical &gt; 180d</div><div class="kpi-val">${r.critOver180}</div></div>
+    <div class="kpi-card"><div class="bar" style="background:var(--high)"></div><div class="kpi-label">High &gt; 90d</div><div class="kpi-val">${r.highOver90}</div></div>
+    <div class="kpi-card"><div class="bar" style="background:var(--high)"></div><div class="kpi-label">High &gt; 180d</div><div class="kpi-val">${r.highOver180}</div></div>
+  </div>
+  <div class="grid-2">
+    <div class="panel"><div class="panel-head"><h3>Risk distribution</h3></div>
+      <div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap;">
+        ${svgDonut([{value:r.dist.Critical,color:'var(--crit)'},{value:r.dist.High,color:'var(--high)'},{value:r.dist.Medium,color:'var(--med)'},{value:r.dist.Low,color:'var(--low)'}])}
+        <div class="legend" style="flex-direction:column;align-items:flex-start;">
+          <div class="legend-item"><span class="legend-dot" style="background:var(--crit)"></span>Critical — ${r.dist.Critical}</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--high)"></span>High — ${r.dist.High}</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--med)"></span>Medium — ${r.dist.Medium}</div>
+          <div class="legend-item"><span class="legend-dot" style="background:var(--low)"></span>Low — ${r.dist.Low}</div>
+        </div>
+      </div>
+    </div>
+    <div class="panel"><div class="panel-head"><h3>Risk trend — by age bucket</h3><span class="hint">critical + high concentration</span></div>
+      ${svgBarList(AGE_BUCKETS.map(b=>({key:b[0],value:rows.filter(x=>bucketOf(x['Vulnerability Age'])===b[0] && (riskClass(x['Risk Rating'])==='crit'||riskClass(x['Risk Rating'])==='high')).length, color:'var(--crit)'})))}
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="panel"><div class="panel-head"><h3>Risk by environment</h3></div>
+      <div class="tbl-wrap"><table class="data"><thead><tr><th>Environment</th><th>Critical</th><th>High</th><th>Medium</th><th>Low</th></tr></thead><tbody>
+      ${envRows.map(k=>`<tr><td>${esc(k)}</td><td>${r.byEnv[k].Critical}</td><td>${r.byEnv[k].High}</td><td>${r.byEnv[k].Medium}</td><td>${r.byEnv[k].Low}</td></tr>`).join('') || `<tr><td colspan="5" style="text-align:center;color:var(--text-faint);">No data</td></tr>`}
+      </tbody></table></div>
+    </div>
+    <div class="panel"><div class="panel-head"><h3>Risk by CSP</h3></div>
+      <div class="tbl-wrap"><table class="data"><thead><tr><th>CSP</th><th>Critical</th><th>High</th><th>Medium</th><th>Low</th></tr></thead><tbody>
+      ${cspRows.map(k=>`<tr><td>${esc(k)}</td><td>${r.byCsp[k].Critical}</td><td>${r.byCsp[k].High}</td><td>${r.byCsp[k].Medium}</td><td>${r.byCsp[k].Low}</td></tr>`).join('') || `<tr><td colspan="5" style="text-align:center;color:var(--text-faint);">No data</td></tr>`}
+      </tbody></table></div>
+    </div>
+  </div>
+  `;
+}
+
+const AVG_DIMS = [
+  {key:'Application Name', label:'Application', field:'Application Name'},
+  {key:'App Owner', label:'Owner', field:'App Owner'},
+  {key:'Environment', label:'Environment', field:'Environment'},
+  {key:'CSP', label:'CSP', field:'CSP'},
+  {key:'Risk Rating', label:'Risk Rating', field:'Risk Rating'},
+  {key:'Vulnerability Category', label:'Category', field:'Vulnerability Category'},
+];
+function pageAvgAge(rows){
+  const ages = rows.map(r=>r['Vulnerability Age']);
+  const overall = ages.length? Math.round(ages.reduce((a,b)=>a+b,0)/ages.length):0;
+  const sorted = [...ages].sort((a,b)=>a-b);
+  const median = sorted.length? (sorted.length%2? sorted[(sorted.length-1)/2] : Math.round((sorted[sorted.length/2-1]+sorted[sorted.length/2])/2)) : 0;
+  const max = ages.length? Math.max(...ages):0;
+  const min = ages.length? Math.min(...ages):0;
+
+  const activeDim = AVG_DIMS.find(d=>d.key===APP.avgAgeTab) || AVG_DIMS[0];
+  const stats = groupAvgAge(rows, activeDim.field);
+  const tblId = 'avgage_'+norm(activeDim.key);
+  const columns = [
+    {key:'key', label:activeDim.label},
+    {key:'count', label:'Findings'},
+    {key:'min', label:'Min (d)'},
+    {key:'avg', label:'Avg Age (d)', render:r=>`<span style="color:${ageColor(r.avg)};font-family:var(--font-mono);font-weight:600;">${r.avg}</span>`},
+    {key:'max', label:'Max (d)'},
+  ];
+
+  return `
+  <div class="page-head"><div><h2>Vulnerability Age Averages</h2><p>Average finding age across the current filter scope, broken down by dimension — built for quick copy into status reports.</p></div></div>
+
+  <div class="gauge-grid">
+    <div class="gauge-card">${svgProgressRing(overall, 240, ageColor(overall))}<div class="g-label" style="margin-top:10px;">Overall Average</div><div class="g-sub">across ${ages.length.toLocaleString()} findings</div></div>
+    <div class="gauge-card">${svgProgressRing(median, 240, ageColor(median))}<div class="g-label" style="margin-top:10px;">Median Age</div><div class="g-sub">midpoint of scope</div></div>
+    <div class="gauge-card">${svgProgressRing(max, Math.max(max,365), 'var(--crit)')}<div class="g-label" style="margin-top:10px;">Maximum Age</div><div class="g-sub">oldest open finding</div></div>
+    <div class="gauge-card">${svgProgressRing(min, 240, 'var(--ok)')}<div class="g-label" style="margin-top:10px;">Minimum Age</div><div class="g-sub">newest finding</div></div>
+  </div>
+
+  <div class="threshold-legend">
+    <span><b>Reference bands</b></span>
+    <span>🟢 0–90d within typical Critical/High tolerance</span>
+    <span>🟡 91–180d approaching Medium SLA ceiling</span>
+    <span>🔴 180d+ aged past standard SLA thresholds</span>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Average age by dimension</h3><span class="hint">select a view</span></div>
+    <div class="tabs-row">${AVG_DIMS.map(d=>`<button class="tab-btn ${activeDim.key===d.key?'active':''}" data-avgtab="${esc(d.key)}">${esc(d.label)}</button>`).join('')}</div>
+    <div class="grid-2" style="margin-bottom:6px;">
+      <div>${svgBarList(stats.slice(0,12).map(s=>({key:s.key,value:s.avg,color:ageColor(s.avg)})))}</div>
+      <div style="display:flex;align-items:center;justify-content:center;">
+        ${stats.length? svgDonut(stats.slice(0,6).map((s,i)=>({value:s.count,color:['#2DD4BF','#38BDF8','#FBBF24','#FB923C','#FB4570','#A78BFA'][i%6]}))) : emptyMini()}
+      </div>
+    </div>
+    <div class="tbl-toolbar" style="margin-top:10px;">
+      <div class="copy-toolbar">
+        <button class="btn" id="copyAvgTable" data-dim="${esc(activeDim.key)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 9h10v10H9zM5 15V5a1 1 0 011-1h10"/></svg>Copy key table</button>
+        <button class="btn" id="downloadAvgCsv" data-dim="${esc(activeDim.key)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>Download CSV</button>
+      </div>
+      <span style="font-size:11px;color:var(--text-faint);">Copies as tab-separated — paste straight into Excel or a status email</span>
+    </div>
+    ${renderDataTable(tblId, stats, columns, {pageSize:12})}
+  </div>
+  `;
+}
+function avgAgeExportText(dimKey, delim){
+  const rows = getFilteredRows();
+  const dim = AVG_DIMS.find(d=>d.key===dimKey) || AVG_DIMS[0];
+  const stats = groupAvgAge(rows, dim.field);
+  const header = [dim.label,'Findings','Min (d)','Avg Age (d)','Max (d)'];
+  const lines = [header.join(delim), ...stats.map(s=>[s.key,s.count,s.min,s.avg,s.max].join(delim))];
+  return lines.join('\n');
+}
+
+/* ---------- Owner / APM ID mail summary ---------- */
+function groupMailSummary(rows, byKey){
+  const acc = {};
+  rows.forEach(r=>{
+    const k = r[byKey] || 'Unspecified';
+    if(!acc[k]) acc[k] = { key:k, apps:new Set(), owners:new Set(), pastDue:0, withinSla:0, dueSoon:0, other:0, total:0 };
+    const g = acc[k];
+    if(r['Application Name']) g.apps.add(r['Application Name']);
+    if(r['App Owner']) g.owners.add(r['App Owner']);
+    const sc = slaClass(r['SLA Status']);
+    if(sc==='bad') g.pastDue++;
+    else if(sc==='ok') g.withinSla++;
+    else if(sc==='med') g.dueSoon++;
+    else g.other++;
+    g.total++;
+  });
+  return Object.values(acc).map(g=>({
+    key:g.key,
+    apps:[...g.apps].join(', '),
+    owners:[...g.owners].join(', '),
+    pastDue:g.pastDue, withinSla:g.withinSla, dueSoon:g.dueSoon, total:g.total,
+    compliance: (g.withinSla+g.pastDue)? Math.round(g.withinSla/(g.withinSla+g.pastDue)*1000)/10 : 0,
+  })).sort((a,b)=> b.pastDue-a.pastDue || b.total-a.total);
+}
+function mailSummaryExportText(delim){
+  const rows = getFilteredRows();
+  const groupBy = APP.mailGroupBy || 'App Owner';
+  const data = groupMailSummary(rows, groupBy);
+  const extraLabel = groupBy==='APM ID' ? 'Application / Owner' : 'Applications';
+  const header = [groupBy, extraLabel, 'Past Due', 'Within SLA', 'Due Soon', 'Total', 'Compliance %'];
+  const lines = [header.join(delim)];
+  data.forEach(g=>{
+    const extra = groupBy==='APM ID' ? `${g.apps} / ${g.owners}` : g.apps;
+    lines.push([g.key, extra, g.pastDue, g.withinSla, g.dueSoon, g.total, g.compliance].join(delim));
+  });
+  return lines.join('\n');
+}
+function mailDraftText(rows){
+  const groupBy = APP.mailGroupBy || 'App Owner';
+  const data = groupMailSummary(rows, groupBy).filter(g=>g.pastDue>0);
+  const dateStr = new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  const lines = [`Vulnerability SLA Status — ${dateStr}`, ''];
+  data.forEach(g=>{ lines.push(`${g.key} — Past Due: ${g.pastDue}, Within SLA: ${g.withinSla}, Due Soon: ${g.dueSoon} (Total: ${g.total})`); });
+  if(!data.length) lines.push('No past-due findings in the current filter scope.');
+  return lines.join('\n');
+}
+function pageMailSummary(rows){
+  const groupBy = APP.mailGroupBy || 'App Owner';
+  const data = groupMailSummary(rows, groupBy);
+  const tblId = 'mailsummary_'+norm(groupBy);
+  const totalPastDue = data.reduce((a,g)=>a+g.pastDue,0);
+  const totalWithin = data.reduce((a,g)=>a+g.withinSla,0);
+  const columns = [
+    {key:'key', label:groupBy},
+    groupBy==='APM ID'
+      ? {key:'apps', label:'Application / Owner', render:r=>`${esc(r.apps)}${r.owners?` <span style="color:var(--text-faint);">(${esc(r.owners)})</span>`:''}`}
+      : {key:'apps', label:'Applications'},
+    {key:'pastDue', label:'Past Due', render:r=>`<span class="badge bad">${r.pastDue}</span>`},
+    {key:'withinSla', label:'Within SLA', render:r=>`<span class="badge ok">${r.withinSla}</span>`},
+    {key:'dueSoon', label:'Due Soon'},
+    {key:'total', label:'Total'},
+    {key:'compliance', label:'Compliance %'},
+    {key:'action', label:'', render:r=>`<button class="btn" data-mailline="${esc(`${r.key} — Past Due: ${r.pastDue}, Within SLA: ${r.withinSla}, Due Soon: ${r.dueSoon} (Total: ${r.total})`)}" style="padding:4px 10px;font-size:11px;">Copy line</button>`},
+  ];
+  return `
+  <div class="page-head"><div><h2>Owner Mail Summary</h2><p>Past-due vs within-SLA counts by App Owner or APM ID — built to paste straight into a status email.</p></div></div>
+  <div class="kpi-grid" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr));">
+    <div class="kpi-card"><div class="bar" style="background:var(--bad)"></div><div class="kpi-label">Total Past Due</div><div class="kpi-val">${totalPastDue.toLocaleString()}</div></div>
+    <div class="kpi-card"><div class="bar" style="background:var(--ok)"></div><div class="kpi-label">Total Within SLA</div><div class="kpi-val">${totalWithin.toLocaleString()}</div></div>
+    <div class="kpi-card"><div class="bar" style="background:var(--accent)"></div><div class="kpi-label">${groupBy==='APM ID'?'APM IDs':'Owners'} in scope</div><div class="kpi-val">${data.length.toLocaleString()}</div></div>
+  </div>
+  <div class="tabs-row">
+    <button class="tab-btn ${groupBy==='App Owner'?'active':''}" data-mailgroup="App Owner">By App Owner</button>
+    <button class="tab-btn ${groupBy==='APM ID'?'active':''}" data-mailgroup="APM ID">By APM ID</button>
+  </div>
+  <div class="panel">
+    <div class="tbl-toolbar">
+      <div class="copy-toolbar">
+        <button class="btn primary" id="copyMailTable"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 9h10v10H9zM5 15V5a1 1 0 011-1h10"/></svg>Copy table</button>
+        <button class="btn" id="downloadMailCsv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>Download CSV</button>
+        <button class="btn" id="copyMailDraft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18v14H3z M3 5l9 7 9-7"/></svg>Copy mail draft (past due)</button>
+      </div>
+      <span style="font-size:11px;color:var(--text-faint);">Table copies tab-separated — pastes cleanly into Excel or the body of an email</span>
+    </div>
+    ${renderDataTable(tblId, data, columns, {pageSize:15})}
+  </div>
+  `;
+}
+
+
+function pageHowItWorks(){
+  return `
+  <div class="page-head"><div><h2>How SecureMetrics Hub works</h2><p>A quick tour of the pipeline, the data it expects, and how the SLA math is done.</p></div></div>
+
+  <div class="panel" style="margin-bottom:18px;">
+    <div class="hiw-step"><div class="hiw-num">1</div><div><h4>Upload your export</h4><p>Drag a Qualys-style CSV or XLSX export onto the Upload page, or click to browse. Everything runs locally in your browser — the file never leaves your machine, there is no server and no account.</p></div></div>
+    <div class="hiw-step"><div class="hiw-num">2</div><div><h4>Automatic column matching</h4><p>Headers are normalized and matched against the expected 23-column schema, even if capitalization or spacing differs between weekly exports. Any missing mandatory column is flagged before you continue, with a checklist showing exactly what was and wasn't found.</p></div></div>
+    <div class="hiw-step"><div class="hiw-num">3</div><div><h4>Filter to the scope you need</h4><p>The filter bar at the top applies everywhere at once — Summary, Aging, Productivity, Risk, Age Averages, Records and Insights all recalculate live as you change IF/PCI, SLA status, category, scan type, risk, environment, CSP, application or owner.</p></div></div>
+    <div class="hiw-step"><div class="hiw-num">4</div><div><h4>Read the dashboards</h4><p>Summary gives you the headline KPIs; Aging breaks findings into 0–30 through 365+ day buckets with a heat map by application; Productivity tracks closure and SLA compliance; Risk Analytics isolates critical/high exposure by age and environment; Age Averages gives copy-ready tables for status reporting.</p></div></div>
+    <div class="hiw-step"><div class="hiw-num">5</div><div><h4>Export or save your view</h4><p>Export the current filtered scope to Excel, CSV, PDF or PowerPoint from the Export page. Save recurring filter combinations as presets, or bookmark a specific page + filter state to reopen later — both are stored locally on this device.</p></div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-head"><h3>Expected columns</h3><span class="hint">${MANDATORY_COLUMNS.length} mandatory</span></div>
+      <div class="col-check">${CANON_COLUMNS.map(c=>`<span class="col-tag ${MANDATORY_COLUMNS.includes(c)?'found':'neu'}" style="${MANDATORY_COLUMNS.includes(c)?'':'background:var(--surface2);color:var(--text-dim);border:1px solid var(--border);'}">${esc(c)}${MANDATORY_COLUMNS.includes(c)?'':' (optional)'}</span>`).join('')}</div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Reference SLA bands</h3><span class="hint">used for context, not enforced on upload</span></div>
+      <table class="sla-table">
+        <thead><tr><th>Risk Rating</th><th>Typical window</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge crit">Critical</span></td><td>30 days</td></tr>
+          <tr><td><span class="badge high">High</span></td><td>90 days (IF/PCI) · 120 days (non IF/PCI)</td></tr>
+          <tr><td><span class="badge med">Medium</span></td><td>180 days</td></tr>
+        </tbody>
+      </table>
+      <p style="font-size:11.5px;color:var(--text-faint);margin-top:10px;">SLA Status itself is read directly from your export's <b>SLA Status</b> column — this table is shown for context on the Age Averages and Aging pages.</p>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:16px;">
+    <div class="panel-head"><h3>Privacy &amp; processing</h3></div>
+    <p style="font-size:12.5px;color:var(--text-dim);line-height:1.6;">This is a single self-contained HTML file with no backend. Parsing (SheetJS), charting and export (Excel/CSV/PDF/PowerPoint) all run in your browser's memory. Saved presets and bookmarks are stored in your browser's local storage on this device only — nothing is uploaded anywhere.</p>
+  </div>
+  `;
+}
+
+function pageRecords(rows){
+  const columns = [
+    {key:'APM ID',label:'APM ID'}, {key:'Application Name',label:'Application'},
+    {key:'Vulnerability ID',label:'Vuln ID'}, {key:'Vulnerability Name',label:'Vulnerability'},
+    {key:'Risk Rating',label:'Risk',render:r=>`<span class="badge ${riskClass(r['Risk Rating'])}">${esc(r['Risk Rating'])}</span>`},
+    {key:'Vulnerability Age',label:'Age',render:r=>r['Vulnerability Age']+'d'},
+    {key:'SLA Status',label:'SLA',render:r=>`<span class="badge ${slaClass(r['SLA Status'])}">${esc(r['SLA Status'])}</span>`},
+    {key:'App Owner',label:'Owner'}, {key:'Environment',label:'Environment'}, {key:'CSP',label:'CSP'},
+    {key:'Impacted Asset',label:'Asset'}, {key:'First Found Date',label:'First Found',render:r=>fmtDate(parseDate(r['First Found Date']))},
+    {key:'Due Date',label:'Due',render:r=>fmtDate(parseDate(r['Due Date']))},
+  ];
+  return `
+  <div class="page-head"><div><h2>Detailed Records</h2><p>Every finding in the current filter scope — sortable, searchable, paginated.</p></div></div>
+  <div class="panel">${renderDataTable('records', rows, columns, {pageSize:15})}</div>
+  `;
+}
+
+function pageInsights(rows){
+  const list = genInsights(rows);
+  const toneMeta = { bad:{bg:'rgba(251,69,112,.14)',color:'var(--crit)',icon:'M12 9v4M12 17h.01M10.3 3.9L2.5 17a2 2 0 001.7 3h15.6a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z'}, warn:{bg:'rgba(251,191,36,.14)',color:'var(--med)',icon:'M12 8v4M12 16h.01M12 2a10 10 0 100 20 10 10 0 000-20z'}, info:{bg:'rgba(56,189,248,.14)',color:'var(--low)',icon:'M12 16v-4M12 8h.01M12 22a10 10 0 100-20 10 10 0 000 20z'} };
+  return `
+  <div class="page-head"><div><h2>Advanced Insights</h2><p>Automated read-outs generated from the current filter scope, refreshed on every change.</p></div></div>
+  ${list.length? list.map(i=>{ const m = toneMeta[i.tone]; return `
+  <div class="insight-card">
+    <div class="ic" style="background:${m.bg};color:${m.color};"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="${m.icon}"/></svg></div>
+    <div><h4>${esc(i.title)}</h4><p>${esc(i.body)}</p></div>
+  </div>`; }).join('') : `<div class="empty-state"><h3>No insights to show</h3><p>Adjust your filters — there isn't enough data in the current scope.</p></div>`}
+  `;
+}
+
+function pageExport(rows){
+  return `
+  <div class="page-head"><div><h2>Export</h2><p>Every export respects the filters currently applied (${rows.length.toLocaleString()} records in scope).</p></div></div>
+  <div class="export-grid">
+    <div class="export-card"><div class="xi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3v4a1 1 0 001 1h4M6 3h9l5 5v13a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1z"/></svg></div>
+      <h4>Excel workbook</h4><p>Multi-sheet .xlsx with filtered data, KPIs, aging, productivity and risk breakdowns.</p>
+      <button class="btn primary" id="exportXlsx">Download .xlsx</button>
+    </div>
+    <div class="export-card"><div class="xi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></div>
+      <h4>CSV file</h4><p>Filtered dataset as a flat, single-sheet CSV file.</p>
+      <button class="btn primary" id="exportCsv">Download .csv</button>
+    </div>
+    <div class="export-card"><div class="xi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M9 13h6M9 17h6"/></svg></div>
+      <h4>PDF report</h4><p>Executive summary — KPIs, top risk items and insights, ready to share.</p>
+      <button class="btn primary" id="exportPdf">Download .pdf</button>
+    </div>
+    <div class="export-card"><div class="xi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 4h18v14H3zM8 21h8M12 18v3"/></svg></div>
+      <h4>PowerPoint deck</h4><p>Summary slides covering KPIs, risk distribution and top remediation priorities.</p>
+      <button class="btn primary" id="exportPptx">Download .pptx</button>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:20px;"><div class="panel-head"><h3>Saved filter presets</h3><span class="hint">${APP.presets.length} saved</span></div>
+    ${APP.presets.length? APP.presets.map((p,i)=>`<div class="preset-row"><span>${esc(p.name)} <span style="color:var(--text-faint);">— ${new Date(p.savedAt).toLocaleDateString()}</span></span><span><button data-apply-preset="${i}" style="margin-right:14px;color:var(--accent);">Apply</button><button data-del-preset="${i}">Remove</button></span></div>`).join('') : `<p style="font-size:12.5px;color:var(--text-dim);">No presets saved yet — use "Save preset" in the filter bar.</p>`}
+  </div>
+  <div class="panel" style="margin-top:16px;"><div class="panel-head"><h3>Bookmarked views</h3><span class="hint">${APP.bookmarks.length} saved</span></div>
+    ${APP.bookmarks.length? APP.bookmarks.map((b,i)=>`<div class="preset-row"><span>${esc(b.name)} <span style="color:var(--text-faint);">— ${esc(b.page)}</span></span><span><button data-apply-bookmark="${i}" style="margin-right:14px;color:var(--accent);">Open</button><button data-del-bookmark="${i}">Remove</button></span></div>`).join('') : `<p style="font-size:12.5px;color:var(--text-dim);">No bookmarks saved yet — use "Bookmark" in the filter bar.</p>`}
+  </div>
+  `;
+}
+
+/* ---------- Export implementations ---------- */
+const EXPORT_COLUMNS = ["APM ID","Application Name","Vulnerability ID","Vulnerability Name","Risk Rating","Vulnerability Age","Vulnerability Status","SLA Status","App Owner","Environment","CSP","IF or PCI","Scan Type","Vulnerability Category","Impacted Asset","Cloud Account Name","First Found Date","Due Date","Recommendation"];
+function rowsToAOA(rows){
+  return [EXPORT_COLUMNS, ...rows.map(r=>EXPORT_COLUMNS.map(c=>{
+    if(c==='First Found Date'||c==='Due Date'){ const d=parseDate(r[c]); return d? fmtDate(d): (r[c]||''); }
+    return r[c]==null? '': r[c];
+  }))];
+}
+function doExportCsv(){
+  const rows = getFilteredRows();
+  const aoa = rowsToAOA(rows);
+  const csv = aoa.map(r=>r.map(v=>{ const s=String(v==null?'':v); return /[",\n]/.test(s)? '"'+s.replace(/"/g,'""')+'"': s; }).join(',')).join('\n');
+  downloadBlob(new Blob([csv],{type:'text/csv'}), 'SecureMetricsHub_export.csv');
+  toast('CSV exported');
+}
+function doExportXlsx(){
+  const rows = getFilteredRows();
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rowsToAOA(rows)), 'Filtered Data');
+  const k = calcKPIs(rows);
+  const kpiAOA = [['Metric','Value'], ['Total Vulnerabilities',k.total],['Total Applications',k.apps],['Total Assets',k.assets],['Critical',k.critical],['High',k.high],['Medium',k.medium],['Low',k.low],['Breached SLA',k.breached],['Within SLA',k.withinSla],['IF',k.ifCount],['PCI',k.pciCount],['IF-PCI',k.ifpciCount],['Average Age',k.avgAge],['Maximum Age',k.maxAge],['Minimum Age',k.minAge]];
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(kpiAOA), 'KPI Summary');
+  const a = calcAging(rows);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Age Bucket','Count'], ...AGE_BUCKETS.map(b=>[b[0], a.counts[b[0]]])]), 'Aging Buckets');
+  const p = calcProductivity(rows);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Metric','Value'],['Opened',p.opened],['Closed',p.closed],['Closure %',p.closurePct],['SLA Compliance %',p.slaCompliancePct],['Average Age',p.avgAge],['Average Remediation (days)',p.avgRemediation]]), 'Productivity');
+  const r = calcRisk(rows);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([['Risk','Count'],['Critical',r.dist.Critical],['High',r.dist.High],['Medium',r.dist.Medium],['Low',r.dist.Low],[],['Critical > 90d',r.critOver90],['Critical > 180d',r.critOver180],['High > 90d',r.highOver90],['High > 180d',r.highOver180]]), 'Risk Analytics');
+  XLSX.writeFile(wb, 'SecureMetricsHub_export.xlsx');
+  toast('Excel workbook exported');
+}
+function downloadBlob(blob, name){
+  const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),2000);
+}
+function doExportPdf(){
+  try{
+    const { jsPDF } = window.jspdf;
+    const rows = getFilteredRows();
+    const k = calcKPIs(rows); const risk = calcRisk(rows); const insights = genInsights(rows);
+    const doc = new jsPDF();
+    doc.setFontSize(18); doc.text('SecureMetrics Hub — Executive Summary', 14, 18);
+    doc.setFontSize(10); doc.setTextColor(120); doc.text('Measure. Analyze. Remediate.  ·  Generated ' + new Date().toLocaleString(), 14, 25);
+    doc.autoTable({ startY: 32, head:[['Metric','Value']], body:[
+      ['Total Vulnerabilities',k.total],['Total Applications',k.apps],['Total Assets',k.assets],
+      ['Critical',k.critical],['High',k.high],['Medium',k.medium],['Low',k.low],
+      ['Breached SLA',k.breached],['Within SLA',k.withinSla],['Average Age (days)',k.avgAge],
+    ], theme:'grid', headStyles:{fillColor:[15,118,110]}, styles:{fontSize:9} });
+    let y = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(12); doc.text('Top 10 oldest vulnerabilities', 14, y); y+=4;
+    const oldest = calcAging(rows).oldest10.map(r=>[r['Vulnerability Name']||'', r['Application Name']||'', r['Risk Rating']||'', r['Vulnerability Age']+'d', r['SLA Status']||'']);
+    doc.autoTable({ startY:y+2, head:[['Vulnerability','Application','Risk','Age','SLA']], body:oldest, theme:'grid', headStyles:{fillColor:[15,118,110]}, styles:{fontSize:8} });
+    y = doc.lastAutoTable.finalY + 10;
+    if(y>250){ doc.addPage(); y=20; }
+    doc.setFontSize(12); doc.text('Automated insights', 14, y); y+=6;
+    doc.setFontSize(9); doc.setTextColor(60);
+    insights.slice(0,6).forEach(ins=>{
+      if(y>280){ doc.addPage(); y=20; }
+      const lines = doc.splitTextToSize('• '+ins.title+' — '+ins.body, 180);
+      doc.text(lines, 14, y); y += lines.length*4.6 + 3;
+    });
+    doc.save('SecureMetricsHub_report.pdf');
+    toast('PDF report exported');
+  }catch(err){ console.error(err); toast('PDF export needs internet access to load its library.'); }
+}
+function doExportPptx(){
+  try{
+    const pptx = new PptxGenJS();
+    const rows = getFilteredRows(); const k = calcKPIs(rows); const risk = calcRisk(rows);
+    let s = pptx.addSlide(); s.background = { color:'0A1120' };
+    s.addText('SecureMetrics Hub', { x:0.6,y:1.6,w:9,h:0.8,fontSize:34,color:'2DD4BF',bold:true,fontFace:'Arial' });
+    s.addText('Measure. Analyze. Remediate.', { x:0.6,y:2.3,w:9,h:0.5,fontSize:16,color:'E7ECF6' });
+    s.addText('Generated '+new Date().toLocaleDateString(), { x:0.6,y:2.8,w:9,h:0.4,fontSize:11,color:'8C9AB8' });
+    s.addText('Built by Team IVM', { x:0.6,y:6.9,w:6,h:0.3,fontSize:9,color:'5C6A88' });
+
+    let s2 = pptx.addSlide(); s2.background={color:'FFFFFF'};
+    s2.addText('KPI Summary', { x:0.4,y:0.3,w:9,h:0.5,fontSize:22,bold:true,color:'0F172A' });
+    const kpiRows = [['Metric','Value'],['Total Vulnerabilities',String(k.total)],['Applications',String(k.apps)],['Assets',String(k.assets)],['Critical',String(k.critical)],['High',String(k.high)],['Medium',String(k.medium)],['Low',String(k.low)],['Breached SLA',String(k.breached)],['Within SLA',String(k.withinSla)],['Average Age',k.avgAge+'d']];
+    s2.addTable(kpiRows, { x:0.4,y:0.9,w:9,fontSize:11,color:'333333',border:{type:'solid',color:'E2E8F2',pt:1}, fill:{color:'F7F9FC'}, autoPage:false });
+
+    let s3 = pptx.addSlide(); s3.background={color:'FFFFFF'};
+    s3.addText('Risk Distribution', { x:0.4,y:0.3,w:9,h:0.5,fontSize:22,bold:true,color:'0F172A' });
+    s3.addChart(pptx.ChartType.doughnut, [{ name:'Risk', labels:['Critical','High','Medium','Low'], values:[risk.dist.Critical,risk.dist.High,risk.dist.Medium,risk.dist.Low] }], { x:1,y:1,w:5,h:4.2, chartColors:['FB4570','FB923C','FBBF24','38BDF8'] });
+
+    const p = calcProductivity(rows);
+    let s4 = pptx.addSlide(); s4.background={color:'FFFFFF'};
+    s4.addText('Top remediation priorities', { x:0.4,y:0.3,w:9,h:0.5,fontSize:22,bold:true,color:'0F172A' });
+    const topRows = [['Application','Vulnerabilities'], ...p.topAppsVuln.slice(0,8).map(r=>[r[0],String(r[1])])];
+    s4.addTable(topRows, { x:0.4,y:0.9,w:9,fontSize:11,color:'333333',border:{type:'solid',color:'E2E8F2',pt:1}, fill:{color:'F7F9FC'} });
+
+    pptx.writeFile({ fileName:'SecureMetricsHub_summary.pptx' });
+    toast('PowerPoint deck exported');
+  }catch(err){ console.error(err); toast('PowerPoint export needs internet access to load its library.'); }
+}
+
+/* ---------- Event wiring ---------- */
+function render(){ renderNav(); renderFilters(); renderMain(); wireDynamic(); }
+
+function wireDynamic(){
+  // dropzone
+  const dz = document.getElementById('dropzone');
+  if(dz){
+    const fi = document.getElementById('fileInput');
+    dz.addEventListener('click', ()=>fi.click());
+    fi.addEventListener('change', e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); });
+    ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev, e=>{ e.preventDefault(); dz.classList.add('drag'); }));
+    ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev, e=>{ e.preventDefault(); dz.classList.remove('drag'); }));
+    dz.addEventListener('drop', e=>{ const f=e.dataTransfer.files[0]; if(f) handleFile(f); });
+  }
+  const goSummary = document.getElementById('goSummary');
+  if(goSummary) goSummary.addEventListener('click', ()=>{ APP.page='summary'; render(); });
+
+  // export buttons
+  const bindClick=(id,fn)=>{ const el=document.getElementById(id); if(el) el.addEventListener('click', fn); };
+  bindClick('exportCsv', doExportCsv); bindClick('exportXlsx', doExportXlsx); bindClick('exportPdf', doExportPdf); bindClick('exportPptx', doExportPptx);
+
+  document.querySelectorAll('[data-apply-preset]').forEach(b=>b.addEventListener('click', e=>{
+    const p = APP.presets[+e.target.dataset.applyPreset]; if(p){ APP.filters = JSON.parse(JSON.stringify(p.filters)); render(); toast('Preset applied: '+p.name); }
+  }));
+  document.querySelectorAll('[data-del-preset]').forEach(b=>b.addEventListener('click', e=>{
+    APP.presets.splice(+e.target.dataset.delPreset,1); saveLS('smh_presets',APP.presets); render();
+  }));
+  document.querySelectorAll('[data-apply-bookmark]').forEach(b=>b.addEventListener('click', e=>{
+    const bm = APP.bookmarks[+e.target.dataset.applyBookmark]; if(bm){ APP.filters=JSON.parse(JSON.stringify(bm.filters)); APP.page=bm.page; render(); toast('Opened bookmark: '+bm.name); }
+  }));
+  document.querySelectorAll('[data-del-bookmark]').forEach(b=>b.addEventListener('click', e=>{
+    APP.bookmarks.splice(+e.target.dataset.delBookmark,1); saveLS('smh_bookmarks',APP.bookmarks); render();
+  }));
+
+  // tables: sort/search/page
+  document.querySelectorAll('[data-tbl]').forEach(th=>th.addEventListener('click', ()=>{
+    const id=th.dataset.tbl, col=th.dataset.col; const cur=APP.sort[id];
+    APP.sort[id] = (cur && cur.key===col) ? {key:col,dir:-cur.dir} : {key:col,dir:1};
+    render();
+  }));
+  document.querySelectorAll('[data-tbl-search]').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ const id=inp.dataset.tblSearch; APP.pageState[id]=APP.pageState[id]||{page:1,pageSize:15,search:''}; APP.pageState[id].search=inp.value; APP.pageState[id].page=1; render(); preserveFocus(inp); });
+  });
+  document.querySelectorAll('[data-tbl-page]').forEach(b=>b.addEventListener('click', ()=>{
+    const id=b.dataset.tblPage, dir=b.dataset.dir; const st=APP.pageState[id];
+    if(dir==='first') st.page=1; else if(dir==='prev') st.page=Math.max(1,st.page-1); else if(dir==='next') st.page++; else if(dir==='last') st.page=999999;
+    render();
+  }));
+
+  // KPI drill-through: summary risk cards -> records filtered
+  document.querySelectorAll('.kpi-card').forEach(card=>{
+    card.addEventListener('click', ()=>{
+      const label = card.querySelector('.kpi-label').textContent.trim();
+      const map = { Critical:'Critical', High:'High', Medium:'Medium', Low:'Low' };
+      if(map[label]){ APP.filters.risk = [...new Set([...APP.filters.risk, map[label]])]; APP.page='records'; render(); }
+      else if(label==='Breached SLA'){ APP.filters.sla = uniq(APP.rows.map(r=>r['SLA Status'])).filter(s=>slaClass(s)==='bad'); APP.page='records'; render(); }
+      else if(label==='Within SLA'){ APP.filters.sla = uniq(APP.rows.map(r=>r['SLA Status'])).filter(s=>slaClass(s)==='ok'); APP.page='records'; render(); }
+      else { APP.page='records'; render(); }
+    });
+  });
+
+  // avg age tabs + copy/download
+  document.querySelectorAll('[data-avgtab]').forEach(b=>b.addEventListener('click', ()=>{ APP.avgAgeTab = b.dataset.avgtab; render(); }));
+  const copyAvgBtn = document.getElementById('copyAvgTable');
+  if(copyAvgBtn) copyAvgBtn.addEventListener('click', ()=>{ copyToClipboard(avgAgeExportText(copyAvgBtn.dataset.dim, '\t'), copyAvgBtn); });
+  const dlAvgBtn = document.getElementById('downloadAvgCsv');
+  if(dlAvgBtn) dlAvgBtn.addEventListener('click', ()=>{
+    const csv = avgAgeExportText(dlAvgBtn.dataset.dim, ',');
+    downloadBlob(new Blob([csv],{type:'text/csv'}), 'SecureMetricsHub_age_averages.csv');
+    toast('CSV downloaded');
+  });
+
+  // mail summary group toggle + copy/download
+  document.querySelectorAll('[data-mailgroup]').forEach(b=>b.addEventListener('click', ()=>{ APP.mailGroupBy = b.dataset.mailgroup; render(); }));
+  const copyMailBtn = document.getElementById('copyMailTable');
+  if(copyMailBtn) copyMailBtn.addEventListener('click', ()=>{ copyToClipboard(mailSummaryExportText('\t'), copyMailBtn); });
+  const dlMailBtn = document.getElementById('downloadMailCsv');
+  if(dlMailBtn) dlMailBtn.addEventListener('click', ()=>{
+    const csv = mailSummaryExportText(',');
+    downloadBlob(new Blob([csv],{type:'text/csv'}), 'SecureMetricsHub_owner_mail_summary.csv');
+    toast('CSV downloaded');
+  });
+  const copyMailDraftBtn = document.getElementById('copyMailDraft');
+  if(copyMailDraftBtn) copyMailDraftBtn.addEventListener('click', ()=>{ copyToClipboard(mailDraftText(getFilteredRows()), copyMailDraftBtn); });
+  document.querySelectorAll('[data-mailline]').forEach(b=>b.addEventListener('click', ()=>{ copyToClipboard(b.dataset.mailline, b); }));
+
+  // filter toggle
+  const ftoggle = document.getElementById('filterToggle');
+  if(ftoggle) ftoggle.addEventListener('click', ()=>{ APP._filtersOpen = !APP._filtersOpen; render(); });
+
+  // multiselects
+  document.querySelectorAll('[data-msel-toggle]').forEach(btn=>btn.addEventListener('click', e=>{
+    e.stopPropagation(); const key=btn.dataset.mselToggle;
+    document.querySelectorAll('.msel-panel').forEach(p=>{ if(p.dataset.mselPanel!==key) p.classList.remove('open'); });
+    document.querySelector(`[data-msel-panel="${key}"]`).classList.toggle('open');
+  }));
+  document.querySelectorAll('[data-msel-cb]').forEach(cb=>cb.addEventListener('change', ()=>{
+    const key=cb.dataset.mselCb; const set=new Set(APP.filters[key]);
+    if(cb.checked) set.add(cb.value); else set.delete(cb.value);
+    APP.filters[key]=[...set]; render();
+    setTimeout(()=>{ const p=document.querySelector(`[data-msel-panel="${key}"]`); if(p) p.classList.add('open'); },0);
+  }));
+  document.querySelectorAll('[data-msel-search]').forEach(inp=>inp.addEventListener('input', ()=>{
+    const key=inp.dataset.mselSearch; const s=norm(inp.value);
+    document.querySelectorAll(`[data-msel-opts="${key}"] .msel-opt`).forEach(o=>{ o.style.display = norm(o.textContent).includes(s)?'flex':'none'; });
+  }));
+  document.addEventListener('click', ()=>{ document.querySelectorAll('.msel-panel.open').forEach(p=>p.classList.remove('open')); }, {once:true});
+
+  document.querySelectorAll('[data-ftext]').forEach(inp=>inp.addEventListener('input', ()=>{ APP.filters[inp.dataset.ftext]=inp.value; render(); preserveFocus(inp); }));
+  document.querySelectorAll('[data-chip-remove]').forEach(b=>b.addEventListener('click', ()=>{
+    const k=b.dataset.k, v=b.dataset.v;
+    if(k==='appName') APP.filters[k]=''; else APP.filters[k]=APP.filters[k].filter(x=>x!==v);
+    render();
+  }));
+  const clearBtn = document.getElementById('clearFilters'); if(clearBtn) clearBtn.addEventListener('click', ()=>{ resetFilters(); render(); });
+  const saveBtn = document.getElementById('savePreset'); if(saveBtn) saveBtn.addEventListener('click', ()=>{
+    const name = prompt('Name this filter preset:'); if(!name) return;
+    APP.presets.push({ name, filters: JSON.parse(JSON.stringify(APP.filters)), savedAt: Date.now() }); saveLS('smh_presets',APP.presets); toast('Preset saved'); render();
+  });
+  const bmBtn = document.getElementById('bookmarkView'); if(bmBtn) bmBtn.addEventListener('click', ()=>{
+    const name = prompt('Name this bookmark:'); if(!name) return;
+    APP.bookmarks.push({ name, page:APP.page, filters: JSON.parse(JSON.stringify(APP.filters)), savedAt: Date.now() }); saveLS('smh_bookmarks',APP.bookmarks); toast('View bookmarked'); render();
+  });
+}
+function preserveFocus(el){ const sel = el.selectionStart; requestAnimationFrame(()=>{ const again = document.querySelector(`[data-tbl-search="${el.dataset.tblSearch}"], [data-ftext="${el.dataset.ftext}"]`); }); }
+
+/* nav clicks + search + theme (static, bound once) */
+document.getElementById('nav').addEventListener('click', e=>{
+  const item = e.target.closest('[data-nav]'); if(!item) return; APP.page = item.dataset.nav; render();
+});
+document.getElementById('globalSearch').addEventListener('input', e=>{ APP.search = e.target.value; if(APP.rows.length){ render(); } });
+document.getElementById('themeToggle').addEventListener('click', ()=>{
+  const body = document.body; const cur = body.getAttribute('data-theme');
+  const next = cur==='dark' ? 'light' : 'dark'; body.setAttribute('data-theme', next); saveLS('smh_theme', next);
+});
+(function initTheme(){ const t = localStorage.getItem('smh_theme'); const theme = t? JSON.parse(t): 'dark'; document.body.setAttribute('data-theme', theme); })();
+
+/* initial render */
+render();
+</script>
+</body>
+</html>
