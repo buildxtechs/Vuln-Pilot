@@ -601,6 +601,101 @@ function SectionTitle({ icon: Icon, children, right }) {
   );
 }
 
+function ToastNotification({ toast, onClose }) {
+  if (!toast) return null;
+  const isSuccess = toast.type === "success";
+  const isWarn = toast.type === "warn" || toast.type === "alert";
+  return (
+    <div style={{
+      position: "fixed",
+      bottom: 24,
+      right: 24,
+      zIndex: 9999,
+      display: "flex",
+      alignItems: "center",
+      gap: 12,
+      background: isSuccess ? "#064e3b" : isWarn ? "#78350f" : "#1e1e24",
+      color: isSuccess ? "#6ee7b7" : isWarn ? "#fde68a" : "#f4f4f5",
+      border: `1px solid ${isSuccess ? "#059669" : isWarn ? "#d97706" : C.borderLight}`,
+      borderRadius: 10,
+      padding: "12px 18px",
+      boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+      fontSize: 13,
+      fontWeight: 600,
+      fontFamily: "Inter, -apple-system, sans-serif",
+      animation: "toastSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)"
+    }}>
+      {isSuccess && <Check size={18} color="#10b981" />}
+      {isWarn && <AlertTriangle size={18} color="#f59e0b" />}
+      <div>{toast.msg}</div>
+      <button onClick={onClose} style={{ background: "transparent", border: "none", color: "inherit", cursor: "pointer", padding: 2, display: "flex" }}>
+        <X size={14} />
+      </button>
+    </div>
+  );
+}
+
+function ConfigPromptModal({ config, onSave, onProceed, onClose, title = "Link Configuration Required" }) {
+  const [localConfig, setLocalConfig] = useState(config || defaultMailConfig);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: `linear-gradient(160deg, ${C.surface}, ${C.bgElevated})`, border: `1.5px solid ${C.borderLight}`, borderRadius: 14, width: "100%", maxWidth: 640, boxShadow: "0 20px 50px rgba(0,0,0,0.6)", overflow: "hidden" }}>
+        <div style={{ padding: "18px 22px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(234, 179, 8, 0.08)" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <AlertTriangle size={20} color="#f59e0b" />
+            <div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: C.textPrimary }}>{title}</div>
+              <div style={{ fontSize: 11.5, color: C.textMuted }}>Please verify and configure the required resource links before generating emails.</div>
+            </div>
+          </div>
+          <div onClick={onClose} style={{ cursor: "pointer", padding: 4, borderRadius: 4, background: C.bgElevated }}><X size={16} color={C.textMuted} /></div>
+        </div>
+
+        <div style={{ padding: 22, maxHeight: "65vh", overflowY: "auto" }}>
+          <div style={{ fontSize: 12.5, color: C.textSecondary, marginBottom: 16, lineHeight: 1.5, background: C.bgElevated, padding: "10px 14px", borderRadius: 8, border: `1px solid ${C.borderLight}` }}>
+            Ensure all URL placeholders (AIST Dashboard, REM Portal, Saviynt Docs, Reports) are filled with your organization's valid endpoints.
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {Object.keys(localConfig).map(k => (
+              <div key={k}>
+                <div style={{ fontSize: 11.5, fontWeight: 600, color: C.textPrimary, marginBottom: 5 }}>
+                  {k === "aistDashboard" ? "AIST Dashboard URL" : k === "saviyntDocs" ? "Saviynt Instructions URL / Title" : k === "rem" ? "REM (Exception Management) URL" : k === "dtvReports" ? "DTV Reports URL" : k}
+                </div>
+                <input
+                  value={localConfig[k] || ""}
+                  onChange={e => setLocalConfig({ ...localConfig, [k]: e.target.value })}
+                  placeholder={`Enter ${k}...`}
+                  style={{ width: "100%", padding: "9px 12px", background: C.surface, border: `1px solid ${C.borderLight}`, borderRadius: 7, color: C.textPrimary, fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ padding: "14px 22px", borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "flex-end", gap: 10, background: C.bgElevated }}>
+          <button
+            onClick={onClose}
+            style={{ padding: "8px 16px", borderRadius: 7, border: `1px solid ${C.borderLight}`, background: "transparent", color: C.textSecondary, cursor: "pointer", fontWeight: 600, fontSize: 13 }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => {
+              onSave(localConfig);
+              onProceed(localConfig);
+            }}
+            style={{ padding: "8px 18px", borderRadius: 7, border: "none", background: `linear-gradient(135deg, ${C.accent}, #4f46e5)`, color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 13, display: "flex", alignItems: "center", gap: 6, boxShadow: "0 4px 14px rgba(99, 102, 241, 0.4)" }}
+          >
+            <Check size={15} /> Save &amp; Open Mail Template
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function KpiCard({ label, value, sub, accentColor, icon: Icon }) {
   return (
     <Card style={{
@@ -1498,11 +1593,32 @@ function OwnershipPage({ rows }) {
   const [showConfig, setShowConfig] = useState(false);
   const [activeMailOwner, setActiveMailOwner] = useState(null);
   
+  const [showConfigPrompt, setShowConfigPrompt] = useState(false);
+  const [pendingMailOwner, setPendingMailOwner] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
   const saveConfig = (newCfg) => {
     setConfig(newCfg);
     localStorage.setItem("vulnOpsMailConfig", JSON.stringify(newCfg));
+    localStorage.setItem("vulnOpsLinksConfigured", "true");
+    showToast("Link configuration updated successfully!");
   };
-  
+
+  const handleOpenMailTemplate = (owner) => {
+    const isConfigured = localStorage.getItem("vulnOpsLinksConfigured") === "true";
+    if (!isConfigured) {
+      setPendingMailOwner(owner);
+      setShowConfigPrompt(true);
+    } else {
+      setActiveMailOwner(owner);
+    }
+  };
+
   const handlePocUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1528,9 +1644,9 @@ function OwnershipPage({ rows }) {
         setMailStatus(newMailStatus);
         localStorage.setItem("vulnOpsPocData", JSON.stringify(newPocData));
         localStorage.setItem("vulnOpsMailStatus", JSON.stringify(newMailStatus));
-        alert("POC Tracker loaded successfully!");
+        showToast("POC Tracker loaded successfully!");
       } catch (err) {
-        alert("Failed to parse POC Tracker: " + err.message);
+        showToast("Failed to parse POC Tracker: " + err.message, "warn");
       }
     };
     reader.readAsArrayBuffer(file);
@@ -1568,7 +1684,9 @@ function OwnershipPage({ rows }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             {Object.keys(config).map(k => (
               <div key={k}>
-                <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>{k}</div>
+                <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>
+                  {k === "aistDashboard" ? "AIST Dashboard URL" : k === "saviyntDocs" ? "Saviynt Instructions URL / Title" : k === "rem" ? "REM (Exception Management) URL" : k === "dtvReports" ? "DTV Reports URL" : k}
+                </div>
                 <input
                   value={config[k]}
                   onChange={e => saveConfig({ ...config, [k]: e.target.value })}
@@ -1615,7 +1733,7 @@ function OwnershipPage({ rows }) {
                 </td>
                 <td style={{ padding: "8px 10px" }}>
                   <button
-                    onClick={() => setActiveMailOwner(o)}
+                    onClick={() => handleOpenMailTemplate(o)}
                     style={{ padding: "6px 12px", background: C.accentDim, color: C.accent, border: `1px solid ${C.accent}`, borderRadius: 6, cursor: "pointer", fontSize: 11, fontWeight: 600 }}
                   >
                     Mail Template
@@ -1628,21 +1746,45 @@ function OwnershipPage({ rows }) {
         </table>
       </div>
 
+      {showConfigPrompt && (
+        <ConfigPromptModal
+          config={config}
+          onSave={(newCfg) => {
+            saveConfig(newCfg);
+          }}
+          onProceed={(newCfg) => {
+            setShowConfigPrompt(false);
+            if (pendingMailOwner) {
+              setActiveMailOwner(pendingMailOwner);
+              setPendingMailOwner(null);
+            }
+          }}
+          onClose={() => {
+            setShowConfigPrompt(false);
+            setPendingMailOwner(null);
+          }}
+        />
+      )}
+
       {activeMailOwner && (
         <MailTemplateModal
           owner={activeMailOwner}
           config={config}
           onClose={() => setActiveMailOwner(null)}
           onMailSent={() => markMailSent(activeMailOwner.appOwner)}
+          onToast={showToast}
         />
       )}
+
+      <ToastNotification toast={toast} onClose={() => setToast(null)} />
     </Card>
   );
 }
 
-function MailTemplateModal({ owner, config, onClose, onMailSent }) {
+function MailTemplateModal({ owner, config, onClose, onMailSent, onToast }) {
   const contentRef = useRef(null);
   const [headerColor, setHeaderColor] = useState("#1E3A8A");
+  const [copied, setCopied] = useState(false);
   
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   const d = new Date();
@@ -1660,8 +1802,10 @@ function MailTemplateModal({ owner, config, onClose, onMailSent }) {
         const blobText = new Blob([plainText], { type: typeText });
         const data = [new ClipboardItem({ [typeHtml]: blobHtml, [typeText]: blobText })];
         navigator.clipboard.write(data).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 3000);
           onMailSent();
-          alert("Mail content copied to clipboard (Outlook format preserved)!");
+          if (onToast) onToast("Mail content copied to clipboard (Outlook format preserved)!");
         }).catch(() => {
           fallbackCopy();
         });
@@ -1679,8 +1823,10 @@ function MailTemplateModal({ owner, config, onClose, onMailSent }) {
     sel.addRange(range);
     document.execCommand('copy');
     sel.removeAllRanges();
+    setCopied(true);
+    setTimeout(() => setCopied(false), 3000);
     onMailSent();
-    alert("Mail content copied to clipboard!");
+    if (onToast) onToast("Mail content copied to clipboard!");
   };
 
   const safeConfig = {
@@ -1691,7 +1837,7 @@ function MailTemplateModal({ owner, config, onClose, onMailSent }) {
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
       <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, width: "100%", maxWidth: 840, maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
         <div style={{ padding: "16px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: C.textPrimary }}>Mail Template - {owner.appOwner}</div>
@@ -1784,7 +1930,25 @@ function MailTemplateModal({ owner, config, onClose, onMailSent }) {
           </div>
           <div style={{ display: "flex", gap: 12 }}>
             <button onClick={onClose} style={{ padding: "8px 16px", borderRadius: 6, border: `1px solid ${C.border}`, background: "transparent", color: C.textSecondary, cursor: "pointer", fontWeight: 600 }}>Cancel</button>
-            <button onClick={handleCopy} style={{ padding: "8px 16px", borderRadius: 6, border: "none", background: C.accent, color: "#fff", cursor: "pointer", fontWeight: 600 }}>Copy Mail Content</button>
+            <button
+              onClick={handleCopy}
+              style={{
+                padding: "8px 18px",
+                borderRadius: 6,
+                border: "none",
+                background: copied ? "#059669" : C.accent,
+                color: "#fff",
+                cursor: "pointer",
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                boxShadow: copied ? "0 4px 12px rgba(16, 185, 129, 0.4)" : "none",
+                transition: "all 0.2s"
+              }}
+            >
+              {copied ? <><Check size={16} /> Copied to Clipboard!</> : <><CopyIcon size={15} /> Copy Mail Content</>}
+            </button>
           </div>
         </div>
       </div>
@@ -1792,9 +1956,10 @@ function MailTemplateModal({ owner, config, onClose, onMailSent }) {
   );
 }
 
-function FollowUpMailTemplateModal({ filteredRows, onClose }) {
+function FollowUpMailTemplateModal({ filteredRows, onClose, onToast }) {
   const contentRef = useRef(null);
   const [headerColor, setHeaderColor] = useState("#0f766e");
+  const [copied, setCopied] = useState(false);
   
   const config = useMemo(() => {
     try { 
@@ -1821,7 +1986,9 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
         const blobText = new Blob([plainText], { type: typeText });
         const data = [new ClipboardItem({ [typeHtml]: blobHtml, [typeText]: blobText })];
         navigator.clipboard.write(data).then(() => {
-          alert("Follow up mail content copied to clipboard (Outlook format preserved)!");
+          setCopied(true);
+          setTimeout(() => setCopied(false), 3000);
+          if (onToast) onToast("Follow up mail content copied to clipboard (Outlook format preserved)!");
         }).catch(() => {
           fallbackCopy();
         });
@@ -1839,7 +2006,9 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
     sel.addRange(range);
     document.execCommand('copy');
     sel.removeAllRanges();
-    alert("Follow up mail content copied to clipboard!");
+    setCopied(true);
+    setTimeout(() => setCopied(false), 3000);
+    if (onToast) onToast("Follow up mail content copied to clipboard!");
   };
 
   const activeRows = filteredRows ? filteredRows.filter(r => r.isOpen) : [];
@@ -1893,7 +2062,7 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
       <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 12, width: "100%", maxWidth: 880, maxHeight: "90vh", display: "flex", flexDirection: "column", boxShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
         <div style={{ padding: "16px 20px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ fontSize: 15, fontWeight: 600, color: C.textPrimary }}>Follow Up Mail Template</div>
@@ -2147,7 +2316,25 @@ function FollowUpMailTemplateModal({ filteredRows, onClose }) {
           </div>
           <div style={{ display: "flex", gap: 12 }}>
             <button onClick={onClose} style={{ padding: "8px 16px", borderRadius: 6, border: `1px solid ${C.border}`, background: "transparent", color: C.textSecondary, cursor: "pointer", fontWeight: 600 }}>Cancel</button>
-            <button onClick={handleCopy} style={{ padding: "8px 16px", borderRadius: 6, border: "none", background: "#ca8a04", color: "#fff", cursor: "pointer", fontWeight: 600 }}>Copy Mail Content</button>
+            <button
+              onClick={handleCopy}
+              style={{
+                padding: "8px 18px",
+                borderRadius: 6,
+                border: "none",
+                background: copied ? "#059669" : "#ca8a04",
+                color: "#fff",
+                cursor: "pointer",
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                boxShadow: copied ? "0 4px 12px rgba(16, 185, 129, 0.4)" : "none",
+                transition: "all 0.2s"
+              }}
+            >
+              {copied ? <><Check size={16} /> Copied to Clipboard!</> : <><CopyIcon size={15} /> Copy Mail Content</>}
+            </button>
           </div>
         </div>
       </div>
@@ -2677,15 +2864,34 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
     vulnStatus: [], ifPci: [], slaStatus: [], vulnCategory: [], scanType: [], riskRating: [], environment: [], csp: [], appName: [], appOwner: []
   });
   const [showFollowUpModal, setShowFollowUpModal] = useState(false);
+  const [showConfigPrompt, setShowConfigPrompt] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [copiedTable, setCopiedTable] = useState(false);
   const [config, setConfig] = useState(() => {
     try { return JSON.parse(localStorage.getItem("vulnOpsMailConfig")) || defaultMailConfig; }
     catch { return defaultMailConfig; }
   });
 
+  const showToast = (msg, type = "success") => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
   const saveConfig = (newCfg) => {
     setConfig(newCfg);
     localStorage.setItem("vulnOpsMailConfig", JSON.stringify(newCfg));
+    localStorage.setItem("vulnOpsLinksConfigured", "true");
+    showToast("Link configuration updated successfully!");
+  };
+
+  const handleOpenFollowUpModal = () => {
+    const isConfigured = localStorage.getItem("vulnOpsLinksConfigured") === "true";
+    if (!isConfigured) {
+      setShowConfigPrompt(true);
+    } else {
+      setShowFollowUpModal(true);
+    }
   };
 
   const getVulnStatus = (r) => r.vulnStatus || r.raw?.["Vulnerability Status"] || r.raw?.["Vuln Status"] || (r.isOpen ? "Open" : "Closed");
@@ -2765,9 +2971,9 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
         
         setRows(processed);
         setAllRows(processed);
-        alert(`Successfully imported ${processed.length} rows.`);
+        showToast(`Successfully imported ${processed.length} rows.`);
       } catch (err) {
-        alert("Failed to parse file: " + err.message);
+        showToast("Failed to parse file: " + err.message, "warn");
       }
     };
     reader.readAsArrayBuffer(f);
@@ -2915,7 +3121,7 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
               Configure Links
             </div>
             <button
-              onClick={() => setShowFollowUpModal(true)}
+              onClick={handleOpenFollowUpModal}
               style={{ ...btnStyle(false), background: "rgba(234, 179, 8, 0.12)", color: "#ca8a04", border: `1px solid #ca8a04`, padding: "6px 14px", cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}
             >
               <Sparkles size={14} /> Follow Up Mail
@@ -2933,7 +3139,9 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               {Object.keys(config).map(k => (
                 <div key={k}>
-                  <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>{k}</div>
+                  <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4 }}>
+                    {k === "aistDashboard" ? "AIST Dashboard URL" : k === "saviyntDocs" ? "Saviynt Instructions URL / Title" : k === "rem" ? "REM (Exception Management) URL" : k === "dtvReports" ? "DTV Reports URL" : k}
+                  </div>
                   <input
                     value={config[k]}
                     onChange={e => saveConfig({ ...config, [k]: e.target.value })}
@@ -3004,12 +3212,12 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
         </Card>
 
         <Card>
-          <SectionTitle icon={Cloud}>Top 5 Impacted Assets</SectionTitle>
+          <SectionTitle icon={Server}>Top 5 Impacted Assets</SectionTitle>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {topAssets.map((a, i) => (
               <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", background: C.surfaceHover, borderRadius: 6, border: `1px solid ${C.borderLight}` }}>
                 <div style={{ fontSize: 13, color: C.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200 }} title={a.asset}>{a.asset}</div>
-                <div style={{ fontSize: 13, fontWeight: "bold", color: C.accent }}>{a.count}</div>
+                <div style={{ fontSize: 13, fontWeight: "bold", color: C.high }}>{a.count}</div>
               </div>
             ))}
             {topAssets.length === 0 && <div style={{ fontSize: 13, color: C.textMuted, padding: 8 }}>No data available</div>}
@@ -3037,7 +3245,7 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
             <button
               onClick={() => {
                 if (appTableRows.length === 0) {
-                  alert("No application data to export.");
+                  showToast("No application data to export.", "warn");
                   return;
                 }
                 try {
@@ -3053,8 +3261,9 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
                   const wb = XLSX.utils.book_new();
                   XLSX.utils.book_append_sheet(wb, ws, "App_SLA_Breakdown");
                   XLSX.writeFile(wb, `Application_SLA_Breakdown_${new Date().toISOString().slice(0, 10)}.xlsx`);
+                  showToast("Application breakdown exported to Excel!");
                 } catch (err) {
-                  alert("Failed to export Excel: " + err.message);
+                  showToast("Failed to export Excel: " + err.message, "warn");
                 }
               }}
               style={{
@@ -3078,7 +3287,7 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
             <button
               onClick={() => {
                 if (appTableRows.length === 0) {
-                  alert("No data available to copy.");
+                  showToast("No data available to copy.", "warn");
                   return;
                 }
                 const headerText = "Application Name\tScan Types\tTotal Active\tCritical / High\tWithin SLA\tPast Due SLA";
@@ -3120,15 +3329,21 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
                   const blobHtml = new Blob([tableHtml], { type: "text/html" });
                   const blobText = new Blob([tsvData], { type: "text/plain" });
                   navigator.clipboard.write([new ClipboardItem({ "text/html": blobHtml, "text/plain": blobText })]).then(() => {
-                    alert("Application breakdown table copied! You can now paste directly into Excel or Outlook.");
+                    setCopiedTable(true);
+                    setTimeout(() => setCopiedTable(false), 3000);
+                    showToast("Application breakdown table copied! Paste into Excel or Outlook.");
                   }).catch(() => {
                     navigator.clipboard.writeText(tsvData).then(() => {
-                      alert("Application table copied as spreadsheet data!");
+                      setCopiedTable(true);
+                      setTimeout(() => setCopiedTable(false), 3000);
+                      showToast("Application table copied as spreadsheet data!");
                     });
                   });
                 } else if (navigator.clipboard) {
                   navigator.clipboard.writeText(tsvData).then(() => {
-                    alert("Application table copied to clipboard for Excel!");
+                    setCopiedTable(true);
+                    setTimeout(() => setCopiedTable(false), 3000);
+                    showToast("Application table copied to clipboard for Excel!");
                   });
                 }
               }}
@@ -3139,15 +3354,16 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
                 gap: 6,
                 padding: "7px 13px",
                 fontSize: 12.5,
-                background: C.bgElevated,
-                borderColor: C.borderLight,
-                color: C.textPrimary,
+                background: copiedTable ? "rgba(16, 185, 129, 0.15)" : C.bgElevated,
+                borderColor: copiedTable ? "#10b981" : C.borderLight,
+                color: copiedTable ? "#34d399" : C.textPrimary,
                 cursor: "pointer",
-                borderRadius: 6
+                borderRadius: 6,
+                transition: "all 0.2s"
               }}
               title="Copy table for pasting directly into Excel or Outlook"
             >
-              <CopyIcon size={14} /> Copy Table
+              {copiedTable ? <><Check size={14} color="#10b981" /> Copied!</> : <><CopyIcon size={14} /> Copy Table</>}
             </button>
           </div>
         </div>
@@ -3209,12 +3425,30 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
         </div>
       </Card>
       
+      {showConfigPrompt && (
+        <ConfigPromptModal
+          config={config}
+          onSave={(newCfg) => {
+            saveConfig(newCfg);
+          }}
+          onProceed={(newCfg) => {
+            setShowConfigPrompt(false);
+            setShowFollowUpModal(true);
+          }}
+          onClose={() => setShowConfigPrompt(false)}
+          title="Follow Up Mail Link Configuration"
+        />
+      )}
+
       {showFollowUpModal && (
         <FollowUpMailTemplateModal
           filteredRows={filteredRows}
           onClose={() => setShowFollowUpModal(false)}
+          onToast={showToast}
         />
       )}
+
+      <ToastNotification toast={toast} onClose={() => setToast(null)} />
     </div>
   );
 }
