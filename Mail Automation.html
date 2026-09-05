@@ -2815,7 +2815,7 @@ function MultiSelectDropdown({ label, options, selected, onChange, searchable = 
     : options;
 
   return (
-    <div ref={ddRef} style={{ position: "relative", display: "inline-block" }}>
+    <div ref={ddRef} style={{ position: "relative", display: "inline-block", zIndex: isOpen ? 9999 : 1 }}>
       <div 
         onClick={() => setIsOpen(!isOpen)} 
         style={{ 
@@ -2844,8 +2844,8 @@ function MultiSelectDropdown({ label, options, selected, onChange, searchable = 
       {isOpen && (
         <div style={{ 
           position: "absolute", top: "100%", left: 0, marginTop: 6, background: "#111622", 
-          border: "1px solid rgba(0, 242, 254, 0.35)", borderRadius: 10, boxShadow: "0 14px 40px rgba(0,0,0,0.8), 0 0 20px rgba(0, 242, 254, 0.15)", 
-          zIndex: 100, minWidth: 230, maxHeight: 320, display: "flex", flexDirection: "column",
+          border: "1px solid rgba(0, 242, 254, 0.45)", borderRadius: 10, boxShadow: "0 20px 50px rgba(0,0,0,0.95), 0 0 25px rgba(0, 242, 254, 0.25)", 
+          zIndex: 99999, minWidth: 230, maxHeight: 320, display: "flex", flexDirection: "column",
           overflow: "hidden", animation: "toastSlideIn 0.2s ease-out"
         }}>
           {searchable && (
@@ -2906,7 +2906,9 @@ function CustomDashboardFilterBar({ filters, setFilters, filterOptions }) {
       border: "1px solid rgba(255, 255, 255, 0.08)", 
       borderRadius: 12, 
       padding: "16px 18px", 
-      marginBottom: 20 
+      marginBottom: 20,
+      position: "relative",
+      overflow: "visible"
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -3214,7 +3216,7 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
         </div>
       </div>
 
-      <Card style={{ marginBottom: 20 }}>
+      <Card style={{ marginBottom: 20, overflow: "visible", position: "relative", zIndex: 50 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
           <SectionTitle icon={FilterIcon}>Advanced Filters</SectionTitle>
           <div style={{ display: "flex", gap: 8 }}>
