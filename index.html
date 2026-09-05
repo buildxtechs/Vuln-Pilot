@@ -1670,7 +1670,6 @@
       <div class="ivm-team-meta">
         <div class="ivm-team-title-row">
           <span class="ivm-team-name">Built by IVM Team</span>
-          <span class="ivm-live-time" id="header-live-time">00:00:00 IST</span>
         </div>
         <span class="ivm-cyber-tagline">Continuous Posture &amp; Threat Defense</span>
       </div>
@@ -2355,23 +2354,7 @@
       });
     });
 
-    // Live Time Clock for Built by IVM Team in IST (Indian Standard Time)
-    function updateLiveTime() {
-      const timeElem = document.getElementById('header-live-time');
-      if (timeElem) {
-        const now = new Date();
-        const istTimeStr = now.toLocaleTimeString('en-US', {
-          timeZone: 'Asia/Kolkata',
-          hour12: false,
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        });
-        timeElem.textContent = `${istTimeStr} IST`;
-      }
-    }
-    updateLiveTime();
-    setInterval(updateLiveTime, 1000);
+
 
     // Interactive Tag click actions
     document.querySelectorAll('.tag-pill').forEach(pill => {
