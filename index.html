@@ -1328,7 +1328,7 @@
       <div class="ivm-team-meta">
         <div class="ivm-team-title-row">
           <span class="ivm-team-name">Built by IVM Team</span>
-          <span class="ivm-live-time" id="header-live-time">00:00:00 UTC</span>
+          <span class="ivm-live-time" id="header-live-time">00:00:00 IST</span>
         </div>
         <span class="ivm-cyber-tagline">Continuous Posture &amp; Threat Defense</span>
       </div>
@@ -1352,14 +1352,14 @@
             <div class="dev-avatar">B</div>
             <div class="dev-info">
               <div class="dev-name">Barath</div>
-              <div class="dev-role">IVM Operations &amp; Architecture</div>
+              <div class="dev-role">IVM Operations</div>
             </div>
           </div>
           <div class="dev-item">
             <div class="dev-avatar">D</div>
             <div class="dev-info">
               <div class="dev-name">Dhinakaran</div>
-              <div class="dev-role">SecOps &amp; Remediation Automation</div>
+              <div class="dev-role">IVM Operations</div>
             </div>
           </div>
         </div>
@@ -2013,15 +2013,19 @@
       });
     });
 
-    // Live Time Clock for Built by IVM Team
+    // Live Time Clock for Built by IVM Team in IST (Indian Standard Time)
     function updateLiveTime() {
       const timeElem = document.getElementById('header-live-time');
       if (timeElem) {
         const now = new Date();
-        const hours = String(now.getUTCHours()).padStart(2, '0');
-        const minutes = String(now.getUTCMinutes()).padStart(2, '0');
-        const seconds = String(now.getUTCSeconds()).padStart(2, '0');
-        timeElem.textContent = `${hours}:${minutes}:${seconds} UTC`;
+        const istTimeStr = now.toLocaleTimeString('en-US', {
+          timeZone: 'Asia/Kolkata',
+          hour12: false,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+        timeElem.textContent = `${istTimeStr} IST`;
       }
     }
     updateLiveTime();
