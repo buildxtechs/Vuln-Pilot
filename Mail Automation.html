@@ -2202,7 +2202,8 @@ function OwnershipPage({ rows }) {
   };
 
   return (
-    <Card>
+    <>
+      <Card>
       <SectionTitle icon={IdCard} right={
         <div style={{ display: "flex", gap: 10 }}>
           <label className="vd-nav" style={{ ...btnStyle(false), padding: "6px 12px", background: C.surfaceHover, border: `1px solid ${C.borderLight}` }}>
@@ -2363,41 +2364,42 @@ function OwnershipPage({ rows }) {
           </tbody>
         </table>
       </div>
-
-      {showConfigPrompt && (
-        <ConfigPromptModal
-          config={config}
-          onSave={(newCfg) => {
-            saveConfig(newCfg);
-          }}
-          onProceed={(newCfg) => {
-            setShowConfigPrompt(false);
-            if (pendingMailOwner) {
-              setActiveMailOwner(pendingMailOwner);
-              setPendingMailOwner(null);
-            }
-          }}
-          onClose={() => {
-            setShowConfigPrompt(false);
-            setPendingMailOwner(null);
-          }}
-        />
-      )}
-
-      {activeMailOwner && (
-        <MailTemplateModal
-          owner={activeMailOwner}
-          config={config}
-          pocData={pocData}
-          onClose={() => setActiveMailOwner(null)}
-          onMailSent={() => markMailSent(activeMailOwner.appOwner)}
-          onToast={showToast}
-        />
-      )}
-
-      <ToastNotification toast={toast} onClose={() => setToast(null)} />
     </Card>
-  );
+
+    {showConfigPrompt && (
+      <ConfigPromptModal
+        config={config}
+        onSave={(newCfg) => {
+          saveConfig(newCfg);
+        }}
+        onProceed={(newCfg) => {
+          setShowConfigPrompt(false);
+          if (pendingMailOwner) {
+            setActiveMailOwner(pendingMailOwner);
+            setPendingMailOwner(null);
+          }
+        }}
+        onClose={() => {
+          setShowConfigPrompt(false);
+          setPendingMailOwner(null);
+        }}
+      />
+    )}
+
+    {activeMailOwner && (
+      <MailTemplateModal
+        owner={activeMailOwner}
+        config={config}
+        pocData={pocData}
+        onClose={() => setActiveMailOwner(null)}
+        onMailSent={() => markMailSent(activeMailOwner.appOwner)}
+        onToast={showToast}
+      />
+    )}
+
+    <ToastNotification toast={toast} onClose={() => setToast(null)} />
+  </>
+);
 }
 
 function MailTemplateModal({ owner, config, pocData, onClose, onMailSent, onToast }) {
