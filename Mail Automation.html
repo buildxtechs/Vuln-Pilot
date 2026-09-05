@@ -10,15 +10,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; background: #09090b; height: 100%; color: #f4f4f5; }
+  html, body { margin: 0; padding: 0; background: #06080d; height: 100%; color: #f1f5f9; }
   body { font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
-  #root { min-height: 100vh; }
+  #root { min-height: 100vh; background: radial-gradient(circle at 50% 0%, rgba(14, 165, 233, 0.08) 0%, transparent 60%), #06080d; }
 
   #boot-loader {
     display: none;
     position: fixed; inset: 0; z-index: 999;
     flex-direction: column; align-items: center; justify-content: center;
-    gap: 16px; background: #09090b;
+    gap: 16px; background: #06080d;
   }
   #boot-loader.vd-show { display: flex; }
   .boot-title { font-size: 14px; font-weight: 600; color: #f4f4f5; letter-spacing: 0.2px; }
@@ -39,19 +39,33 @@
   .vd-spin { animation: vd-spin-anim 0.8s linear infinite; }
   @keyframes vd-spin-anim { to { transform: rotate(360deg); } }
 
-  ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-track { background: #09090b; }
-  ::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
-  ::-webkit-scrollbar-thumb:hover { background: #52525b; }
+  ::-webkit-scrollbar { width: 7px; height: 7px; }
+  ::-webkit-scrollbar-track { background: #07090e; }
+  ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; border: 1px solid #0f172a; }
+  ::-webkit-scrollbar-thumb:hover { background: #334155; }
 
-  .vd-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-  .vd-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
+  .vd-card { 
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .vd-card:hover { 
+    transform: translateY(-2px); 
+    box-shadow: 0 12px 35px rgba(0,0,0,0.65), 0 0 1px rgba(56, 189, 248, 0.4); 
+    border-color: rgba(56, 189, 248, 0.35) !important;
+  }
   
   .vd-btn { transition: all 0.2s ease; cursor: pointer; }
-  .vd-btn:hover { opacity: 0.85; transform: scale(0.98); }
+  .vd-btn:hover { opacity: 0.9; transform: translateY(-1px); }
 
-  .vd-row { transition: background 0.15s ease; }
-  .vd-row:hover { background: #3f3f4625 !important; }
+  .vd-row { transition: all 0.12s ease; }
+  .vd-row:hover { background: rgba(56, 189, 248, 0.06) !important; }
+
+  @keyframes pulseGlow {
+    0%, 100% { opacity: 0.6; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.08); }
+  }
+  .vd-pulse-red { animation: pulseGlow 2s infinite ease-in-out; }
 </style>
 </head>
 <body>
@@ -158,29 +172,33 @@ function launchOutlookDirectMail({ to = "", subject = "", body = "", htmlContent
 /* ---------------------------------- tokens ---------------------------------- */
 
 const C = {
-  bg: "#09090b",
-  bgElevated: "#18181b",
-  surface: "#27272a",
-  surfaceHover: "#3f3f46",
-  border: "#3f3f46",
-  borderLight: "#52525b",
-  textPrimary: "#f4f4f5",
-  textSecondary: "#a1a1aa",
-  textMuted: "#71717a",
-  accent: "#6366f1",
-  accentDim: "rgba(99, 102, 241, 0.15)",
+  bg: "#06080d",
+  bgElevated: "#0c1019",
+  surface: "#111726",
+  surfaceHover: "#192238",
+  border: "#1e293b",
+  borderLight: "#2d3c59",
+  textPrimary: "#f8fafc",
+  textSecondary: "#94a3b8",
+  textMuted: "#64748b",
+  accent: "#38bdf8",
+  accentDim: "rgba(56, 189, 248, 0.15)",
+  cyan: "#00f2fe",
+  cyanDim: "rgba(0, 242, 254, 0.15)",
   critical: "#ef4444",
-  criticalDim: "rgba(239, 68, 68, 0.15)",
+  criticalDim: "rgba(239, 68, 68, 0.18)",
   high: "#f97316",
-  highDim: "rgba(249, 115, 22, 0.15)",
+  highDim: "rgba(249, 115, 22, 0.18)",
   medium: "#eab308",
-  mediumDim: "rgba(234, 179, 8, 0.15)",
+  mediumDim: "rgba(234, 179, 8, 0.18)",
   low: "#3b82f6",
-  lowDim: "rgba(59, 130, 246, 0.15)",
-  info: "#a1a1aa",
-  infoDim: "rgba(161, 161, 170, 0.15)",
-  success: "#22c55e",
-  successDim: "rgba(34, 197, 94, 0.15)",
+  lowDim: "rgba(59, 130, 246, 0.18)",
+  purple: "#a855f7",
+  purpleDim: "rgba(168, 85, 247, 0.18)",
+  info: "#94a3b8",
+  infoDim: "rgba(148, 163, 184, 0.15)",
+  success: "#10b981",
+  successDim: "rgba(16, 185, 129, 0.18)",
 };
 
 const SEV_META = {
@@ -203,8 +221,8 @@ const AGE_BUCKETS = [
 ];
 
 const selectStyle = {
-  background: C.bgElevated, border: `1px solid ${C.borderLight}`, borderRadius: 8,
-  padding: "8px 12px", fontSize: 13, color: C.textPrimary, outline: "none", cursor: "pointer",
+  background: "#0d121f", border: "1px solid #28354f", borderRadius: 8,
+  padding: "8px 12px", fontSize: 13, color: "#f8fafc", outline: "none", cursor: "pointer",
   transition: "border-color 0.2s, box-shadow 0.2s",
 };
 
@@ -609,33 +627,47 @@ Respond in under 180 words: 3-5 short numbered remediation steps, plus one line 
 
 /* ----------------------------------- UI atoms ----------------------------------- */
 
-function Card({ children, style, ...rest }) {
+function Card({ children, style, glowColor, ...rest }) {
   return (
     <div
       className="vd-card"
       style={{ 
-        background: `linear-gradient(145deg, ${C.surface}, #1e1e24)`, 
-        border: `1px solid ${C.borderLight}`, 
-        borderRadius: 16, 
-        padding: 24, 
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.2)',
+        background: "linear-gradient(155deg, rgba(17, 23, 38, 0.9) 0%, rgba(10, 14, 24, 0.95) 100%)", 
+        border: "1px solid #1e293b", 
+        borderRadius: 14, 
+        padding: 22, 
+        boxShadow: glowColor ? `0 8px 30px rgba(0,0,0,0.6), 0 0 20px ${glowColor}15` : "0 8px 25px rgba(0, 0, 0, 0.5)",
+        position: "relative",
+        overflow: "hidden",
         ...style 
       }}
       {...rest}
     >
+      {glowColor && (
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, transparent, ${glowColor}, transparent)` }} />
+      )}
       {children}
     </div>
   );
 }
 
-function SectionTitle({ icon: Icon, children, right }) {
+function SectionTitle({ icon: Icon, children, right, badge }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        {Icon && <Icon size={18} color={C.accent} />}
-        <h3 style={{ margin: 0, fontSize: 14, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", color: C.textPrimary }}>
+        {Icon && (
+          <div style={{ padding: 6, borderRadius: 8, background: "rgba(56, 189, 248, 0.12)", color: "#38bdf8", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Icon size={16} color="#38bdf8" />
+          </div>
+        )}
+        <h3 style={{ margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: "#f8fafc", fontFamily: "'JetBrains Mono', monospace" }}>
           {children}
         </h3>
+        {badge && (
+          <span style={{ fontSize: 10.5, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: "rgba(56, 189, 248, 0.15)", color: "#38bdf8", border: "1px solid rgba(56, 189, 248, 0.3)" }}>
+            {badge}
+          </span>
+        )}
       </div>
       {right}
     </div>
@@ -655,12 +687,12 @@ function ToastNotification({ toast, onClose }) {
       display: "flex",
       alignItems: "center",
       gap: 12,
-      background: isSuccess ? "#064e3b" : isWarn ? "#78350f" : "#1e1e24",
-      color: isSuccess ? "#6ee7b7" : isWarn ? "#fde68a" : "#f4f4f5",
-      border: `1px solid ${isSuccess ? "#059669" : isWarn ? "#d97706" : C.borderLight}`,
+      background: isSuccess ? "linear-gradient(135deg, #064e3b, #022c22)" : isWarn ? "linear-gradient(135deg, #78350f, #451a03)" : "#111827",
+      color: isSuccess ? "#6ee7b7" : isWarn ? "#fde68a" : "#f8fafc",
+      border: `1px solid ${isSuccess ? "#10b981" : isWarn ? "#f59e0b" : "#374151"}`,
       borderRadius: 10,
       padding: "12px 18px",
-      boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
+      boxShadow: "0 12px 35px rgba(0,0,0,0.8), 0 0 15px rgba(0,242,254,0.15)",
       fontSize: 13,
       fontWeight: 600,
       fontFamily: "Inter, -apple-system, sans-serif",
@@ -680,45 +712,45 @@ function ConfigPromptModal({ config, onSave, onProceed, onClose, title = "Link C
   const [localConfig, setLocalConfig] = useState(config || defaultMailConfig);
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      <div style={{ background: `linear-gradient(160deg, ${C.surface}, ${C.bgElevated})`, border: `1.5px solid ${C.borderLight}`, borderRadius: 14, width: "100%", maxWidth: 640, boxShadow: "0 20px 50px rgba(0,0,0,0.6)", overflow: "hidden" }}>
-        <div style={{ padding: "18px 22px", borderBottom: `1px solid ${C.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(234, 179, 8, 0.08)" }}>
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20, backdropFilter: "blur(6px)" }}>
+      <div style={{ background: "linear-gradient(160deg, #111726, #090d16)", border: "1px solid rgba(56, 189, 248, 0.4)", borderRadius: 14, width: "100%", maxWidth: 640, boxShadow: "0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(56, 189, 248, 0.15)", overflow: "hidden" }}>
+        <div style={{ padding: "18px 22px", borderBottom: "1px solid #1e293b", display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(234, 179, 8, 0.06)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <AlertTriangle size={20} color="#f59e0b" />
             <div>
-              <div style={{ fontSize: 15, fontWeight: 700, color: C.textPrimary }}>{title}</div>
-              <div style={{ fontSize: 11.5, color: C.textMuted }}>Please verify and configure the required resource links before generating emails.</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: "#f8fafc" }}>{title}</div>
+              <div style={{ fontSize: 11.5, color: "#94a3b8" }}>Please verify and configure the required resource links before generating emails.</div>
             </div>
           </div>
-          <div onClick={onClose} style={{ cursor: "pointer", padding: 4, borderRadius: 4, background: C.bgElevated }}><X size={16} color={C.textMuted} /></div>
+          <div onClick={onClose} style={{ cursor: "pointer", padding: 4, borderRadius: 4, background: "#0c1019" }}><X size={16} color="#94a3b8" /></div>
         </div>
 
         <div style={{ padding: 22, maxHeight: "65vh", overflowY: "auto" }}>
-          <div style={{ fontSize: 12.5, color: C.textSecondary, marginBottom: 16, lineHeight: 1.5, background: C.bgElevated, padding: "10px 14px", borderRadius: 8, border: `1px solid ${C.borderLight}` }}>
+          <div style={{ fontSize: 12.5, color: "#94a3b8", marginBottom: 16, lineHeight: 1.5, background: "#0c1019", padding: "10px 14px", borderRadius: 8, border: "1px solid #1e293b" }}>
             Ensure all URL placeholders (AIST Dashboard, REM Portal, Saviynt Docs, Reports) are filled with your organization's valid endpoints.
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {Object.keys(localConfig).map(k => (
               <div key={k}>
-                <div style={{ fontSize: 11.5, fontWeight: 600, color: C.textPrimary, marginBottom: 5 }}>
+                <div style={{ fontSize: 11.5, fontWeight: 600, color: "#f8fafc", marginBottom: 5 }}>
                   {k === "aistDashboard" ? "AIST Dashboard URL" : k === "saviyntDocs" ? "Saviynt Instructions URL / Title" : k === "rem" ? "REM (Exception Management) URL" : k === "dtvReports" ? "DTV Reports URL" : k}
                 </div>
                 <input
                   value={localConfig[k] || ""}
                   onChange={e => setLocalConfig({ ...localConfig, [k]: e.target.value })}
                   placeholder={`Enter ${k}...`}
-                  style={{ width: "100%", padding: "9px 12px", background: C.surface, border: `1px solid ${C.borderLight}`, borderRadius: 7, color: C.textPrimary, fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
+                  style={{ width: "100%", padding: "9px 12px", background: "#0c1019", border: "1px solid #28354f", borderRadius: 7, color: "#f8fafc", fontSize: 12.5, outline: "none", boxSizing: "border-box" }}
                 />
               </div>
             ))}
           </div>
         </div>
 
-        <div style={{ padding: "14px 22px", borderTop: `1px solid ${C.border}`, display: "flex", justifyContent: "flex-end", gap: 10, background: C.bgElevated }}>
+        <div style={{ padding: "14px 22px", borderTop: "1px solid #1e293b", display: "flex", justifyContent: "flex-end", gap: 10, background: "#0c1019" }}>
           <button
             onClick={onClose}
-            style={{ padding: "8px 16px", borderRadius: 7, border: `1px solid ${C.borderLight}`, background: "transparent", color: C.textSecondary, cursor: "pointer", fontWeight: 600, fontSize: 13 }}
+            style={{ padding: "8px 16px", borderRadius: 7, border: "1px solid #28354f", background: "transparent", color: "#94a3b8", cursor: "pointer", fontWeight: 600, fontSize: 13 }}
           >
             Cancel
           </button>
@@ -727,7 +759,7 @@ function ConfigPromptModal({ config, onSave, onProceed, onClose, title = "Link C
               onSave(localConfig);
               onProceed(localConfig);
             }}
-            style={{ padding: "8px 18px", borderRadius: 7, border: "none", background: `linear-gradient(135deg, ${C.accent}, #4f46e5)`, color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 13, display: "flex", alignItems: "center", gap: 6, boxShadow: "0 4px 14px rgba(99, 102, 241, 0.4)" }}
+            style={{ padding: "8px 18px", borderRadius: 7, border: "none", background: "linear-gradient(135deg, #0284c7, #0369a1)", color: "#fff", cursor: "pointer", fontWeight: 700, fontSize: 13, display: "flex", alignItems: "center", gap: 6, boxShadow: "0 4px 14px rgba(2, 132, 199, 0.4)" }}
           >
             <Check size={15} /> Save &amp; Open Mail Template
           </button>
@@ -737,58 +769,84 @@ function ConfigPromptModal({ config, onSave, onProceed, onClose, title = "Link C
   );
 }
 
-function KpiCard({ label, value, sub, accentColor, icon: Icon }) {
+function KpiCard({ label, value, sub, accentColor = "#38bdf8", icon: Icon, trend, meta }) {
   return (
-    <Card style={{
-      display: "flex", flexDirection: "column", gap: 8, minWidth: 0, padding: 20,
-      borderTop: accentColor ? `4px solid ${accentColor}` : `1px solid ${C.borderLight}`,
-    }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.8, color: C.textSecondary, fontWeight: 700 }}>{label}</span>
-        {Icon && <div style={{ background: accentColor ? `${accentColor}25` : C.surfaceHover, padding: 6, borderRadius: 8 }}><Icon size={16} color={accentColor || C.textMuted} /></div>}
+    <div
+      className="vd-card"
+      style={{
+        display: "flex", flexDirection: "column", justifyContent: "space-between", minWidth: 0, padding: "18px 20px",
+        background: "linear-gradient(155deg, #111728 0%, #0a0e18 100%)",
+        borderRadius: 14,
+        border: `1px solid ${accentColor ? `${accentColor}35` : "#1e293b"}`,
+        boxShadow: accentColor ? `0 8px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06), 0 0 16px ${accentColor}12` : "0 8px 24px rgba(0,0,0,0.5)",
+        position: "relative",
+        overflow: "hidden"
+      }}
+    >
+      <div style={{ position: "absolute", top: 0, left: 0, width: 4, bottom: 0, background: accentColor }} />
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+        <span style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.8, color: "#94a3b8", fontWeight: 700, fontFamily: "'JetBrains Mono', monospace" }}>{label}</span>
+        {Icon && (
+          <div style={{ background: `${accentColor}20`, border: `1px solid ${accentColor}40`, padding: 6, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Icon size={16} color={accentColor} />
+          </div>
+        )}
       </div>
-      <div style={{ fontSize: 32, fontWeight: 800, color: accentColor || C.textPrimary, fontFamily: "'JetBrains Mono', ui-monospace, monospace", marginTop: 4 }}>
-        {value}
+      <div>
+        <div style={{ fontSize: 30, fontWeight: 800, color: accentColor || "#f8fafc", fontFamily: "'JetBrains Mono', ui-monospace, monospace", letterSpacing: -0.5, lineHeight: 1.1 }}>
+          {value}
+        </div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
+          {sub && <div style={{ fontSize: 11.5, color: "#64748b", fontWeight: 500 }}>{sub}</div>}
+          {meta && <div style={{ fontSize: 10.5, color: accentColor, fontWeight: 700, background: `${accentColor}15`, padding: "1px 6px", borderRadius: 4 }}>{meta}</div>}
+        </div>
       </div>
-      {sub && <div style={{ fontSize: 12, color: C.textMuted, marginTop: 4, fontWeight: 500 }}>{sub}</div>}
-    </Card>
+    </div>
   );
 }
 
-function Badge({ color, dim, children }) {
+function Badge({ color = "#38bdf8", dim = "rgba(56, 189, 248, 0.15)", children }) {
   return (
     <span style={{
-      display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 700,
-      padding: "3px 8px", borderRadius: 5, background: dim, color, letterSpacing: 0.3,
+      display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 700,
+      padding: "3px 9px", borderRadius: 6, background: dim, color, letterSpacing: 0.3,
+      border: `1px solid ${color}40`,
+      boxShadow: `0 2px 6px ${dim}`,
       fontFamily: "'JetBrains Mono', ui-monospace, monospace",
     }}>
+      <span style={{ width: 5, height: 5, borderRadius: "50%", background: color }} />
       {children}
     </span>
   );
 }
 
-function ProgressBar({ pct, color }) {
+function ProgressBar({ pct, color = "#38bdf8" }) {
   return (
-    <div style={{ height: 6, borderRadius: 3, background: C.bgElevated, overflow: "hidden" }}>
-      <div style={{ width: `${Math.max(0, Math.min(100, pct))}%`, height: "100%", background: color, borderRadius: 3 }} />
+    <div style={{ height: 6, borderRadius: 4, background: "#0f172a", border: "1px solid #1e293b", overflow: "hidden", position: "relative" }}>
+      <div style={{ width: `${Math.max(0, Math.min(100, pct))}%`, height: "100%", background: `linear-gradient(90deg, ${color}80, ${color})`, borderRadius: 3, boxShadow: `0 0 8px ${color}80` }} />
     </div>
   );
 }
 
 function Gauge({ score }) {
-  const color = score >= 75 ? C.success : score >= 50 ? C.medium : C.critical;
+  const color = score >= 75 ? "#10b981" : score >= 50 ? "#eab308" : "#ef4444";
   const r = 62, circ = 2 * Math.PI * r, offset = circ * (1 - score / 100);
   return (
-    <svg width="160" height="160" viewBox="0 0 160 160">
-      <circle cx="80" cy="80" r={r} fill="none" stroke={C.bgElevated} strokeWidth="12" />
-      <circle
-        cx="80" cy="80" r={r} fill="none" stroke={color} strokeWidth="12"
-        strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
-        transform="rotate(-90 80 80)"
-      />
-      <text x="80" y="76" textAnchor="middle" fontSize="30" fontWeight="700" fill={C.textPrimary} fontFamily="ui-monospace, monospace">{score}</text>
-      <text x="80" y="96" textAnchor="middle" fontSize="11" fill={C.textMuted}>/ 100</text>
-    </svg>
+    <div style={{ position: "relative", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+      <svg width="170" height="170" viewBox="0 0 170 170" style={{ filter: `drop-shadow(0 0 12px ${color}40)` }}>
+        <circle cx="85" cy="85" r={r} fill="none" stroke="#0f172a" strokeWidth="12" />
+        <circle
+          cx="85" cy="85" r={r} fill="none" stroke={color} strokeWidth="12"
+          strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round"
+          transform="rotate(-90 85 85)"
+          style={{ transition: "stroke-dashoffset 0.6s ease" }}
+        />
+        <text x="85" y="80" textAnchor="middle" fontSize="34" fontWeight="800" fill="#f8fafc" fontFamily="'JetBrains Mono', monospace">{score}</text>
+        <text x="85" y="104" textAnchor="middle" fontSize="11" fontWeight="700" fill={color} letterSpacing="1">
+          {score >= 75 ? "HEALTHY" : score >= 50 ? "MODERATE" : "CRITICAL"}
+        </text>
+      </svg>
+    </div>
   );
 }
 
@@ -796,27 +854,35 @@ function HeatMap({ data }) {
   const sevs = [5, 4, 3];
   const max = Math.max(1, ...sevs.flatMap((s) => AGE_BUCKETS.map((b) => data[s]?.[b.label] || 0)));
   return (
-    <div style={{ display: "grid", gridTemplateColumns: `90px repeat(${AGE_BUCKETS.length}, 1fr)`, gap: 4 }}>
-      <div />
+    <div style={{ display: "grid", gridTemplateColumns: `110px repeat(${AGE_BUCKETS.length}, 1fr)`, gap: 6 }}>
+      <div style={{ fontSize: 10, color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>SEVERITY \ AGE</div>
       {AGE_BUCKETS.map((b) => (
-        <div key={b.label} style={{ fontSize: 10, color: C.textMuted, textAlign: "center", fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{b.label}</div>
+        <div key={b.label} style={{ fontSize: 11, color: "#94a3b8", textAlign: "center", fontWeight: 600, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>
+          {b.label}d
+        </div>
       ))}
       {sevs.map((s) => (
         <React.Fragment key={s}>
-          <div style={{ fontSize: 11.5, color: SEV_META[s].color, fontWeight: 700, display: "flex", alignItems: "center" }}>{SEV_META[s].label}</div>
+          <div style={{ fontSize: 12, color: SEV_META[s].color, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: SEV_META[s].color }} />
+            {SEV_META[s].label}
+          </div>
           {AGE_BUCKETS.map((b) => {
             const v = data[s]?.[b.label] || 0;
             const intensity = v / max;
+            const bg = v === 0 ? "#0c1019" : SEV_META[s].color;
             return (
               <div
                 key={b.label}
-                title={`${SEV_META[s].label} - ${b.label} days - ${v}`}
+                title={`${SEV_META[s].label} - ${b.label} days: ${v} findings`}
                 style={{
-                  height: 40, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center",
-                  background: v === 0 ? C.bgElevated : SEV_META[s].color,
-                  opacity: v === 0 ? 1 : 0.25 + intensity * 0.75,
-                  fontSize: 12, fontWeight: 700, color: v === 0 ? C.textMuted : "#0A0E14",
+                  height: 44, borderRadius: 8, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  background: v === 0 ? "#0c1019" : `linear-gradient(135deg, ${bg}${Math.round(40 + intensity * 60).toString(16)}, ${bg})`,
+                  border: `1px solid ${v === 0 ? "#1e293b" : `${SEV_META[s].color}60`}`,
+                  boxShadow: v > 0 ? `0 4px 12px ${SEV_META[s].color}25` : "none",
+                  fontSize: 13, fontWeight: 800, color: v === 0 ? "#475569" : "#ffffff",
                   fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+                  transition: "all 0.2s"
                 }}
               >
                 {v > 0 ? v : "-"}
@@ -830,11 +896,12 @@ function HeatMap({ data }) {
 }
 
 const btnStyle = (active) => ({
-  padding: "8px 16px", borderRadius: 8, fontSize: 13, fontWeight: active ? 600 : 500, cursor: "pointer",
-  border: `1px solid ${active ? C.accent : C.borderLight}`,
-  background: active ? C.accentDim : C.bgElevated,
-  color: active ? C.accent : C.textPrimary,
-  display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap",
+  padding: "7px 14px", borderRadius: 8, fontSize: 12, fontWeight: active ? 700 : 500, cursor: "pointer",
+  border: `1px solid ${active ? "#00f2fe" : "#1e293b"}`,
+  background: active ? "rgba(0, 242, 254, 0.15)" : "#0c1019",
+  color: active ? "#00f2fe" : "#94a3b8",
+  display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap",
+  boxShadow: active ? "0 0 12px rgba(0, 242, 254, 0.2)" : "none",
   transition: "all 0.2s ease",
 });
 
@@ -960,39 +1027,45 @@ const NAV_GROUPS = [
 function Sidebar({ page, setPage, fileName, rowCount, onReset }) {
   return (
     <div style={{
-      width: 240, flexShrink: 0, background: C.bgElevated, borderRight: `1px solid ${C.border}`,
-      padding: "20px 12px", display: "flex", flexDirection: "column", gap: 4, 
+      width: 250, flexShrink: 0, background: "linear-gradient(180deg, #090d16 0%, #06080d 100%)", borderRight: "1px solid #1e293b",
+      padding: "22px 14px", display: "flex", flexDirection: "column", gap: 4, 
       position: "sticky", top: 0, height: "100vh", alignSelf: "flex-start",
-      boxSizing: "border-box", zIndex: 40
+      boxSizing: "border-box", zIndex: 40, boxShadow: "4px 0 20px rgba(0,0,0,0.5)"
     }}>
-      <div style={{ padding: "0 10px 24px", display: "flex", alignItems: "center", gap: 10 }}>
+      {/* Brand Header */}
+      <div style={{ padding: "0 8px 24px", display: "flex", alignItems: "center", gap: 12, borderBottom: "1px solid #1e293b", marginBottom: 12 }}>
         <img
           src="logo.png"
           alt="SPECTRA Logo"
           style={{
-            width: 36,
-            height: 36,
-            borderRadius: 9,
+            width: 38,
+            height: 38,
+            borderRadius: 10,
             objectFit: "cover",
-            border: `1px solid ${C.accent}`,
-            boxShadow: "0 0 14px rgba(99, 102, 241, 0.4)",
+            border: "1.5px solid #00f2fe",
+            boxShadow: "0 0 16px rgba(0, 242, 254, 0.45)",
             background: "#07090e",
             flexShrink: 0
           }}
         />
         <div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: C.textPrimary, letterSpacing: 0.3 }}>SPECTRA DISPATCH</div>
-          <div style={{ fontSize: 10, color: C.textMuted, fontWeight: 500 }}>Remediation Automation</div>
+          <div style={{ fontSize: 13.5, fontWeight: 800, color: "#f8fafc", letterSpacing: 0.5, fontFamily: "'JetBrains Mono', monospace" }}>
+            SPECTRA <span style={{ color: "#00f2fe" }}>DISPATCH</span>
+          </div>
+          <div style={{ fontSize: 10, color: "#38bdf8", fontWeight: 600, letterSpacing: 0.3 }}>
+            Remediation &amp; Mail Ops
+          </div>
         </div>
       </div>
       
+      {/* Navigation Links */}
       <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", paddingRight: 4, display: "flex", flexDirection: "column", gap: 20 }}>
         {NAV_GROUPS.map((group, idx) => (
           <div key={idx}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: 0.8, marginBottom: 8, paddingLeft: 10 }}>
+            <div style={{ fontSize: 9.5, fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 8, paddingLeft: 10, fontFamily: "'JetBrains Mono', monospace" }}>
               {group.title}
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
               {group.items.map((n) => {
                 const Icon = n.icon === Gauge ? GaugeIcon : n.icon;
                 const active = page === n.id;
@@ -1002,16 +1075,18 @@ function Sidebar({ page, setPage, fileName, rowCount, onReset }) {
                     className="vd-nav"
                     onClick={() => setPage(n.id)}
                     style={{
-                      display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 8,
-                      cursor: "pointer", fontSize: 12.5, fontWeight: active ? 600 : 500,
-                      color: active ? C.textPrimary : C.textSecondary,
-                      background: active ? C.surfaceHover : "transparent",
-                      borderLeft: `3px solid ${active ? C.accent : "transparent"}`,
+                      display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8,
+                      cursor: "pointer", fontSize: 12.5, fontWeight: active ? 700 : 500,
+                      color: active ? "#ffffff" : "#94a3b8",
+                      background: active ? "linear-gradient(90deg, rgba(0, 242, 254, 0.16) 0%, rgba(0, 242, 254, 0.03) 100%)" : "transparent",
+                      borderLeft: `3px solid ${active ? "#00f2fe" : "transparent"}`,
+                      boxShadow: active ? "0 2px 10px rgba(0, 242, 254, 0.15)" : "none",
                       transition: "all 0.2s ease"
                     }}
                   >
-                    <Icon size={16} color={active ? C.accent : C.textMuted} />
-                    {n.label}
+                    <Icon size={16} color={active ? "#00f2fe" : "#64748b"} />
+                    <span style={{ flex: 1 }}>{n.label}</span>
+                    {active && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#00f2fe", boxShadow: "0 0 8px #00f2fe" }} />}
                   </div>
                 );
               })}
@@ -1019,18 +1094,24 @@ function Sidebar({ page, setPage, fileName, rowCount, onReset }) {
           </div>
         ))}
       </div>
-      <div style={{ marginTop: "auto", paddingTop: 16, borderTop: `1px solid ${C.border}` }}>
-        <div style={{ padding: "0 10px", fontSize: 11, color: C.textMuted, marginBottom: 8, lineHeight: 1.5 }}>
-          <FileSpreadsheet size={12} style={{ verticalAlign: -2, marginRight: 4 }} />
-          {fileName}
-          <br />
-          {rowCount.toLocaleString()} rows loaded
+
+      {/* Footer Info */}
+      <div style={{ marginTop: "auto", paddingTop: 14, borderTop: "1px solid #1e293b" }}>
+        <div style={{ padding: "8px 10px", background: "rgba(15, 23, 42, 0.6)", borderRadius: 8, border: "1px solid #1e293b", fontSize: 11, color: "#94a3b8", marginBottom: 10, lineHeight: 1.5 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, color: "#f8fafc", fontWeight: 600, marginBottom: 2 }}>
+            <FileSpreadsheet size={13} color="#00f2fe" />
+            <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fileName || "No file active"}</span>
+          </div>
+          <div style={{ fontSize: 10.5, color: "#64748b" }}>
+            <span style={{ color: "#38bdf8", fontWeight: 700 }}>{rowCount.toLocaleString()}</span> findings loaded
+          </div>
         </div>
-        <div className="vd-nav" onClick={onReset} style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 10px", borderRadius: 7, cursor: "pointer", fontSize: 12.5, color: C.textSecondary }}>
-          <RefreshCw size={13} /> Load new file
+        <div className="vd-nav" onClick={onReset} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 7, cursor: "pointer", fontSize: 12, color: "#94a3b8", background: "rgba(239, 68, 68, 0.08)", border: "1px solid rgba(239, 68, 68, 0.25)" }}>
+          <RefreshCw size={13} color="#f87171" />
+          <span style={{ color: "#fca5a5", fontWeight: 600 }}>Switch / Load Dataset</span>
         </div>
-        <div style={{ padding: "14px 10px 0", fontSize: 10, color: C.textMuted, letterSpacing: 0.3 }}>
-          Built by <span style={{ color: C.textSecondary, fontWeight: 600 }}>Barathraj V</span>
+        <div style={{ padding: "12px 6px 0", fontSize: 10, color: "#475569", letterSpacing: 0.3, textAlign: "center" }}>
+          Built by <span style={{ color: "#94a3b8", fontWeight: 600 }}>Barathraj V</span>
         </div>
       </div>
     </div>
@@ -1041,26 +1122,35 @@ function Sidebar({ page, setPage, fileName, rowCount, onReset }) {
 
 function TopBar({ fileName, kpi, posture }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18, paddingBottom: 16, borderBottom: `1px solid ${C.border}`, flexWrap: "wrap", gap: 12 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20, paddingBottom: 16, borderBottom: "1px solid #1e293b", flexWrap: "wrap", gap: 14 }}>
       <div>
-        <h1 style={{ fontSize: 17, fontWeight: 700, color: C.textPrimary, margin: 0 }}>VulnOps Intelligence</h1>
-        <div style={{ fontSize: 11.5, color: C.textMuted, marginTop: 3, display: "flex", alignItems: "center" }}>
-          <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: 3, background: C.success, marginRight: 6 }} />
-          Analyzing {fileName}
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <h1 style={{ fontSize: 19, fontWeight: 800, color: "#f8fafc", margin: 0, letterSpacing: -0.3, fontFamily: "'JetBrains Mono', monospace" }}>
+            VulnOps Intelligence
+          </h1>
+          <span style={{ background: "rgba(16, 185, 129, 0.15)", border: "1px solid rgba(16, 185, 129, 0.4)", color: "#34d399", padding: "2px 8px", borderRadius: 12, fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5 }}>
+            ● LIVE TELEMETRY
+          </span>
+        </div>
+        <div style={{ fontSize: 11.5, color: "#94a3b8", marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "#00f2fe", boxShadow: "0 0 8px #00f2fe" }} />
+          Active Workspace: <strong style={{ color: "#f8fafc" }}>{fileName}</strong>
         </div>
       </div>
-      <div style={{ display: "flex", gap: 24 }}>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: C.textPrimary }}>{kpi.totalOpen.toLocaleString()}</div>
-          <div style={{ fontSize: 10.5, color: C.textMuted }}>open findings</div>
+
+      {/* Cyber Ops KPI Tiles */}
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ background: "linear-gradient(145deg, #111728, #0a0e18)", padding: "8px 14px", borderRadius: 10, border: "1px solid #1e293b", textAlign: "right", minWidth: 105 }}>
+          <div style={{ fontSize: 17, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: "#f8fafc" }}>{kpi.totalOpen.toLocaleString()}</div>
+          <div style={{ fontSize: 10, color: "#64748b", textTransform: "uppercase", fontWeight: 700 }}>Open Findings</div>
         </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: kpi.slaCompliance >= 80 ? C.success : C.medium }}>{kpi.slaCompliance}%</div>
-          <div style={{ fontSize: 10.5, color: C.textMuted }}>SLA compliance</div>
+        <div style={{ background: "linear-gradient(145deg, #111728, #0a0e18)", padding: "8px 14px", borderRadius: 10, border: `1px solid ${kpi.slaCompliance >= 80 ? "rgba(16, 185, 129, 0.35)" : "rgba(234, 179, 8, 0.35)"}`, textAlign: "right", minWidth: 105 }}>
+          <div style={{ fontSize: 17, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: kpi.slaCompliance >= 80 ? "#34d399" : "#facc15" }}>{kpi.slaCompliance}%</div>
+          <div style={{ fontSize: 10, color: "#64748b", textTransform: "uppercase", fontWeight: 700 }}>SLA Compliance</div>
         </div>
-        <div style={{ textAlign: "right" }}>
-          <div style={{ fontSize: 18, fontWeight: 700, fontFamily: "'JetBrains Mono', ui-monospace, monospace", color: posture >= 75 ? C.success : posture >= 50 ? C.medium : C.critical }}>{posture}</div>
-          <div style={{ fontSize: 10.5, color: C.textMuted }}>posture score</div>
+        <div style={{ background: "linear-gradient(145deg, #111728, #0a0e18)", padding: "8px 14px", borderRadius: 10, border: `1px solid ${posture >= 75 ? "rgba(16, 185, 129, 0.35)" : posture >= 50 ? "rgba(234, 179, 8, 0.35)" : "rgba(239, 68, 68, 0.35)"}`, textAlign: "right", minWidth: 105 }}>
+          <div style={{ fontSize: 17, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: posture >= 75 ? "#34d399" : posture >= 50 ? "#facc15" : "#f87171" }}>{posture}</div>
+          <div style={{ fontSize: 10, color: "#64748b", textTransform: "uppercase", fontWeight: 700 }}>Posture Score</div>
         </div>
       </div>
     </div>
@@ -1069,27 +1159,25 @@ function TopBar({ fileName, kpi, posture }) {
 
 /* --------------------------------- filter bar --------------------------------- */
 
-/* --------------------------------- filter bar --------------------------------- */
-
 function FilterBar({ filters, setFilters, infraOptions, cspOptions, ifPciOptions, appNameOptions, vulnStatusOptions, totalCount = 0, filteredCount = 0 }) {
-  const isClean = filters.severity === "all" &&
-    filters.vulnStatus === "all" &&
-    filters.infra === "all" &&
-    filters.slaStatus === "all" &&
+  const isClean = filters.severity.length === 0 &&
+    filters.vulnStatus.length === 0 &&
+    filters.infra.length === 0 &&
+    filters.slaStatus.length === 0 &&
     !filters.search &&
-    filters.csp === "all" &&
-    filters.ifPci === "all" &&
+    filters.csp.length === 0 &&
+    filters.ifPci.length === 0 &&
     !filters.appName;
 
   const resetFilters = () => {
     setFilters({
-      severity: "all",
-      vulnStatus: "all",
-      infra: "all",
-      slaStatus: "all",
+      severity: [],
+      vulnStatus: [],
+      infra: [],
+      slaStatus: [],
       search: "",
-      csp: "all",
-      ifPci: "all",
+      csp: [],
+      ifPci: [],
       appName: ""
     });
   };
@@ -1102,94 +1190,113 @@ function FilterBar({ filters, setFilters, infraOptions, cspOptions, ifPciOptions
 
   const activeFilterCount = useMemo(() => {
     let count = 0;
-    if (filters.severity !== "all") count++;
-    if (filters.vulnStatus !== "all") count++;
-    if (filters.infra !== "all") count++;
-    if (filters.slaStatus !== "all") count++;
+    count += (filters.severity || []).length;
+    count += (filters.vulnStatus || []).length;
+    count += (filters.infra || []).length;
+    count += (filters.slaStatus || []).length;
+    count += (filters.csp || []).length;
+    count += (filters.ifPci || []).length;
     if (filters.search) count++;
-    if (filters.csp !== "all") count++;
-    if (filters.ifPci !== "all") count++;
     if (filters.appName) count++;
     return count;
   }, [filters]);
 
+  const toggleArrayFilter = (key, val) => {
+    setFilters(f => {
+      const arr = f[key] || [];
+      if (arr.includes(val)) {
+        return { ...f, [key]: arr.filter(x => x !== val) };
+      } else {
+        return { ...f, [key]: [...arr, val] };
+      }
+    });
+  };
+
+  const clearArrayFilter = (key) => {
+    setFilters(f => ({ ...f, [key]: [] }));
+  };
+
   const filterCardStyle = {
-    background: "linear-gradient(165deg, #181c28 0%, #0f131d 100%)",
-    border: "1px solid #28334a",
+    background: "linear-gradient(165deg, rgba(17, 23, 38, 0.95) 0%, rgba(9, 13, 22, 0.98) 100%)",
+    border: "1px solid rgba(56, 189, 248, 0.25)",
     borderRadius: 14,
     padding: "16px 18px",
     marginBottom: 20,
-    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.45)",
+    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(56, 189, 248, 0.08)",
     display: "flex",
     flexDirection: "column",
-    gap: 14
+    gap: 14,
+    position: "relative"
   };
 
   const sectionLabelStyle = {
     fontSize: 10.5,
-    fontWeight: 700,
+    fontWeight: 800,
     color: "#94a3b8",
     textTransform: "uppercase",
     letterSpacing: "0.8px",
-    marginBottom: 6,
+    marginBottom: 8,
     display: "flex",
     alignItems: "center",
-    gap: 6
+    justifyContent: "space-between",
+    fontFamily: "'JetBrains Mono', monospace"
   };
 
   const pillGroupStyle = {
     display: "flex",
     gap: 6,
-    flexWrap: "wrap"
+    flexWrap: "wrap",
+    alignItems: "center"
   };
 
   const getPillStyle = (active, activeBg, activeColor, activeBorder) => ({
-    padding: "6px 12px",
+    padding: "5px 11px",
     borderRadius: 7,
     fontSize: 12,
-    fontWeight: active ? 600 : 500,
+    fontWeight: active ? 700 : 500,
     cursor: "pointer",
-    border: `1px solid ${active ? (activeBorder || activeColor || C.accent) : "#2d374d"}`,
-    background: active ? (activeBg || C.accentDim) : "#131722",
-    color: active ? (activeColor || C.accent) : "#cbd5e1",
+    border: `1px solid ${active ? (activeBorder || activeColor || "#00f2fe") : "#1e293b"}`,
+    background: active ? (activeBg || "rgba(0, 242, 254, 0.15)") : "#0a0e17",
+    color: active ? (activeColor || "#00f2fe") : "#94a3b8",
     display: "inline-flex",
     alignItems: "center",
     gap: 6,
     whiteSpace: "nowrap",
-    boxShadow: active ? `0 2px 8px ${activeBg || 'rgba(99, 102, 241, 0.25)'}` : "none",
+    boxShadow: active ? `0 2px 10px ${activeBg || 'rgba(0, 242, 254, 0.25)'}` : "none",
     transition: "all 0.18s ease",
     userSelect: "none"
   });
 
   return (
     <div style={filterCardStyle}>
-      {/* Top Header Row: Title, Scope summary, Search, App Filter & Clear All */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, paddingBottom: 12, borderBottom: "1px solid #232c3f" }}>
+      {/* Top Header Row: Omni Search, App Filter, Live Findings Counter & Reset */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, paddingBottom: 12, borderBottom: "1px solid #1e293b" }}>
         
         {/* Left: Omni Search & App Search */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", flex: 1, minWidth: 280 }}>
           {/* Omni Search */}
           <div style={{ position: "relative", flex: 1, minWidth: 240, maxWidth: 360 }}>
-            <Search size={14} color="#64748b" style={{ position: "absolute", left: 11, top: 10 }} />
+            <Search size={14} color="#00f2fe" style={{ position: "absolute", left: 11, top: 10 }} />
             <input
               value={filters.search}
               onChange={(e) => setFilters(f => ({ ...f, search: e.target.value }))}
-              placeholder="Search IP, host, CVE, vulnerability..."
+              placeholder="Search IP, Host, CVE, Vulnerability..."
               style={{
                 width: "100%",
-                background: "#0d1017",
-                border: "1px solid #2d374d",
+                background: "#070a12",
+                border: "1px solid #28354f",
                 borderRadius: 8,
                 padding: "8px 28px 8px 34px",
                 fontSize: 12.5,
                 color: "#f8fafc",
-                outline: "none"
+                outline: "none",
+                fontFamily: "Inter, sans-serif"
               }}
             />
             {filters.search && (
               <div
                 onClick={() => setFilters(f => ({ ...f, search: "" }))}
-                style={{ position: "absolute", right: 8, top: 8, cursor: "pointer", padding: 2, borderRadius: 4, background: "#1f2738", display: "flex" }}
+                style={{ position: "absolute", right: 8, top: 8, cursor: "pointer", padding: 2, borderRadius: 4, background: "#1e293b", display: "flex" }}
               >
                 <X size={12} color="#94a3b8" />
               </div>
@@ -1197,7 +1304,7 @@ function FilterBar({ filters, setFilters, infraOptions, cspOptions, ifPciOptions
           </div>
 
           {/* App Name Filter */}
-          <div style={{ position: "relative", width: 200 }}>
+          <div style={{ position: "relative", width: 210 }}>
             <input
               list="vd-app-list"
               value={filters.appName}
@@ -1205,8 +1312,8 @@ function FilterBar({ filters, setFilters, infraOptions, cspOptions, ifPciOptions
               placeholder="Filter by App Name..."
               style={{
                 width: "100%",
-                background: "#0d1017",
-                border: "1px solid #2d374d",
+                background: "#070a12",
+                border: "1px solid #28354f",
                 borderRadius: 8,
                 padding: "8px 26px 8px 12px",
                 fontSize: 12.5,
@@ -1217,7 +1324,7 @@ function FilterBar({ filters, setFilters, infraOptions, cspOptions, ifPciOptions
             {filters.appName && (
               <div
                 onClick={() => setFilters(f => ({ ...f, appName: "" }))}
-                style={{ position: "absolute", right: 8, top: 8, cursor: "pointer", padding: 2, borderRadius: 4, background: "#1f2738", display: "flex" }}
+                style={{ position: "absolute", right: 8, top: 8, cursor: "pointer", padding: 2, borderRadius: 4, background: "#1e293b", display: "flex" }}
               >
                 <X size={12} color="#94a3b8" />
               </div>
@@ -1231,11 +1338,11 @@ function FilterBar({ filters, setFilters, infraOptions, cspOptions, ifPciOptions
         {/* Right: Record Counter & Clear Filters Action */}
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {totalCount > 0 && (
-            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "#94a3b8", background: "#0d1017", padding: "5px 12px", borderRadius: 6, border: "1px solid #242c3d" }}>
-              <span style={{ color: C.accent, fontWeight: 700 }}>{filteredCount.toLocaleString()}</span> of <span>{totalCount.toLocaleString()}</span> findings
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "#94a3b8", background: "#070a12", padding: "6px 14px", borderRadius: 8, border: "1px solid #1e293b" }}>
+              <span style={{ color: "#00f2fe", fontWeight: 800, fontFamily: "'JetBrains Mono', monospace" }}>{filteredCount.toLocaleString()}</span> of <span>{totalCount.toLocaleString()}</span> findings
               {activeFilterCount > 0 && (
-                <span style={{ marginLeft: 4, background: "rgba(99, 102, 241, 0.2)", color: C.accent, padding: "1px 6px", borderRadius: 10, fontWeight: 700, fontSize: 10.5 }}>
-                  {activeFilterCount} active
+                <span style={{ marginLeft: 6, background: "rgba(0, 242, 254, 0.2)", border: "1px solid rgba(0, 242, 254, 0.4)", color: "#00f2fe", padding: "1px 7px", borderRadius: 10, fontWeight: 800, fontSize: 10.5 }}>
+                  {activeFilterCount} Active
                 </span>
               )}
             </div>
@@ -1249,16 +1356,17 @@ function FilterBar({ filters, setFilters, infraOptions, cspOptions, ifPciOptions
                 alignItems: "center",
                 gap: 5,
                 padding: "6px 12px",
-                borderRadius: 7,
+                borderRadius: 8,
                 fontSize: 11.5,
-                fontWeight: 600,
+                fontWeight: 700,
                 color: "#f87171",
                 background: "rgba(239, 68, 68, 0.12)",
-                border: "1px solid rgba(239, 68, 68, 0.35)",
+                border: "1px solid rgba(239, 68, 68, 0.4)",
                 cursor: "pointer",
+                boxShadow: "0 0 12px rgba(239, 68, 68, 0.2)",
                 transition: "all 0.15s"
               }}
-              title="Clear all active filters"
+              title="Clear all active multi-select filters"
             >
               <X size={13} /> Reset Filters
             </button>
@@ -1266,98 +1374,112 @@ function FilterBar({ filters, setFilters, infraOptions, cspOptions, ifPciOptions
         </div>
       </div>
 
-      {/* Main Filter Sections Row: Severity, Vulnerability Status, SLA, Infra, CSP, IF/PCI */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+      {/* Main Multi-Select Filter Rails: Severity, Vulnerability Status, SLA Posture, Infra, CSP, IF/PCI */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 16 }}>
         
-        {/* 1. Severity Filter */}
+        {/* 1. Multi-Select Severity Level */}
         <div>
           <div style={sectionLabelStyle}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444" }} />
-            Severity Level
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444", boxShadow: "0 0 6px #ef4444" }} />
+              Severity Levels
+            </span>
+            {filters.severity.length > 0 && (
+              <span onClick={() => clearArrayFilter("severity")} style={{ cursor: "pointer", fontSize: 10, color: "#64748b" }}>Clear</span>
+            )}
           </div>
           <div style={pillGroupStyle}>
-            <div onClick={() => setFilters(f => ({ ...f, severity: "all" }))} style={getPillStyle(filters.severity === "all")}>
+            <div onClick={() => clearArrayFilter("severity")} style={getPillStyle(filters.severity.length === 0)}>
               All
             </div>
-            <div onClick={() => setFilters(f => ({ ...f, severity: 5 }))} style={getPillStyle(filters.severity === 5, "rgba(239, 68, 68, 0.2)", "#f87171", "#ef4444")}>
+            <div onClick={() => toggleArrayFilter("severity", 5)} style={getPillStyle(filters.severity.includes(5), "rgba(239, 68, 68, 0.22)", "#f87171", "#ef4444")}>
               <span style={{ color: "#ef4444", fontSize: 10 }}>●</span> Critical
             </div>
-            <div onClick={() => setFilters(f => ({ ...f, severity: 4 }))} style={getPillStyle(filters.severity === 4, "rgba(249, 115, 22, 0.2)", "#fb923c", "#f97316")}>
+            <div onClick={() => toggleArrayFilter("severity", 4)} style={getPillStyle(filters.severity.includes(4), "rgba(249, 115, 22, 0.22)", "#fb923c", "#f97316")}>
               <span style={{ color: "#f97316", fontSize: 10 }}>●</span> High
             </div>
-            <div onClick={() => setFilters(f => ({ ...f, severity: 3 }))} style={getPillStyle(filters.severity === 3, "rgba(234, 179, 8, 0.2)", "#facc15", "#eab308")}>
+            <div onClick={() => toggleArrayFilter("severity", 3)} style={getPillStyle(filters.severity.includes(3), "rgba(234, 179, 8, 0.22)", "#facc15", "#eab308")}>
               <span style={{ color: "#eab308", fontSize: 10 }}>●</span> Medium
             </div>
           </div>
         </div>
 
-        {/* 2. Vulnerability Status Filter (NEW) */}
+        {/* 2. Multi-Select Vulnerability Status */}
         <div>
           <div style={sectionLabelStyle}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#38bdf8" }} />
-            Vuln Status
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#00f2fe", boxShadow: "0 0 6px #00f2fe" }} />
+              Vulnerability Status
+            </span>
+            {filters.vulnStatus.length > 0 && (
+              <span onClick={() => clearArrayFilter("vulnStatus")} style={{ cursor: "pointer", fontSize: 10, color: "#64748b" }}>Clear</span>
+            )}
           </div>
           <div style={pillGroupStyle}>
-            <div onClick={() => setFilters(f => ({ ...f, vulnStatus: "all" }))} style={getPillStyle(filters.vulnStatus === "all")}>
+            <div onClick={() => clearArrayFilter("vulnStatus")} style={getPillStyle(filters.vulnStatus.length === 0)}>
               All
             </div>
-            {statusList.slice(0, 3).map((st) => {
-              const isAct = filters.vulnStatus === st;
+            {statusList.map((st) => {
+              const isAct = filters.vulnStatus.includes(st);
               const isFixed = st.toLowerCase().includes("fix") || st.toLowerCase().includes("close");
               const isReopen = st.toLowerCase().includes("reopen") || st.toLowerCase().includes("re-open");
               const color = isFixed ? "#34d399" : isReopen ? "#f59e0b" : "#38bdf8";
-              const bg = isFixed ? "rgba(52, 211, 153, 0.18)" : isReopen ? "rgba(245, 158, 11, 0.18)" : "rgba(56, 189, 248, 0.18)";
+              const bg = isFixed ? "rgba(52, 211, 153, 0.2)" : isReopen ? "rgba(245, 158, 11, 0.2)" : "rgba(56, 189, 248, 0.2)";
               return (
-                <div key={st} onClick={() => setFilters(f => ({ ...f, vulnStatus: st }))} style={getPillStyle(isAct, bg, color, color)}>
+                <div key={st} onClick={() => toggleArrayFilter("vulnStatus", st)} style={getPillStyle(isAct, bg, color, color)}>
+                  {isAct && <Check size={11} strokeWidth={3} />}
                   {st}
                 </div>
               );
             })}
-            {statusList.length > 3 && (
-              <select
-                value={statusList.includes(filters.vulnStatus) && statusList.indexOf(filters.vulnStatus) >= 3 ? filters.vulnStatus : ""}
-                onChange={(e) => e.target.value && setFilters(f => ({ ...f, vulnStatus: e.target.value }))}
-                style={{ ...selectStyle, padding: "5px 8px", fontSize: 11.5, height: 31, minWidth: 90 }}
-              >
-                <option value="">More...</option>
-                {statusList.slice(3).map(st => <option key={st} value={st}>{st}</option>)}
-              </select>
-            )}
           </div>
         </div>
 
-        {/* 3. SLA Posture Filter */}
+        {/* 3. Multi-Select SLA Posture */}
         <div>
           <div style={sectionLabelStyle}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981" }} />
-            SLA Posture
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", boxShadow: "0 0 6px #10b981" }} />
+              SLA Posture
+            </span>
+            {filters.slaStatus.length > 0 && (
+              <span onClick={() => clearArrayFilter("slaStatus")} style={{ cursor: "pointer", fontSize: 10, color: "#64748b" }}>Clear</span>
+            )}
           </div>
           <div style={pillGroupStyle}>
-            <div onClick={() => setFilters(f => ({ ...f, slaStatus: "all" }))} style={getPillStyle(filters.slaStatus === "all")}>
+            <div onClick={() => clearArrayFilter("slaStatus")} style={getPillStyle(filters.slaStatus.length === 0)}>
               All
             </div>
-            <div onClick={() => setFilters(f => ({ ...f, slaStatus: "breached" }))} style={getPillStyle(filters.slaStatus === "breached", "rgba(239, 68, 68, 0.2)", "#f87171", "#ef4444")}>
+            <div onClick={() => toggleArrayFilter("slaStatus", "breached")} style={getPillStyle(filters.slaStatus.includes("breached"), "rgba(239, 68, 68, 0.22)", "#f87171", "#ef4444")}>
+              {filters.slaStatus.includes("breached") && <Check size={11} strokeWidth={3} />}
               Breached
             </div>
-            <div onClick={() => setFilters(f => ({ ...f, slaStatus: "within" }))} style={getPillStyle(filters.slaStatus === "within", "rgba(16, 185, 129, 0.2)", "#34d399", "#10b981")}>
+            <div onClick={() => toggleArrayFilter("slaStatus", "within")} style={getPillStyle(filters.slaStatus.includes("within"), "rgba(16, 185, 129, 0.22)", "#34d399", "#10b981")}>
+              {filters.slaStatus.includes("within") && <Check size={11} strokeWidth={3} />}
               Within SLA
             </div>
           </div>
         </div>
 
-        {/* 4. Infrastructure & Cloud Segment */}
+        {/* 4. Multi-Select Infrastructure & Cloud Scope */}
         <div>
           <div style={sectionLabelStyle}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#a855f7" }} />
-            Infrastructure &amp; Scope
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#a855f7", boxShadow: "0 0 6px #a855f7" }} />
+              Infrastructure &amp; Tags
+            </span>
+            {(filters.infra.length > 0 || filters.csp.length > 0 || filters.ifPci.length > 0) && (
+              <span onClick={() => { clearArrayFilter("infra"); clearArrayFilter("csp"); clearArrayFilter("ifPci"); }} style={{ cursor: "pointer", fontSize: 10, color: "#64748b" }}>Clear</span>
+            )}
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             <div style={pillGroupStyle}>
-              <div onClick={() => setFilters(f => ({ ...f, infra: "all" }))} style={getPillStyle(filters.infra === "all")}>
+              <div onClick={() => clearArrayFilter("infra")} style={getPillStyle(filters.infra.length === 0)}>
                 All
               </div>
               {infraOptions.map((i) => (
-                <div key={i} onClick={() => setFilters(f => ({ ...f, infra: i }))} style={getPillStyle(filters.infra === i, "rgba(168, 85, 247, 0.18)", "#c084fc", "#a855f7")}>
+                <div key={i} onClick={() => toggleArrayFilter("infra", i)} style={getPillStyle(filters.infra.includes(i), "rgba(168, 85, 247, 0.22)", "#c084fc", "#a855f7")}>
+                  {filters.infra.includes(i) && <Check size={11} strokeWidth={3} />}
                   {i}
                 </div>
               ))}
@@ -1366,16 +1488,16 @@ function FilterBar({ filters, setFilters, infraOptions, cspOptions, ifPciOptions
             {/* Dropdowns */}
             <div style={{ display: "flex", gap: 6 }}>
               <select
-                value={filters.csp}
-                onChange={(e) => setFilters(f => ({ ...f, csp: e.target.value }))}
+                value={filters.csp.length === 1 ? filters.csp[0] : ""}
+                onChange={(e) => e.target.value ? setFilters(f => ({ ...f, csp: e.target.value === "all" ? [] : [e.target.value] })) : clearArrayFilter("csp")}
                 style={{
                   ...selectStyle,
                   padding: "5px 10px",
                   fontSize: 11.5,
                   height: 31,
-                  background: filters.csp !== "all" ? "rgba(99, 102, 241, 0.18)" : "#131722",
-                  borderColor: filters.csp !== "all" ? C.accent : "#2d374d",
-                  color: filters.csp !== "all" ? C.accent : "#cbd5e1"
+                  background: filters.csp.length > 0 ? "rgba(56, 189, 248, 0.18)" : "#0a0e17",
+                  borderColor: filters.csp.length > 0 ? "#38bdf8" : "#1e293b",
+                  color: filters.csp.length > 0 ? "#38bdf8" : "#94a3b8"
                 }}
               >
                 <option value="all">All CSP</option>
@@ -1383,16 +1505,16 @@ function FilterBar({ filters, setFilters, infraOptions, cspOptions, ifPciOptions
               </select>
 
               <select
-                value={filters.ifPci}
-                onChange={(e) => setFilters(f => ({ ...f, ifPci: e.target.value }))}
+                value={filters.ifPci.length === 1 ? filters.ifPci[0] : ""}
+                onChange={(e) => e.target.value ? setFilters(f => ({ ...f, ifPci: e.target.value === "all" ? [] : [e.target.value] })) : clearArrayFilter("ifPci")}
                 style={{
                   ...selectStyle,
                   padding: "5px 10px",
                   fontSize: 11.5,
                   height: 31,
-                  background: filters.ifPci !== "all" ? "rgba(234, 179, 8, 0.18)" : "#131722",
-                  borderColor: filters.ifPci !== "all" ? "#eab308" : "#2d374d",
-                  color: filters.ifPci !== "all" ? "#facc15" : "#cbd5e1"
+                  background: filters.ifPci.length > 0 ? "rgba(234, 179, 8, 0.18)" : "#0a0e17",
+                  borderColor: filters.ifPci.length > 0 ? "#eab308" : "#1e293b",
+                  color: filters.ifPci.length > 0 ? "#facc15" : "#94a3b8"
                 }}
               >
                 <option value="all">All IF / PCI</option>
@@ -1406,56 +1528,56 @@ function FilterBar({ filters, setFilters, infraOptions, cspOptions, ifPciOptions
 
       {/* Active Filter Pills Bar (Quick Dismiss) */}
       {!isClean && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", paddingTop: 8, borderTop: "1px dashed #28334a" }}>
-          <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>Active Filters:</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", paddingTop: 10, borderTop: "1px dashed #1e293b" }}>
+          <span style={{ fontSize: 11, color: "#64748b", fontWeight: 700, textTransform: "uppercase", fontFamily: "'JetBrains Mono', monospace" }}>Active Criteria:</span>
           {filters.search && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#1e293b", color: "#f8fafc", padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(56, 189, 248, 0.15)", border: "1px solid rgba(56, 189, 248, 0.35)", color: "#f8fafc", padding: "3px 9px", borderRadius: 6, fontSize: 11 }}>
               Search: "{filters.search}"
-              <X size={11} style={{ cursor: "pointer" }} onClick={() => setFilters(f => ({ ...f, search: "" }))} />
+              <X size={11} style={{ cursor: "pointer", color: "#38bdf8" }} onClick={() => setFilters(f => ({ ...f, search: "" }))} />
             </span>
           )}
           {filters.appName && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#1e293b", color: "#f8fafc", padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(56, 189, 248, 0.15)", border: "1px solid rgba(56, 189, 248, 0.35)", color: "#f8fafc", padding: "3px 9px", borderRadius: 6, fontSize: 11 }}>
               App: {filters.appName}
-              <X size={11} style={{ cursor: "pointer" }} onClick={() => setFilters(f => ({ ...f, appName: "" }))} />
+              <X size={11} style={{ cursor: "pointer", color: "#38bdf8" }} onClick={() => setFilters(f => ({ ...f, appName: "" }))} />
             </span>
           )}
-          {filters.severity !== "all" && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(239, 68, 68, 0.2)", color: "#f87171", padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>
-              Severity: {SEV_META[filters.severity]?.label || filters.severity}
-              <X size={11} style={{ cursor: "pointer" }} onClick={() => setFilters(f => ({ ...f, severity: "all" }))} />
+          {filters.severity.map(s => (
+            <span key={s} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(239, 68, 68, 0.2)", border: "1px solid rgba(239, 68, 68, 0.4)", color: "#f87171", padding: "3px 9px", borderRadius: 6, fontSize: 11 }}>
+              Sev {s}: {SEV_META[s]?.label || s}
+              <X size={11} style={{ cursor: "pointer" }} onClick={() => toggleArrayFilter("severity", s)} />
             </span>
-          )}
-          {filters.vulnStatus !== "all" && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(56, 189, 248, 0.2)", color: "#38bdf8", padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>
-              Status: {filters.vulnStatus}
-              <X size={11} style={{ cursor: "pointer" }} onClick={() => setFilters(f => ({ ...f, vulnStatus: "all" }))} />
+          ))}
+          {filters.vulnStatus.map(st => (
+            <span key={st} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(0, 242, 254, 0.18)", border: "1px solid rgba(0, 242, 254, 0.4)", color: "#00f2fe", padding: "3px 9px", borderRadius: 6, fontSize: 11 }}>
+              Status: {st}
+              <X size={11} style={{ cursor: "pointer" }} onClick={() => toggleArrayFilter("vulnStatus", st)} />
             </span>
-          )}
-          {filters.slaStatus !== "all" && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: filters.slaStatus === "breached" ? "rgba(239, 68, 68, 0.2)" : "rgba(16, 185, 129, 0.2)", color: filters.slaStatus === "breached" ? "#f87171" : "#34d399", padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>
-              SLA: {filters.slaStatus === "breached" ? "Breached" : "Within SLA"}
-              <X size={11} style={{ cursor: "pointer" }} onClick={() => setFilters(f => ({ ...f, slaStatus: "all" }))} />
+          ))}
+          {filters.slaStatus.map(sla => (
+            <span key={sla} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: sla === "breached" ? "rgba(239, 68, 68, 0.2)" : "rgba(16, 185, 129, 0.2)", border: `1px solid ${sla === "breached" ? "rgba(239, 68, 68, 0.4)" : "rgba(16, 185, 129, 0.4)"}`, color: sla === "breached" ? "#f87171" : "#34d399", padding: "3px 9px", borderRadius: 6, fontSize: 11 }}>
+              SLA: {sla === "breached" ? "Breached" : "Within SLA"}
+              <X size={11} style={{ cursor: "pointer" }} onClick={() => toggleArrayFilter("slaStatus", sla)} />
             </span>
-          )}
-          {filters.infra !== "all" && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(168, 85, 247, 0.2)", color: "#c084fc", padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>
-              Infra: {filters.infra}
-              <X size={11} style={{ cursor: "pointer" }} onClick={() => setFilters(f => ({ ...f, infra: "all" }))} />
+          ))}
+          {filters.infra.map(i => (
+            <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(168, 85, 247, 0.2)", border: "1px solid rgba(168, 85, 247, 0.4)", color: "#c084fc", padding: "3px 9px", borderRadius: 6, fontSize: 11 }}>
+              Infra: {i}
+              <X size={11} style={{ cursor: "pointer" }} onClick={() => toggleArrayFilter("infra", i)} />
             </span>
-          )}
-          {filters.csp !== "all" && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(99, 102, 241, 0.2)", color: C.accent, padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>
-              CSP: {filters.csp}
-              <X size={11} style={{ cursor: "pointer" }} onClick={() => setFilters(f => ({ ...f, csp: "all" }))} />
+          ))}
+          {filters.csp.map(c => (
+            <span key={c} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(56, 189, 248, 0.2)", border: "1px solid rgba(56, 189, 248, 0.4)", color: "#38bdf8", padding: "3px 9px", borderRadius: 6, fontSize: 11 }}>
+              CSP: {c}
+              <X size={11} style={{ cursor: "pointer" }} onClick={() => toggleArrayFilter("csp", c)} />
             </span>
-          )}
-          {filters.ifPci !== "all" && (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(234, 179, 8, 0.2)", color: "#facc15", padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>
-              IF/PCI: {filters.ifPci}
-              <X size={11} style={{ cursor: "pointer" }} onClick={() => setFilters(f => ({ ...f, ifPci: "all" }))} />
+          ))}
+          {filters.ifPci.map(p => (
+            <span key={p} style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(234, 179, 8, 0.2)", border: "1px solid rgba(234, 179, 8, 0.4)", color: "#facc15", padding: "3px 9px", borderRadius: 6, fontSize: 11 }}>
+              IF/PCI: {p}
+              <X size={11} style={{ cursor: "pointer" }} onClick={() => toggleArrayFilter("ifPci", p)} />
             </span>
-          )}
+          ))}
         </div>
       )}
     </div>
@@ -1529,96 +1651,147 @@ function VulnDetailPanel({ vuln, onClose }) {
 function OverviewPage({ rows, kpi, posture, infraAgg, ageingHeat, dataQuality }) {
   const donutData = [5, 4, 3].map((s) => ({ name: SEV_META[s].label, value: rows.filter((r) => r.isOpen && r.sevNum === s).length, color: SEV_META[s].color }));
   const approaching = rows.filter((r) => r.isOpen && !r.breached && r.slaDelta !== null && r.slaDelta <= 15 && r.slaDelta >= 0).length;
+  const criticalBreached = rows.filter((r) => r.isOpen && r.breached && r.sevNum === 5).length;
+  const highBreached = rows.filter((r) => r.isOpen && r.breached && r.sevNum === 4).length;
+  const reopenedCount = rows.filter((r) => r.isOpen && r.isReopened).length;
 
   return (
     <div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(6, 1fr)", gap: 16, marginBottom: 24 }}>
-        <KpiCard label="Assets" value={kpi.totalAssets.toLocaleString()} icon={Server} />
-        <KpiCard label="Open vulns" value={kpi.totalOpen.toLocaleString()} icon={Database} />
-        <KpiCard label="Critical" value={kpi.sev5} accentColor={C.critical} icon={ShieldAlert} />
-        <KpiCard label="High" value={kpi.sev4} accentColor={C.high} icon={AlertTriangle} />
-        <KpiCard label="SLA compliance" value={`${kpi.slaCompliance}%`} accentColor={kpi.slaCompliance >= 80 ? C.success : C.medium} icon={CheckCircle2} />
-        <KpiCard label="SLA breached" value={kpi.slaBreached} accentColor={C.critical} sub={`Avg age ${kpi.avgAge}d`} icon={Clock} />
+      {/* Top Threat Telemetry KPI Cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 14, marginBottom: 24 }}>
+        <KpiCard label="Monitored Assets" value={kpi.totalAssets.toLocaleString()} icon={Server} accentColor="#38bdf8" sub="Total tracked endpoints" />
+        <KpiCard label="Active Findings" value={kpi.totalOpen.toLocaleString()} icon={Database} accentColor="#00f2fe" sub="Open vulnerabilities" />
+        <KpiCard label="Critical Severity" value={kpi.sev5.toLocaleString()} accentColor="#ef4444" icon={ShieldAlert} meta="Sev 5" sub="Immediate patch target" />
+        <KpiCard label="High Severity" value={kpi.sev4.toLocaleString()} accentColor="#f97316" icon={AlertTriangle} meta="Sev 4" sub="Priority remediation" />
+        <KpiCard label="SLA Compliance" value={`${kpi.slaCompliance}%`} accentColor={kpi.slaCompliance >= 80 ? "#10b981" : "#eab308"} icon={CheckCircle2} sub="Target: ≥ 85%" />
+        <KpiCard label="SLA Breached" value={kpi.slaBreached.toLocaleString()} accentColor="#ef4444" icon={Clock} sub={`Avg age: ${kpi.avgAge} days`} />
       </div>
 
-      <SectionTitle icon={AlertTriangle}>What needs attention</SectionTitle>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 32 }}>
-        <Card style={{ borderLeft: `3px solid ${C.critical}` }}>
-          <div style={{ fontSize: 11, color: C.critical, fontWeight: 700, marginBottom: 6 }}>IMMEDIATE ATTENTION</div>
-          <div style={{ fontSize: 13.5, color: C.textPrimary, lineHeight: 1.5 }}>
-            <b style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{rows.filter((r) => r.isOpen && r.breached && r.sevNum === 5).length}</b> critical vulnerabilities breached SLA
+      {/* Threat Radar Attention Grid */}
+      <SectionTitle icon={AlertTriangle} badge="CRITICAL DEFENSE VECTOR">Security Threat &amp; Remediation Attention</SectionTitle>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14, marginBottom: 28 }}>
+        <Card glowColor="#ef4444" style={{ background: "linear-gradient(155deg, rgba(239, 68, 68, 0.12) 0%, rgba(10, 14, 24, 0.95) 100%)", border: "1px solid rgba(239, 68, 68, 0.35)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <div style={{ fontSize: 11, color: "#f87171", fontWeight: 800, letterSpacing: 0.8, fontFamily: "'JetBrains Mono', monospace" }}>IMMEDIATE ACTION</div>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#ef4444", boxShadow: "0 0 8px #ef4444" }} className="vd-pulse-red" />
+          </div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: "#ef4444", fontFamily: "'JetBrains Mono', monospace", marginBottom: 4 }}>
+            {criticalBreached}
+          </div>
+          <div style={{ fontSize: 12.5, color: "#cbd5e1", lineHeight: 1.4 }}>
+            Critical findings have <strong>breached SLA</strong> and require emergency change requests.
           </div>
         </Card>
-        <Card style={{ borderLeft: `3px solid ${C.high}` }}>
-          <div style={{ fontSize: 11, color: C.high, fontWeight: 700, marginBottom: 6 }}>HIGH PRIORITY</div>
-          <div style={{ fontSize: 13.5, color: C.textPrimary, lineHeight: 1.5 }}>
-            <b style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{rows.filter((r) => r.isOpen && r.breached && r.sevNum === 4).length}</b> high severity vulnerabilities are overdue
+
+        <Card glowColor="#f97316" style={{ background: "linear-gradient(155deg, rgba(249, 115, 22, 0.12) 0%, rgba(10, 14, 24, 0.95) 100%)", border: "1px solid rgba(249, 115, 22, 0.35)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <div style={{ fontSize: 11, color: "#fb923c", fontWeight: 800, letterSpacing: 0.8, fontFamily: "'JetBrains Mono', monospace" }}>HIGH OVERDUE</div>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#f97316", boxShadow: "0 0 8px #f97316" }} />
+          </div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: "#f97316", fontFamily: "'JetBrains Mono', monospace", marginBottom: 4 }}>
+            {highBreached}
+          </div>
+          <div style={{ fontSize: 12.5, color: "#cbd5e1", lineHeight: 1.4 }}>
+            High severity vulnerabilities past deadline &mdash; prioritize in current sprint.
           </div>
         </Card>
-        <Card style={{ borderLeft: `3px solid ${C.medium}` }}>
-          <div style={{ fontSize: 11, color: C.medium, fontWeight: 700, marginBottom: 6 }}>APPROACHING SLA</div>
-          <div style={{ fontSize: 13.5, color: C.textPrimary, lineHeight: 1.5 }}>
-            <b style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{approaching}</b> vulnerabilities breach SLA within 15 days
+
+        <Card glowColor="#eab308" style={{ background: "linear-gradient(155deg, rgba(234, 179, 8, 0.1) 0%, rgba(10, 14, 24, 0.95) 100%)", border: "1px solid rgba(234, 179, 8, 0.35)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <div style={{ fontSize: 11, color: "#facc15", fontWeight: 800, letterSpacing: 0.8, fontFamily: "'JetBrains Mono', monospace" }}>SLA EXPIRING SOON</div>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#eab308" }} />
+          </div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: "#facc15", fontFamily: "'JetBrains Mono', monospace", marginBottom: 4 }}>
+            {approaching}
+          </div>
+          <div style={{ fontSize: 12.5, color: "#cbd5e1", lineHeight: 1.4 }}>
+            Findings breaching SLA within <strong>&le; 15 days</strong>. Requires immediate developer notice.
           </div>
         </Card>
-        <Card style={{ borderLeft: `3px solid ${C.success}` }}>
-          <div style={{ fontSize: 11, color: C.success, fontWeight: 700, marginBottom: 6 }}>REOPENED</div>
-          <div style={{ fontSize: 13.5, color: C.textPrimary, lineHeight: 1.5 }}>
-            <b style={{ fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{rows.filter((r) => r.isOpen && r.isReopened).length}</b> vulnerabilities have been reopened
+
+        <Card glowColor="#38bdf8" style={{ background: "linear-gradient(155deg, rgba(56, 189, 248, 0.1) 0%, rgba(10, 14, 24, 0.95) 100%)", border: "1px solid rgba(56, 189, 248, 0.35)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <div style={{ fontSize: 11, color: "#38bdf8", fontWeight: 800, letterSpacing: 0.8, fontFamily: "'JetBrains Mono', monospace" }}>REOPENED FINDINGS</div>
+            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#38bdf8" }} />
+          </div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: "#38bdf8", fontFamily: "'JetBrains Mono', monospace", marginBottom: 4 }}>
+            {reopenedCount}
+          </div>
+          <div style={{ fontSize: 12.5, color: "#cbd5e1", lineHeight: 1.4 }}>
+            Vulnerabilities detected again after prior fix &mdash; check regression testing.
           </div>
         </Card>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "260px 1fr 1fr", gap: 16, marginBottom: 32 }}>
-        <Card style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <SectionTitle>Security posture</SectionTitle>
+      {/* Interactive Cyber Charts Grid */}
+      <div style={{ display: "grid", gridTemplateColumns: "280px 1.1fr 1.2fr", gap: 16, marginBottom: 28 }}>
+        {/* Posture Score Gauge */}
+        <Card style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center" }} glowColor="#38bdf8">
+          <SectionTitle icon={ShieldCheck}>Security Posture</SectionTitle>
           <Gauge score={posture} />
-          <div style={{ fontSize: 11, color: C.textMuted, textAlign: "center", marginTop: 10, lineHeight: 1.5 }}>
-            Weighted blend of SLA compliance, critical exposure, and average vulnerability age
+          <div style={{ fontSize: 11.5, color: "#94a3b8", textAlign: "center", marginTop: 14, lineHeight: 1.5 }}>
+            Real-time weighted score incorporating SLA posture, critical exposure, and mean age.
           </div>
         </Card>
 
-        <Card>
-          <SectionTitle>Open vulnerabilities by severity</SectionTitle>
-          <ResponsiveContainer width="100%" height={200}>
+        {/* Severity Breakdown Donut */}
+        <Card glowColor="#ef4444">
+          <SectionTitle icon={PieChartIcon}>Open Findings by Severity</SectionTitle>
+          <ResponsiveContainer width="100%" height={210}>
             <PieChart>
-              <Pie data={donutData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={80} paddingAngle={2}>
-                {donutData.map((d, i) => <Cell key={i} fill={d.color} stroke={C.surface} strokeWidth={2} />)}
+              <Pie data={donutData} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={4}>
+                {donutData.map((d, i) => <Cell key={i} fill={d.color} stroke="#07090e" strokeWidth={3} />)}
               </Pie>
-              <Tooltip contentStyle={tooltipStyle} />
-              <Legend wrapperStyle={{ fontSize: 11, color: C.textSecondary }} />
+              <Tooltip contentStyle={{ background: "#0c1019", border: "1px solid #1e293b", borderRadius: 8, fontSize: 12, color: "#f8fafc" }} />
+              <Legend wrapperStyle={{ fontSize: 11.5, color: "#94a3b8" }} />
             </PieChart>
           </ResponsiveContainer>
         </Card>
 
-        <Card>
-          <SectionTitle>Infrastructure comparison</SectionTitle>
-          <ResponsiveContainer width="100%" height={200}>
+        {/* Infrastructure Distribution Bar Chart */}
+        <Card glowColor="#a855f7">
+          <SectionTitle icon={Building2}>Infrastructure Exposure</SectionTitle>
+          <ResponsiveContainer width="100%" height={210}>
             <BarChart data={infraAgg}>
-              <CartesianGrid stroke={C.border} vertical={false} />
-              <XAxis dataKey="infra" tick={axisStyle} interval={0} angle={-15} textAnchor="end" height={50} />
-              <YAxis tick={axisStyle} />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Bar dataKey="sev5" stackId="a" fill={C.critical} name="Critical" />
-              <Bar dataKey="sev4" stackId="a" fill={C.high} name="High" />
-              <Bar dataKey="sev3" stackId="a" fill={C.medium} name="Medium" radius={[4, 4, 0, 0]} />
+              <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" vertical={false} />
+              <XAxis dataKey="infra" tick={{ fontSize: 11, fill: "#94a3b8" }} interval={0} height={40} />
+              <YAxis tick={{ fontSize: 11, fill: "#94a3b8" }} />
+              <Tooltip contentStyle={{ background: "#0c1019", border: "1px solid #1e293b", borderRadius: 8, fontSize: 12, color: "#f8fafc" }} />
+              <Legend wrapperStyle={{ fontSize: 11.5, color: "#94a3b8" }} />
+              <Bar dataKey="sev5" stackId="a" fill="#ef4444" name="Critical" />
+              <Bar dataKey="sev4" stackId="a" fill="#f97316" name="High" />
+              <Bar dataKey="sev3" stackId="a" fill="#eab308" name="Medium" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </Card>
       </div>
 
-      <Card style={{ marginBottom: 20 }}>
-        <SectionTitle icon={Clock}>Risk pulse &mdash; age &times; severity</SectionTitle>
+      {/* Ageing Risk Matrix HeatMap */}
+      <Card style={{ marginBottom: 24 }} glowColor="#00f2fe">
+        <SectionTitle icon={Clock} badge="0 - 365+ DAYS BREAKDOWN">Risk Heatmap &mdash; Age &times; Severity Matrix</SectionTitle>
         <HeatMap data={ageingHeat} />
       </Card>
 
-      <Card>
-        <SectionTitle icon={Info}>Data quality</SectionTitle>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-          <div><div style={{ fontSize: 20, fontWeight: 700, color: C.textPrimary, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{dataQuality.total}</div><div style={{ fontSize: 11.5, color: C.textMuted }}>Total rows parsed</div></div>
-          <div><div style={{ fontSize: 20, fontWeight: 700, color: dataQuality.missingSeverity ? C.medium : C.textPrimary, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{dataQuality.missingSeverity}</div><div style={{ fontSize: 11.5, color: C.textMuted }}>Missing risk rating</div></div>
-          <div><div style={{ fontSize: 20, fontWeight: 700, color: dataQuality.missingDates ? C.medium : C.textPrimary, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{dataQuality.missingDates}</div><div style={{ fontSize: 11.5, color: C.textMuted }}>Missing detection dates</div></div>
-          <div><div style={{ fontSize: 20, fontWeight: 700, color: dataQuality.duplicates ? C.medium : C.textPrimary, fontFamily: "'JetBrains Mono', ui-monospace, monospace" }}>{dataQuality.duplicates}</div><div style={{ fontSize: 11.5, color: C.textMuted }}>Duplicate unique IDs</div></div>
+      {/* Data Health & Reconciliation Telemetry */}
+      <Card glowColor="#10b981">
+        <SectionTitle icon={Info}>Dataset Health &amp; Reconciliation</SectionTitle>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 16 }}>
+          <div style={{ background: "#0c1019", padding: "12px 16px", borderRadius: 10, border: "1px solid #1e293b" }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: "#f8fafc", fontFamily: "'JetBrains Mono', monospace" }}>{dataQuality.total.toLocaleString()}</div>
+            <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", fontWeight: 700, marginTop: 2 }}>Parsed Rows</div>
+          </div>
+          <div style={{ background: "#0c1019", padding: "12px 16px", borderRadius: 10, border: "1px solid #1e293b" }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: dataQuality.missingSeverity ? "#facc15" : "#10b981", fontFamily: "'JetBrains Mono', monospace" }}>{dataQuality.missingSeverity}</div>
+            <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", fontWeight: 700, marginTop: 2 }}>Missing Severity</div>
+          </div>
+          <div style={{ background: "#0c1019", padding: "12px 16px", borderRadius: 10, border: "1px solid #1e293b" }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: dataQuality.missingDates ? "#facc15" : "#10b981", fontFamily: "'JetBrains Mono', monospace" }}>{dataQuality.missingDates}</div>
+            <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", fontWeight: 700, marginTop: 2 }}>Missing Dates</div>
+          </div>
+          <div style={{ background: "#0c1019", padding: "12px 16px", borderRadius: 10, border: "1px solid #1e293b" }}>
+            <div style={{ fontSize: 22, fontWeight: 800, color: dataQuality.duplicates ? "#f87171" : "#10b981", fontFamily: "'JetBrains Mono', monospace" }}>{dataQuality.duplicates}</div>
+            <div style={{ fontSize: 11, color: "#64748b", textTransform: "uppercase", fontWeight: 700, marginTop: 2 }}>Duplicates</div>
+          </div>
         </div>
       </Card>
     </div>
@@ -4224,7 +4397,7 @@ function App() {
   const [matchInfo, setMatchInfo] = useState(null);
   const [page, setPage] = useState("overview");
   const [selectedVuln, setSelectedVuln] = useState(null);
-  const [filters, setFilters] = useState({ severity: "all", vulnStatus: "all", infra: "all", slaStatus: "all", search: "", csp: "all", ifPci: "all", appName: "" });
+  const [filters, setFilters] = useState({ severity: [], vulnStatus: [], infra: [], slaStatus: [], search: "", csp: [], ifPci: [], appName: "" });
 
   const handleData = (computed, name, matched, total) => {
     const filtered = computed.filter((r) => r.sevNum >= 3);
@@ -4253,28 +4426,52 @@ function App() {
   const filteredRows = useMemo(() => {
     if (!allRows) return [];
     return allRows.filter((r) => {
-      if (filters.severity !== "all" && r.sevNum !== filters.severity) return false;
-      if (filters.vulnStatus && filters.vulnStatus !== "all") {
+      // 1. Severity multi-select
+      if (filters.severity.length > 0 && !filters.severity.includes(r.sevNum)) return false;
+
+      // 2. Vulnerability Status multi-select
+      if (filters.vulnStatus.length > 0) {
         const vStat = String(r.vulnStatus || (r.isOpen ? "Active" : "Fixed")).trim().toLowerCase();
-        const target = String(filters.vulnStatus).trim().toLowerCase();
-        if (target === "active" || target === "open") {
-          if (!r.isOpen && !vStat.includes("active") && !vStat.includes("open")) return false;
-        } else if (target === "reopened" || target === "re-opened") {
-          if (!vStat.includes("reopen") && !vStat.includes("re-open")) return false;
-        } else if (target === "fixed" || target === "closed") {
-          if (r.isOpen && !vStat.includes("fix") && !vStat.includes("close")) return false;
-        } else if (target === "new") {
-          if (!vStat.includes("new")) return false;
-        } else {
-          if (vStat !== target) return false;
-        }
+        const matchesAny = filters.vulnStatus.some(targetSt => {
+          const target = String(targetSt).trim().toLowerCase();
+          if (target === "active" || target === "open") {
+            return r.isOpen || vStat.includes("active") || vStat.includes("open");
+          } else if (target === "reopened" || target === "re-opened") {
+            return vStat.includes("reopen") || vStat.includes("re-open");
+          } else if (target === "fixed" || target === "closed") {
+            return !r.isOpen || vStat.includes("fix") || vStat.includes("close");
+          } else if (target === "new") {
+            return vStat.includes("new");
+          } else {
+            return vStat === target;
+          }
+        });
+        if (!matchesAny) return false;
       }
-      if (filters.infra !== "all" && r.infra !== filters.infra) return false;
-      if (filters.slaStatus === "breached" && !r.breached) return false;
-      if (filters.slaStatus === "within" && (r.breached || !r.isOpen)) return false;
-      if (filters.csp !== "all" && r.cspVal !== filters.csp) return false;
-      if (filters.ifPci !== "all" && r.ifOrPciVal !== filters.ifPci) return false;
+
+      // 3. Infrastructure multi-select
+      if (filters.infra.length > 0 && !filters.infra.includes(r.infra)) return false;
+
+      // 4. SLA Posture multi-select
+      if (filters.slaStatus.length > 0) {
+        const matchesSla = filters.slaStatus.some(st => {
+          if (st === "breached") return r.breached;
+          if (st === "within") return !r.breached && r.isOpen;
+          return true;
+        });
+        if (!matchesSla) return false;
+      }
+
+      // 5. CSP multi-select
+      if (filters.csp.length > 0 && !filters.csp.includes(r.cspVal)) return false;
+
+      // 6. IF / PCI multi-select
+      if (filters.ifPci.length > 0 && !filters.ifPci.includes(r.ifOrPciVal)) return false;
+
+      // 7. App Name filter
       if (filters.appName && !r.appNameVal.toLowerCase().includes(filters.appName.toLowerCase())) return false;
+
+      // 8. Omni search query
       if (filters.search) {
         const s = filters.search.toLowerCase();
         const hay = `${r.ip} ${r.dns} ${r.fqdn} ${r.vulnName} ${r.cveId} ${r.assetKey}`.toLowerCase();
