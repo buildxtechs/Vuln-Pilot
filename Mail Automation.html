@@ -1069,80 +1069,393 @@ function TopBar({ fileName, kpi, posture }) {
 
 /* --------------------------------- filter bar --------------------------------- */
 
-function FilterBar({ filters, setFilters, infraOptions, cspOptions, ifPciOptions, appNameOptions }) {
-  const chip = (key, value, label) => (
-    <div key={String(value)} onClick={() => setFilters((f) => ({ ...f, [key]: value }))} style={btnStyle(filters[key] === value)}>
-      {label}
-    </div>
-  );
-  const isClean = filters.severity === "all" && filters.infra === "all" && filters.slaStatus === "all" &&
-    !filters.search && filters.csp === "all" && filters.ifPci === "all" && !filters.appName;
+/* --------------------------------- filter bar --------------------------------- */
+
+function FilterBar({ filters, setFilters, infraOptions, cspOptions, ifPciOptions, appNameOptions, vulnStatusOptions, totalCount = 0, filteredCount = 0 }) {
+  const isClean = filters.severity === "all" &&
+    filters.vulnStatus === "all" &&
+    filters.infra === "all" &&
+    filters.slaStatus === "all" &&
+    !filters.search &&
+    filters.csp === "all" &&
+    filters.ifPci === "all" &&
+    !filters.appName;
+
+  const resetFilters = () => {
+    setFilters({
+      severity: "all",
+      vulnStatus: "all",
+      infra: "all",
+      slaStatus: "all",
+      search: "",
+      csp: "all",
+      ifPci: "all",
+      appName: ""
+    });
+  };
+
+  const statusList = useMemo(() => {
+    const defaultList = ["Active", "Reopened", "Fixed"];
+    if (!vulnStatusOptions || !vulnStatusOptions.length) return defaultList;
+    return vulnStatusOptions;
+  }, [vulnStatusOptions]);
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (filters.severity !== "all") count++;
+    if (filters.vulnStatus !== "all") count++;
+    if (filters.infra !== "all") count++;
+    if (filters.slaStatus !== "all") count++;
+    if (filters.search) count++;
+    if (filters.csp !== "all") count++;
+    if (filters.ifPci !== "all") count++;
+    if (filters.appName) count++;
+    return count;
+  }, [filters]);
+
+  const filterCardStyle = {
+    background: "linear-gradient(165deg, #181c28 0%, #0f131d 100%)",
+    border: "1px solid #28334a",
+    borderRadius: 14,
+    padding: "16px 18px",
+    marginBottom: 20,
+    boxShadow: "0 8px 24px rgba(0, 0, 0, 0.45)",
+    display: "flex",
+    flexDirection: "column",
+    gap: 14
+  };
+
+  const sectionLabelStyle = {
+    fontSize: 10.5,
+    fontWeight: 700,
+    color: "#94a3b8",
+    textTransform: "uppercase",
+    letterSpacing: "0.8px",
+    marginBottom: 6,
+    display: "flex",
+    alignItems: "center",
+    gap: 6
+  };
+
+  const pillGroupStyle = {
+    display: "flex",
+    gap: 6,
+    flexWrap: "wrap"
+  };
+
+  const getPillStyle = (active, activeBg, activeColor, activeBorder) => ({
+    padding: "6px 12px",
+    borderRadius: 7,
+    fontSize: 12,
+    fontWeight: active ? 600 : 500,
+    cursor: "pointer",
+    border: `1px solid ${active ? (activeBorder || activeColor || C.accent) : "#2d374d"}`,
+    background: active ? (activeBg || C.accentDim) : "#131722",
+    color: active ? (activeColor || C.accent) : "#cbd5e1",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: 6,
+    whiteSpace: "nowrap",
+    boxShadow: active ? `0 2px 8px ${activeBg || 'rgba(99, 102, 241, 0.25)'}` : "none",
+    transition: "all 0.18s ease",
+    userSelect: "none"
+  });
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
-      <div style={{ position: "relative" }}>
-        <Search size={14} color={C.textMuted} style={{ position: "absolute", left: 10, top: 9 }} />
-        <input
-          value={filters.search}
-          onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
-          placeholder="Search IP, host, CVE, vulnerability..."
-          style={{
-            background: C.bgElevated, border: `1px solid ${C.borderLight}`, borderRadius: 8,
-            padding: "8px 12px 8px 32px", fontSize: 13, color: C.textPrimary, width: 220, outline: "none",
-            transition: "border-color 0.2s"
-          }}
-        />
+    <div style={filterCardStyle}>
+      {/* Top Header Row: Title, Scope summary, Search, App Filter & Clear All */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12, paddingBottom: 12, borderBottom: "1px solid #232c3f" }}>
+        
+        {/* Left: Omni Search & App Search */}
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", flex: 1, minWidth: 280 }}>
+          {/* Omni Search */}
+          <div style={{ position: "relative", flex: 1, minWidth: 240, maxWidth: 360 }}>
+            <Search size={14} color="#64748b" style={{ position: "absolute", left: 11, top: 10 }} />
+            <input
+              value={filters.search}
+              onChange={(e) => setFilters(f => ({ ...f, search: e.target.value }))}
+              placeholder="Search IP, host, CVE, vulnerability..."
+              style={{
+                width: "100%",
+                background: "#0d1017",
+                border: "1px solid #2d374d",
+                borderRadius: 8,
+                padding: "8px 28px 8px 34px",
+                fontSize: 12.5,
+                color: "#f8fafc",
+                outline: "none"
+              }}
+            />
+            {filters.search && (
+              <div
+                onClick={() => setFilters(f => ({ ...f, search: "" }))}
+                style={{ position: "absolute", right: 8, top: 8, cursor: "pointer", padding: 2, borderRadius: 4, background: "#1f2738", display: "flex" }}
+              >
+                <X size={12} color="#94a3b8" />
+              </div>
+            )}
+          </div>
+
+          {/* App Name Filter */}
+          <div style={{ position: "relative", width: 200 }}>
+            <input
+              list="vd-app-list"
+              value={filters.appName}
+              onChange={(e) => setFilters(f => ({ ...f, appName: e.target.value }))}
+              placeholder="Filter by App Name..."
+              style={{
+                width: "100%",
+                background: "#0d1017",
+                border: "1px solid #2d374d",
+                borderRadius: 8,
+                padding: "8px 26px 8px 12px",
+                fontSize: 12.5,
+                color: "#f8fafc",
+                outline: "none"
+              }}
+            />
+            {filters.appName && (
+              <div
+                onClick={() => setFilters(f => ({ ...f, appName: "" }))}
+                style={{ position: "absolute", right: 8, top: 8, cursor: "pointer", padding: 2, borderRadius: 4, background: "#1f2738", display: "flex" }}
+              >
+                <X size={12} color="#94a3b8" />
+              </div>
+            )}
+            <datalist id="vd-app-list">
+              {appNameOptions.map(o => <option key={o} value={o} />)}
+            </datalist>
+          </div>
+        </div>
+
+        {/* Right: Record Counter & Clear Filters Action */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {totalCount > 0 && (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5, color: "#94a3b8", background: "#0d1017", padding: "5px 12px", borderRadius: 6, border: "1px solid #242c3d" }}>
+              <span style={{ color: C.accent, fontWeight: 700 }}>{filteredCount.toLocaleString()}</span> of <span>{totalCount.toLocaleString()}</span> findings
+              {activeFilterCount > 0 && (
+                <span style={{ marginLeft: 4, background: "rgba(99, 102, 241, 0.2)", color: C.accent, padding: "1px 6px", borderRadius: 10, fontWeight: 700, fontSize: 10.5 }}>
+                  {activeFilterCount} active
+                </span>
+              )}
+            </div>
+          )}
+
+          {!isClean && (
+            <button
+              onClick={resetFilters}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                padding: "6px 12px",
+                borderRadius: 7,
+                fontSize: 11.5,
+                fontWeight: 600,
+                color: "#f87171",
+                background: "rgba(239, 68, 68, 0.12)",
+                border: "1px solid rgba(239, 68, 68, 0.35)",
+                cursor: "pointer",
+                transition: "all 0.15s"
+              }}
+              title="Clear all active filters"
+            >
+              <X size={13} /> Reset Filters
+            </button>
+          )}
+        </div>
       </div>
 
-      <div style={{ position: "relative" }}>
-        <input
-          list="vd-app-list"
-          value={filters.appName}
-          onChange={(e) => setFilters((f) => ({ ...f, appName: e.target.value }))}
-          placeholder="Filter by app name"
-          style={{
-            background: C.bgElevated, border: `1px solid ${C.borderLight}`, borderRadius: 8,
-            padding: "8px 12px", fontSize: 13, color: C.textPrimary, width: 170, outline: "none",
-            transition: "border-color 0.2s"
-          }}
-        />
-        <datalist id="vd-app-list">
-          {appNameOptions.map((o) => <option key={o} value={o} />)}
-        </datalist>
+      {/* Main Filter Sections Row: Severity, Vulnerability Status, SLA, Infra, CSP, IF/PCI */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16 }}>
+        
+        {/* 1. Severity Filter */}
+        <div>
+          <div style={sectionLabelStyle}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#ef4444" }} />
+            Severity Level
+          </div>
+          <div style={pillGroupStyle}>
+            <div onClick={() => setFilters(f => ({ ...f, severity: "all" }))} style={getPillStyle(filters.severity === "all")}>
+              All
+            </div>
+            <div onClick={() => setFilters(f => ({ ...f, severity: 5 }))} style={getPillStyle(filters.severity === 5, "rgba(239, 68, 68, 0.2)", "#f87171", "#ef4444")}>
+              <span style={{ color: "#ef4444", fontSize: 10 }}>●</span> Critical
+            </div>
+            <div onClick={() => setFilters(f => ({ ...f, severity: 4 }))} style={getPillStyle(filters.severity === 4, "rgba(249, 115, 22, 0.2)", "#fb923c", "#f97316")}>
+              <span style={{ color: "#f97316", fontSize: 10 }}>●</span> High
+            </div>
+            <div onClick={() => setFilters(f => ({ ...f, severity: 3 }))} style={getPillStyle(filters.severity === 3, "rgba(234, 179, 8, 0.2)", "#facc15", "#eab308")}>
+              <span style={{ color: "#eab308", fontSize: 10 }}>●</span> Medium
+            </div>
+          </div>
+        </div>
+
+        {/* 2. Vulnerability Status Filter (NEW) */}
+        <div>
+          <div style={sectionLabelStyle}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#38bdf8" }} />
+            Vuln Status
+          </div>
+          <div style={pillGroupStyle}>
+            <div onClick={() => setFilters(f => ({ ...f, vulnStatus: "all" }))} style={getPillStyle(filters.vulnStatus === "all")}>
+              All
+            </div>
+            {statusList.slice(0, 3).map((st) => {
+              const isAct = filters.vulnStatus === st;
+              const isFixed = st.toLowerCase().includes("fix") || st.toLowerCase().includes("close");
+              const isReopen = st.toLowerCase().includes("reopen") || st.toLowerCase().includes("re-open");
+              const color = isFixed ? "#34d399" : isReopen ? "#f59e0b" : "#38bdf8";
+              const bg = isFixed ? "rgba(52, 211, 153, 0.18)" : isReopen ? "rgba(245, 158, 11, 0.18)" : "rgba(56, 189, 248, 0.18)";
+              return (
+                <div key={st} onClick={() => setFilters(f => ({ ...f, vulnStatus: st }))} style={getPillStyle(isAct, bg, color, color)}>
+                  {st}
+                </div>
+              );
+            })}
+            {statusList.length > 3 && (
+              <select
+                value={statusList.includes(filters.vulnStatus) && statusList.indexOf(filters.vulnStatus) >= 3 ? filters.vulnStatus : ""}
+                onChange={(e) => e.target.value && setFilters(f => ({ ...f, vulnStatus: e.target.value }))}
+                style={{ ...selectStyle, padding: "5px 8px", fontSize: 11.5, height: 31, minWidth: 90 }}
+              >
+                <option value="">More...</option>
+                {statusList.slice(3).map(st => <option key={st} value={st}>{st}</option>)}
+              </select>
+            )}
+          </div>
+        </div>
+
+        {/* 3. SLA Posture Filter */}
+        <div>
+          <div style={sectionLabelStyle}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981" }} />
+            SLA Posture
+          </div>
+          <div style={pillGroupStyle}>
+            <div onClick={() => setFilters(f => ({ ...f, slaStatus: "all" }))} style={getPillStyle(filters.slaStatus === "all")}>
+              All
+            </div>
+            <div onClick={() => setFilters(f => ({ ...f, slaStatus: "breached" }))} style={getPillStyle(filters.slaStatus === "breached", "rgba(239, 68, 68, 0.2)", "#f87171", "#ef4444")}>
+              Breached
+            </div>
+            <div onClick={() => setFilters(f => ({ ...f, slaStatus: "within" }))} style={getPillStyle(filters.slaStatus === "within", "rgba(16, 185, 129, 0.2)", "#34d399", "#10b981")}>
+              Within SLA
+            </div>
+          </div>
+        </div>
+
+        {/* 4. Infrastructure & Cloud Segment */}
+        <div>
+          <div style={sectionLabelStyle}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#a855f7" }} />
+            Infrastructure &amp; Scope
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <div style={pillGroupStyle}>
+              <div onClick={() => setFilters(f => ({ ...f, infra: "all" }))} style={getPillStyle(filters.infra === "all")}>
+                All
+              </div>
+              {infraOptions.map((i) => (
+                <div key={i} onClick={() => setFilters(f => ({ ...f, infra: i }))} style={getPillStyle(filters.infra === i, "rgba(168, 85, 247, 0.18)", "#c084fc", "#a855f7")}>
+                  {i}
+                </div>
+              ))}
+            </div>
+
+            {/* Dropdowns */}
+            <div style={{ display: "flex", gap: 6 }}>
+              <select
+                value={filters.csp}
+                onChange={(e) => setFilters(f => ({ ...f, csp: e.target.value }))}
+                style={{
+                  ...selectStyle,
+                  padding: "5px 10px",
+                  fontSize: 11.5,
+                  height: 31,
+                  background: filters.csp !== "all" ? "rgba(99, 102, 241, 0.18)" : "#131722",
+                  borderColor: filters.csp !== "all" ? C.accent : "#2d374d",
+                  color: filters.csp !== "all" ? C.accent : "#cbd5e1"
+                }}
+              >
+                <option value="all">All CSP</option>
+                {cspOptions.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+
+              <select
+                value={filters.ifPci}
+                onChange={(e) => setFilters(f => ({ ...f, ifPci: e.target.value }))}
+                style={{
+                  ...selectStyle,
+                  padding: "5px 10px",
+                  fontSize: 11.5,
+                  height: 31,
+                  background: filters.ifPci !== "all" ? "rgba(234, 179, 8, 0.18)" : "#131722",
+                  borderColor: filters.ifPci !== "all" ? "#eab308" : "#2d374d",
+                  color: filters.ifPci !== "all" ? "#facc15" : "#cbd5e1"
+                }}
+              >
+                <option value="all">All IF / PCI</option>
+                {ifPciOptions.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+            </div>
+          </div>
+        </div>
+
       </div>
 
-      <div style={{ display: "flex", gap: 6 }}>
-        {chip("severity", "all", "All severity")}
-        {[5, 4, 3].map((s) => chip("severity", s, SEV_META[s].label))}
-      </div>
-
-      <div style={{ display: "flex", gap: 6 }}>
-        {chip("infra", "all", "All infra")}
-        {infraOptions.map((i) => chip("infra", i, i))}
-      </div>
-
-      <div style={{ display: "flex", gap: 6 }}>
-        {chip("slaStatus", "all", "All SLA")}
-        {chip("slaStatus", "breached", "Breached")}
-        {chip("slaStatus", "within", "Within SLA")}
-      </div>
-
-      <select value={filters.csp} onChange={(e) => setFilters((f) => ({ ...f, csp: e.target.value }))} style={selectStyle}>
-        <option value="all">All CSP</option>
-        {cspOptions.map((o) => <option key={o} value={o}>{o}</option>)}
-      </select>
-
-      <select value={filters.ifPci} onChange={(e) => setFilters((f) => ({ ...f, ifPci: e.target.value }))} style={selectStyle}>
-        <option value="all">All IF / PCI</option>
-        {ifPciOptions.map((o) => <option key={o} value={o}>{o}</option>)}
-      </select>
-
+      {/* Active Filter Pills Bar (Quick Dismiss) */}
       {!isClean && (
-        <div
-          onClick={() => setFilters({ severity: "all", infra: "all", slaStatus: "all", search: "", csp: "all", ifPci: "all", appName: "" })}
-          style={{ ...btnStyle(false), color: C.critical, borderColor: C.critical }}
-        >
-          <X size={12} /> Clear
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", paddingTop: 8, borderTop: "1px dashed #28334a" }}>
+          <span style={{ fontSize: 11, color: "#64748b", fontWeight: 600 }}>Active Filters:</span>
+          {filters.search && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#1e293b", color: "#f8fafc", padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>
+              Search: "{filters.search}"
+              <X size={11} style={{ cursor: "pointer" }} onClick={() => setFilters(f => ({ ...f, search: "" }))} />
+            </span>
+          )}
+          {filters.appName && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "#1e293b", color: "#f8fafc", padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>
+              App: {filters.appName}
+              <X size={11} style={{ cursor: "pointer" }} onClick={() => setFilters(f => ({ ...f, appName: "" }))} />
+            </span>
+          )}
+          {filters.severity !== "all" && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(239, 68, 68, 0.2)", color: "#f87171", padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>
+              Severity: {SEV_META[filters.severity]?.label || filters.severity}
+              <X size={11} style={{ cursor: "pointer" }} onClick={() => setFilters(f => ({ ...f, severity: "all" }))} />
+            </span>
+          )}
+          {filters.vulnStatus !== "all" && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(56, 189, 248, 0.2)", color: "#38bdf8", padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>
+              Status: {filters.vulnStatus}
+              <X size={11} style={{ cursor: "pointer" }} onClick={() => setFilters(f => ({ ...f, vulnStatus: "all" }))} />
+            </span>
+          )}
+          {filters.slaStatus !== "all" && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: filters.slaStatus === "breached" ? "rgba(239, 68, 68, 0.2)" : "rgba(16, 185, 129, 0.2)", color: filters.slaStatus === "breached" ? "#f87171" : "#34d399", padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>
+              SLA: {filters.slaStatus === "breached" ? "Breached" : "Within SLA"}
+              <X size={11} style={{ cursor: "pointer" }} onClick={() => setFilters(f => ({ ...f, slaStatus: "all" }))} />
+            </span>
+          )}
+          {filters.infra !== "all" && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(168, 85, 247, 0.2)", color: "#c084fc", padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>
+              Infra: {filters.infra}
+              <X size={11} style={{ cursor: "pointer" }} onClick={() => setFilters(f => ({ ...f, infra: "all" }))} />
+            </span>
+          )}
+          {filters.csp !== "all" && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(99, 102, 241, 0.2)", color: C.accent, padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>
+              CSP: {filters.csp}
+              <X size={11} style={{ cursor: "pointer" }} onClick={() => setFilters(f => ({ ...f, csp: "all" }))} />
+            </span>
+          )}
+          {filters.ifPci !== "all" && (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(234, 179, 8, 0.2)", color: "#facc15", padding: "2px 8px", borderRadius: 4, fontSize: 11 }}>
+              IF/PCI: {filters.ifPci}
+              <X size={11} style={{ cursor: "pointer" }} onClick={() => setFilters(f => ({ ...f, ifPci: "all" }))} />
+            </span>
+          )}
         </div>
       )}
     </div>
@@ -3911,7 +4224,7 @@ function App() {
   const [matchInfo, setMatchInfo] = useState(null);
   const [page, setPage] = useState("overview");
   const [selectedVuln, setSelectedVuln] = useState(null);
-  const [filters, setFilters] = useState({ severity: "all", infra: "all", slaStatus: "all", search: "", csp: "all", ifPci: "all", appName: "" });
+  const [filters, setFilters] = useState({ severity: "all", vulnStatus: "all", infra: "all", slaStatus: "all", search: "", csp: "all", ifPci: "all", appName: "" });
 
   const handleData = (computed, name, matched, total) => {
     const filtered = computed.filter((r) => r.sevNum >= 3);
@@ -3926,10 +4239,36 @@ function App() {
   const ifPciOptions = useMemo(() => (allRows ? uniqueVals(allRows, "ifOrPciVal") : []), [allRows]);
   const appNameOptions = useMemo(() => (allRows ? uniqueVals(allRows, "appNameVal") : []), [allRows]);
 
+  const vulnStatusOptions = useMemo(() => {
+    if (!allRows) return [];
+    const rawSet = new Set();
+    allRows.forEach((r) => {
+      const s = r.vulnStatus || (r.isOpen ? "Active" : "Fixed");
+      if (s && s !== "-") rawSet.add(s.trim());
+    });
+    const list = Array.from(rawSet).filter(Boolean).sort();
+    return list.length ? list : ["Active", "Reopened", "Fixed"];
+  }, [allRows]);
+
   const filteredRows = useMemo(() => {
     if (!allRows) return [];
     return allRows.filter((r) => {
       if (filters.severity !== "all" && r.sevNum !== filters.severity) return false;
+      if (filters.vulnStatus && filters.vulnStatus !== "all") {
+        const vStat = String(r.vulnStatus || (r.isOpen ? "Active" : "Fixed")).trim().toLowerCase();
+        const target = String(filters.vulnStatus).trim().toLowerCase();
+        if (target === "active" || target === "open") {
+          if (!r.isOpen && !vStat.includes("active") && !vStat.includes("open")) return false;
+        } else if (target === "reopened" || target === "re-opened") {
+          if (!vStat.includes("reopen") && !vStat.includes("re-open")) return false;
+        } else if (target === "fixed" || target === "closed") {
+          if (r.isOpen && !vStat.includes("fix") && !vStat.includes("close")) return false;
+        } else if (target === "new") {
+          if (!vStat.includes("new")) return false;
+        } else {
+          if (vStat !== target) return false;
+        }
+      }
       if (filters.infra !== "all" && r.infra !== filters.infra) return false;
       if (filters.slaStatus === "breached" && !r.breached) return false;
       if (filters.slaStatus === "within" && (r.breached || !r.isOpen)) return false;
@@ -4068,22 +4407,20 @@ function App() {
               </div>
 
               <p style={{ fontSize: 12.5, color: C.textSecondary, lineHeight: 1.5, marginBottom: 18, flexGrow: 1 }}>
-                Upload the weekly <strong>PowerBI consolidated data sheet</strong> to generate compliant Outlook follow-up notifications, SLA status gauges, and scan-type tables.
+                Directly upload your <strong>Qualys PowerBI Master Consolidated Sheet</strong> to run one-click automated email dispatch, engineer grouping, and preview follow-up notifications.
               </p>
 
               <UploadPanel
                 onData={(computed, name, matched, total) => {
-                  setAllRows(computed);
-                  setFileName(name);
-                  setMatchInfo({ matched, total });
-                  setPage("customDashboard");
+                  handleData(computed, name, matched, total);
+                  setPage("followMail");
                 }}
                 compact={true}
-                label="Drop PowerBI Data Sheet (.xlsx, .csv)"
+                label="Drop PowerBI File / Master Sheet"
               />
 
-              <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "#ca8a04" }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#eab308" }} />
+              <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: C.textMuted }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#facc15" }} />
                 <span>Navigates directly to <strong>Follow Mail Automation</strong></span>
               </div>
             </div>
@@ -4124,6 +4461,9 @@ function App() {
             filters={filters} setFilters={setFilters}
             infraOptions={infraOptions} cspOptions={cspOptions}
             ifPciOptions={ifPciOptions} appNameOptions={appNameOptions}
+            vulnStatusOptions={vulnStatusOptions}
+            totalCount={allRows ? allRows.length : 0}
+            filteredCount={filteredRows ? filteredRows.length : 0}
           />
         )}
 
