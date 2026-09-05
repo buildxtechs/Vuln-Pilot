@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>SPECTRA DISPATCH · Remediation Automation &amp; SLA Dispatcher</title>
+<link rel="icon" type="image/png" href="logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
@@ -965,9 +966,20 @@ function Sidebar({ page, setPage, fileName, rowCount, onReset }) {
       boxSizing: "border-box", zIndex: 40
     }}>
       <div style={{ padding: "0 10px 24px", display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ background: `linear-gradient(135deg, ${C.accent}, #8b5cf6)`, padding: 6, borderRadius: 8 }}>
-          <ShieldCheck size={20} color="#fff" />
-        </div>
+        <img
+          src="logo.png"
+          alt="SPECTRA Logo"
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 9,
+            objectFit: "cover",
+            border: `1px solid ${C.accent}`,
+            boxShadow: "0 0 14px rgba(99, 102, 241, 0.4)",
+            background: "#07090e",
+            flexShrink: 0
+          }}
+        />
         <div>
           <div style={{ fontSize: 14, fontWeight: 800, color: C.textPrimary, letterSpacing: 0.3 }}>SPECTRA DISPATCH</div>
           <div style={{ fontSize: 10, color: C.textMuted, fontWeight: 500 }}>Remediation Automation</div>

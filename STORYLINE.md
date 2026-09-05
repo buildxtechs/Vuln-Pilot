@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.png" width="120" alt="SPECTRA Logo" style="border-radius: 16px;" />
+</p>
+
 # 🚀 The SPECTRA Story: Engineering the Next-Gen Cyber Operations Fabric
 ### *How a Vision for Zero-Friction Vulnerability Operations Became the SPECTRA Platform*
 **By the IVM Team (Barath & Dhinakaran)**

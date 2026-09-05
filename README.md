@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.png" width="120" alt="SPECTRA Logo" style="border-radius: 16px;" />
+</p>
+
 # 🚀 SPECTRA OPS CENTER
 ### *Security Operations, Posture & Intelligence Platform*
 **Engineered by IVM Team (Barath & Dhinakaran) · Continuous Posture & Threat Defense**
