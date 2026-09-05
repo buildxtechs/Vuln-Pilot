@@ -11,27 +11,30 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
-  --bg:#0B0D12;
-  --bg-grid: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 0);
-  --surface:#12141b;
-  --surface-2:#191c25;
-  --surface-3:#20242f;
-  --border:#262a35;
-  --border-strong:#343a48;
-  --text:#eef0f4;
-  --text-dim:#96a0b0;
-  --text-faint:#616b7a;
+  --bg:#080A10;
+  --bg-grid: radial-gradient(circle at 1px 1px, rgba(0, 210, 255, 0.05) 1px, transparent 0);
+  --surface:#0e111a;
+  --surface-2:#141824;
+  --surface-3:#1c2233;
+  --border:#222a3d;
+  --border-strong:#323e59;
+  --text:#f0f4fc;
+  --text-dim:#94a4c2;
+  --text-faint:#5c6e8e;
   --accent:#E1122C;
   --accent-dim:#3a1017;
-  --accent-glow: rgba(225,18,44,0.38);
-  --crit:#B3001F;
+  --accent-glow: rgba(225,18,44,0.45);
+  --electric-blue:#00D2FF;
+  --electric-blue-dim: rgba(0, 210, 255, 0.12);
+  --electric-blue-glow: rgba(0, 210, 255, 0.4);
+  --crit:#FF1744;
   --high:#F0590B;
   --med:#F5A800;
-  --ok:#22C766;
-  --danger:#E1122C;
+  --ok:#00E676;
+  --danger:#FF1744;
   --aws:#FF9900;
-  --azure:#0E8AE0;
-  --onprem:#9B6BFF;
+  --azure:#00D2FF;
+  --onprem:#B388FF;
   --radius: 10px;
   --mono: 'JetBrains Mono', ui-monospace, monospace;
   --sans: 'Inter', -apple-system, sans-serif;
@@ -41,21 +44,22 @@
 html,body{margin:0;padding:0;}
 body{
   background:
-    linear-gradient(180deg, rgba(225,18,44,0.07), transparent 340px),
-    radial-gradient(circle at 85% 0%, rgba(14,138,224,0.06), transparent 40%),
+    linear-gradient(135deg, rgba(225,18,44,0.08) 0%, transparent 400px),
+    radial-gradient(circle at 90% 10%, rgba(0,210,255,0.09), transparent 45%),
+    radial-gradient(circle at 10% 90%, rgba(225,18,44,0.06), transparent 40%),
     var(--bg-grid),
     var(--bg);
-  background-size: auto, auto, 22px 22px, auto;
+  background-size: auto, auto, auto, 24px 24px, auto;
   color:var(--text);
   font-family:var(--sans);
   font-size:14px;
   -webkit-font-smoothing:antialiased;
 }
-::selection{ background: var(--accent); color:#fff; }
+::selection{ background: var(--electric-blue); color:#080A10; }
 ::-webkit-scrollbar{ width:10px; height:10px; }
 ::-webkit-scrollbar-track{ background:transparent; }
 ::-webkit-scrollbar-thumb{ background:var(--border-strong); border-radius:8px; }
-::-webkit-scrollbar-thumb:hover{ background:#4a5264; }
+::-webkit-scrollbar-thumb:hover{ background:#455578; }
 
 a{ color: var(--accent); }
 button{ font-family:var(--sans); cursor:pointer; }
@@ -72,14 +76,35 @@ input,select,textarea{ font-family:var(--sans); }
 .brand{ display:flex; align-items:center; gap:10px; padding:4px 6px 20px 6px; }
 .brand-mark{
   width:34px; height:34px; border-radius:9px; flex-shrink:0;
-  background: conic-gradient(from 220deg, var(--accent), #7A0A16, var(--accent));
+  background: linear-gradient(135deg, var(--accent) 0%, #7A0A16 50%, #00D2FF 100%);
   display:flex; align-items:center; justify-content:center;
-  box-shadow: 0 0 22px var(--accent-glow);
+  box-shadow: 0 0 20px var(--accent-glow), 0 0 10px var(--electric-blue-glow);
   font-family:var(--disp); font-weight:700; color:#fff; font-size:15px;
 }
 .brand-text{ line-height:1.15; }
 .brand-text .t1{ font-family:var(--disp); font-weight:700; font-size:15px; letter-spacing:0.2px; }
-.brand-text .t2{ font-size:10.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:1.2px; margin-top:2px; }
+.brand-text .t2{ font-size:10.5px; color:var(--electric-blue); text-transform:uppercase; letter-spacing:1.2px; margin-top:2px; font-weight:600; }
+
+.mode-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: var(--mono);
+  margin-bottom: 12px;
+}
+.mode-badge-pill.mode-iasp {
+  border-color: rgba(225,18,44,0.4);
+  color: #FF4D6A;
+}
+.mode-badge-pill.mode-powerbi {
+  border-color: rgba(0,210,255,0.4);
+  color: var(--electric-blue);
+}
 
 .nav{ display:flex; flex-direction:column; gap:3px; margin-top:6px; }
 .nav-item{
@@ -89,15 +114,19 @@ input,select,textarea{ font-family:var(--sans); }
 }
 .nav-item .ico{ width:16px; height:16px; flex-shrink:0; opacity:0.85; transition:transform .16s ease; }
 .nav-item:hover{ background:var(--surface-2); color:var(--text); transform:translateX(2px); }
-.nav-item:hover .ico{ transform:scale(1.1); }
-.nav-item.active{ background:var(--surface-3); color:#FF4D6A; border-color:var(--border-strong); border-left:2px solid var(--accent); }
+.nav-item:hover .ico{ transform:scale(1.1); color:var(--electric-blue); }
+.nav-item.active{ background:var(--surface-3); color:#fff; border-color:var(--border-strong); border-left:2px solid var(--electric-blue); box-shadow:inset 0 0 12px rgba(0,210,255,0.06); }
+.nav-item.active .ico{ color:var(--electric-blue); }
 .nav-item .n-badge{
   margin-left:auto; font-family:var(--mono); font-size:10px; background:var(--surface-3);
   color:var(--text-dim); padding:1px 6px; border-radius:20px; border:1px solid var(--border-strong);
 }
-.nav-item.active .n-badge{ background:var(--accent-dim); color:#FF4D6A; border-color:var(--accent-dim); }
+.nav-item.active .n-badge{ background:rgba(0,210,255,0.15); color:var(--electric-blue); border-color:rgba(0,210,255,0.3); }
 
-.nav-section-label{ font-size:10px; text-transform:uppercase; letter-spacing:1.4px; color:var(--text-faint); margin:16px 8px 6px; }
+.nav-section-label{ font-size:10px; text-transform:uppercase; letter-spacing:1.4px; color:var(--text-faint); margin:16px 8px 6px; display:flex; align-items:center; justify-content:space-between; }
+.nav-section-label .section-tag{ font-size:9px; padding:1px 5px; border-radius:4px; font-weight:600; }
+.nav-section-label .tag-pbi{ background:rgba(0,210,255,0.12); color:var(--electric-blue); border:1px solid rgba(0,210,255,0.25); }
+.nav-section-label .tag-iasp{ background:rgba(225,18,44,0.12); color:#FF4D6A; border:1px solid rgba(225,18,44,0.25); }
 
 .sidebar-foot{ margin-top:auto; padding-top:14px; border-top:1px solid var(--border); }
 .report-date-mini{ font-family:var(--mono); font-size:11px; color:var(--text-dim); padding:4px 6px; }
@@ -108,15 +137,16 @@ input,select,textarea{ font-family:var(--sans); }
 .pagehead{ display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:22px; flex-wrap:wrap; gap:14px;}
 .pagehead h1{ font-family:var(--disp); font-size:23px; margin:0 0 4px; font-weight:700; letter-spacing:0.2px;}
 .pagehead p{ margin:0; color:var(--text-dim); font-size:13px; max-width:640px; }
-.eyebrow{ font-family:var(--mono); font-size:11px; color:var(--accent); text-transform:uppercase; letter-spacing:2px; margin-bottom:6px; display:block;}
+.eyebrow{ font-family:var(--mono); font-size:11px; color:var(--electric-blue); text-transform:uppercase; letter-spacing:2px; margin-bottom:6px; display:block;}
 
 .card{
-  background: linear-gradient(180deg, var(--surface), var(--surface) 60%, #0d0f15);
+  background: linear-gradient(180deg, var(--surface), var(--surface) 60%, #0b0e16);
   border:1px solid var(--border); border-radius:var(--radius); padding:20px;
+  box-shadow:0 4px 20px -8px rgba(0,0,0,0.5);
 }
 .card + .card{ margin-top:16px; }
 .card-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
-.card-title{ font-family:var(--disp); font-weight:600; font-size:14.5px; }
+.card-title{ font-family:var(--disp); font-weight:600; font-size:14.5px; color:var(--text); }
 .card-sub{ color:var(--text-faint); font-size:12px; margin-top:2px; }
 
 .grid{ display:grid; gap:16px; }
@@ -128,24 +158,26 @@ input,select,textarea{ font-family:var(--sans); }
 /* buttons */
 .btn{ display:inline-flex; align-items:center; gap:7px; padding:9px 15px; border-radius:8px; font-size:13px; font-weight:600;
   border:1px solid var(--border-strong); background:var(--surface-2); color:var(--text); transition:transform .12s ease, filter .12s ease, border-color .12s ease, background .12s ease, box-shadow .12s ease; }
-.btn:hover{ border-color:#4a5264; background:var(--surface-3); transform:translateY(-1px); }
+.btn:hover{ border-color:var(--electric-blue); background:var(--surface-3); transform:translateY(-1px); }
 .btn:active{ transform:translateY(0) scale(0.97); }
 .btn:disabled{ opacity:0.4; cursor:not-allowed; transform:none !important; }
-.btn-primary{ background:linear-gradient(180deg, #F5324E, var(--accent)); color:#fff; border-color:transparent; box-shadow:0 0 0 1px rgba(225,18,44,0.2), 0 8px 20px -8px var(--accent-glow); }
-.btn-primary:hover{ filter:brightness(1.08); box-shadow:0 0 0 1px rgba(225,18,44,0.28), 0 10px 24px -8px var(--accent-glow); }
+.btn-primary{ background:linear-gradient(180deg, #FF2B4B, var(--accent)); color:#fff; border-color:transparent; box-shadow:0 0 0 1px rgba(225,18,44,0.3), 0 8px 20px -8px var(--accent-glow); }
+.btn-primary:hover{ filter:brightness(1.12); box-shadow:0 0 0 1px rgba(225,18,44,0.4), 0 10px 24px -8px var(--accent-glow); }
+.btn-electric{ background:linear-gradient(180deg, #26DEFF, #00A3FF); color:#041424; font-weight:700; border-color:transparent; box-shadow:0 0 0 1px rgba(0,210,255,0.3), 0 8px 20px -8px var(--electric-blue-glow); }
+.btn-electric:hover{ filter:brightness(1.1); box-shadow:0 0 0 1px rgba(0,210,255,0.5), 0 10px 24px -8px var(--electric-blue-glow); }
 .btn-ghost{ background:transparent; border-color:var(--border); color:var(--text-dim); }
 .btn-ghost:hover{ color:var(--text); border-color:var(--border-strong); }
 .btn-sm{ padding:6px 10px; font-size:12px; border-radius:6px; }
 .btn-danger{ background:transparent; border-color:rgba(225,18,44,0.4); color:var(--danger); }
 .btn-danger:hover{ background:rgba(225,18,44,0.1); border-color:rgba(225,18,44,0.6); }
-.btn-success{ background:linear-gradient(180deg, #2FDE86, var(--ok)); color:#042313; border-color:transparent; box-shadow:0 0 0 1px rgba(34,199,102,0.2), 0 8px 20px -8px rgba(34,199,102,0.4); }
+.btn-success{ background:linear-gradient(180deg, #2FDE86, var(--ok)); color:#042313; border-color:transparent; box-shadow:0 0 0 1px rgba(0,230,118,0.2), 0 8px 20px -8px rgba(0,230,118,0.4); }
 .btn-success:hover{ filter:brightness(1.08); }
-.btn-info{ background:linear-gradient(180deg, #35A9F7, var(--azure)); color:#fff; border-color:transparent; box-shadow:0 0 0 1px rgba(14,138,224,0.2), 0 8px 20px -8px rgba(14,138,224,0.4); }
+.btn-info{ background:linear-gradient(180deg, #35D0F7, var(--azure)); color:#041424; border-color:transparent; box-shadow:0 0 0 1px rgba(0,210,255,0.2), 0 8px 20px -8px rgba(0,210,255,0.4); }
 .btn-info:hover{ filter:brightness(1.08); }
 .btn-warn{ background:linear-gradient(180deg, #FFC53D, var(--med)); color:#3a2600; border-color:transparent; box-shadow:0 0 0 1px rgba(245,168,0,0.25), 0 8px 20px -8px rgba(245,168,0,0.4); }
 .btn-warn:hover{ filter:brightness(1.06); }
-.btn-refresh{ background:var(--surface-2); border-color:rgba(14,138,224,0.4); color:#4FB4F5; }
-.btn-refresh:hover{ background:rgba(14,138,224,0.1); border-color:rgba(14,138,224,0.65); color:#6FC6FF; }
+.btn-refresh{ background:var(--surface-2); border-color:rgba(0,210,255,0.35); color:var(--electric-blue); }
+.btn-refresh:hover{ background:rgba(0,210,255,0.12); border-color:rgba(0,210,255,0.6); color:#7BE6FF; }
 .btn-refresh .ico{ transition:transform .35s ease; }
 .btn-refresh:hover .ico{ transform:rotate(140deg); }
 .btn-icon{ padding:8px; }
@@ -380,6 +412,11 @@ table.data tbody tr:last-child td{ border-bottom:none; }
   background: linear-gradient(145deg, rgba(225,18,44,0.14), var(--surface-2) 70%);
   box-shadow: 0 0 20px -4px rgba(225,18,44,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
 }
+.mode-card.active-powerbi {
+  border-color: var(--electric-blue);
+  background: linear-gradient(145deg, rgba(0,210,255,0.14), var(--surface-2) 70%);
+  box-shadow: 0 0 20px -4px rgba(0,210,255,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+}
 .mode-card-icon {
   width: 40px;
   height: 40px;
@@ -398,6 +435,13 @@ table.data tbody tr:last-child td{ border-bottom:none; }
   color: #fff;
   border-color: var(--accent);
   box-shadow: 0 0 14px rgba(225,18,44,0.5);
+  transform: scale(1.05);
+}
+.mode-card.active-powerbi .mode-card-icon {
+  background: var(--electric-blue);
+  color: #041424;
+  border-color: var(--electric-blue);
+  box-shadow: 0 0 14px rgba(0,210,255,0.5);
   transform: scale(1.05);
 }
 .mode-card-title {
@@ -1816,63 +1860,100 @@ function rowsToAOA(rows, columns) {
   rows.forEach(r => aoa.push(columns.map(c => r[c] === undefined ? "" : r[c])));
   return aoa;
 }
-function buildWorkbook(result, reportDateStr) {
+function buildWorkbook(result, reportDateStr, reportMode = "iasp") {
   const wb = XLSX.utils.book_new();
-  const wsFinal = XLSX.utils.aoa_to_sheet(rowsToAOA(result.finalRows, FINAL_COLUMNS));
-  XLSX.utils.book_append_sheet(wb, wsFinal, "Final Outcome");
-  const wmRows = Object.keys(result.weeklyMetrics).map(k => ({
-    Metric: k,
-    Value: result.weeklyMetrics[k]
-  }));
-  if (result.weekOverWeek) {
-    wmRows.push({
-      Metric: "Previous Week Total",
-      Value: result.weekOverWeek.prevTotal
-    });
-    wmRows.push({
-      Metric: "Change vs Previous Week",
-      Value: result.weekOverWeek.change
-    });
-    wmRows.push({
-      Metric: "Percent Change",
-      Value: `${result.weekOverWeek.pct.toFixed(2)}%`
-    });
-  }
-  const wsMetrics = XLSX.utils.aoa_to_sheet(rowsToAOA(wmRows, ["Metric", "Value"]));
-  XLSX.utils.book_append_sheet(wb, wsMetrics, "Weekly Metrics");
-  const appCols = ["Application", "APM ID", "App Owner", "Organization", "Total", "Sev5", "Sev4", "Sev3", "PastDue"];
-  const wsApp = XLSX.utils.aoa_to_sheet(rowsToAOA(result.appMetrics, appCols));
-  XLSX.utils.book_append_sheet(wb, wsApp, "Application Metrics");
-  const wsAws = XLSX.utils.aoa_to_sheet(rowsToAOA(result.awsRows, FINAL_COLUMNS));
-  XLSX.utils.book_append_sheet(wb, wsAws, "AWS Vulnerabilities");
-  const wsAzure = XLSX.utils.aoa_to_sheet(rowsToAOA(result.azureRows, FINAL_COLUMNS));
-  XLSX.utils.book_append_sheet(wb, wsAzure, "Azure Vulnerabilities");
-  const excCols = ["IP", "QID", "Reason", "Source", "Details"];
-  const wsExc = XLSX.utils.aoa_to_sheet(rowsToAOA(result.exceptions, excCols));
-  XLSX.utils.book_append_sheet(wb, wsExc, "Exceptions");
-  const wsSummary = XLSX.utils.aoa_to_sheet(rowsToAOA(result.processingSummary, ["Metric", "Value"]));
-  XLSX.utils.book_append_sheet(wb, wsSummary, "Processing Summary");
-  if (result.fixedComparison) {
-    const fcRows = [{ Section: "Total Fixed vs Previous Week", Value: result.fixedComparison.total }, { Section: "", Value: "" }, { Section: "By CSP", Value: "" }];
-    result.fixedComparison.byCSP.forEach(r => fcRows.push({ Section: r.CSP, Value: r.Fixed }));
-    fcRows.push({ Section: "", Value: "" });
-    fcRows.push({ Section: "By Application", Value: "" });
-    result.fixedComparison.byApp.forEach(r => fcRows.push({ Section: r.Application, Value: r.Fixed }));
-    const wsFixed = XLSX.utils.aoa_to_sheet(rowsToAOA(fcRows, ["Section", "Value"]));
-    XLSX.utils.book_append_sheet(wb, wsFixed, "Fixed vs Previous Week");
-  }
-  if (result.newVulnComparison) {
-    const nc = result.newVulnComparison;
-    const ncRows = [{ Section: "New Vulnerabilities (not in last week)", Value: nc.newTotal }, { Section: "Existing Vulnerabilities (also in last week)", Value: nc.existingTotal }, { Section: "", Value: "" }, { Section: "New — By Severity", Value: "" }];
-    nc.byRisk.forEach(r => ncRows.push({ Section: `${r.label} (Sev ${r.risk})`, Value: r.Count }));
-    ncRows.push({ Section: "", Value: "" });
-    ncRows.push({ Section: "New — By CSP", Value: "" });
-    nc.byCSP.forEach(r => ncRows.push({ Section: r.CSP, Value: r.Count }));
-    ncRows.push({ Section: "", Value: "" });
-    ncRows.push({ Section: "New — By Application", Value: "" });
-    nc.byApp.forEach(r => ncRows.push({ Section: r.Application, Value: r.Count }));
-    const wsNew = XLSX.utils.aoa_to_sheet(rowsToAOA(ncRows, ["Section", "Value"]));
-    XLSX.utils.book_append_sheet(wb, wsNew, "New vs Existing");
+
+  if (reportMode === "powerbi") {
+    // POWERBI RELATIONAL MODEL EXPORT
+    // 1. Fact_Vulnerabilities
+    const wsFact = XLSX.utils.aoa_to_sheet(rowsToAOA(result.finalRows, FINAL_COLUMNS));
+    XLSX.utils.book_append_sheet(wb, wsFact, "Fact_Vulnerabilities");
+
+    // 2. Dim_Applications
+    const appCols = ["Application", "APM ID", "App Owner", "Organization", "Total", "Sev5", "Sev4", "Sev3", "PastDue"];
+    const wsApp = XLSX.utils.aoa_to_sheet(rowsToAOA(result.appMetrics, appCols));
+    XLSX.utils.book_append_sheet(wb, wsApp, "Dim_Applications");
+
+    // 3. Measures_WeeklyMetrics
+    const wmRows = Object.keys(result.weeklyMetrics).map(k => ({
+      Metric: k,
+      Value: result.weeklyMetrics[k]
+    }));
+    if (result.weekOverWeek) {
+      wmRows.push({ Metric: "Previous Week Total", Value: result.weekOverWeek.prevTotal });
+      wmRows.push({ Metric: "Change vs Previous Week", Value: result.weekOverWeek.change });
+      wmRows.push({ Metric: "Percent Change", Value: `${result.weekOverWeek.pct.toFixed(2)}%` });
+    }
+    const wsMetrics = XLSX.utils.aoa_to_sheet(rowsToAOA(wmRows, ["Metric", "Value"]));
+    XLSX.utils.book_append_sheet(wb, wsMetrics, "Measures_SLA_Summary");
+
+    // 4. Dim_AWS_Assets & Dim_Azure_Assets
+    const wsAws = XLSX.utils.aoa_to_sheet(rowsToAOA(result.awsRows, FINAL_COLUMNS));
+    XLSX.utils.book_append_sheet(wb, wsAws, "Dim_AWS_Assets");
+
+    const wsAzure = XLSX.utils.aoa_to_sheet(rowsToAOA(result.azureRows, FINAL_COLUMNS));
+    XLSX.utils.book_append_sheet(wb, wsAzure, "Dim_Azure_Assets");
+
+    // 5. Fact_Exceptions
+    const excCols = ["IP", "QID", "Reason", "Source", "Details"];
+    const wsExc = XLSX.utils.aoa_to_sheet(rowsToAOA(result.exceptions, excCols));
+    XLSX.utils.book_append_sheet(wb, wsExc, "Fact_Exceptions");
+  } else {
+    // IASP COMPLIANCE STANDARD EXPORT
+    const wsFinal = XLSX.utils.aoa_to_sheet(rowsToAOA(result.finalRows, FINAL_COLUMNS));
+    XLSX.utils.book_append_sheet(wb, wsFinal, "Final Outcome");
+
+    const wmRows = Object.keys(result.weeklyMetrics).map(k => ({
+      Metric: k,
+      Value: result.weeklyMetrics[k]
+    }));
+    if (result.weekOverWeek) {
+      wmRows.push({ Metric: "Previous Week Total", Value: result.weekOverWeek.prevTotal });
+      wmRows.push({ Metric: "Change vs Previous Week", Value: result.weekOverWeek.change });
+      wmRows.push({ Metric: "Percent Change", Value: `${result.weekOverWeek.pct.toFixed(2)}%` });
+    }
+    const wsMetrics = XLSX.utils.aoa_to_sheet(rowsToAOA(wmRows, ["Metric", "Value"]));
+    XLSX.utils.book_append_sheet(wb, wsMetrics, "Weekly Metrics");
+
+    const appCols = ["Application", "APM ID", "App Owner", "Organization", "Total", "Sev5", "Sev4", "Sev3", "PastDue"];
+    const wsApp = XLSX.utils.aoa_to_sheet(rowsToAOA(result.appMetrics, appCols));
+    XLSX.utils.book_append_sheet(wb, wsApp, "Application Metrics");
+
+    const wsAws = XLSX.utils.aoa_to_sheet(rowsToAOA(result.awsRows, FINAL_COLUMNS));
+    XLSX.utils.book_append_sheet(wb, wsAws, "AWS Vulnerabilities");
+
+    const wsAzure = XLSX.utils.aoa_to_sheet(rowsToAOA(result.azureRows, FINAL_COLUMNS));
+    XLSX.utils.book_append_sheet(wb, wsAzure, "Azure Vulnerabilities");
+
+    const excCols = ["IP", "QID", "Reason", "Source", "Details"];
+    const wsExc = XLSX.utils.aoa_to_sheet(rowsToAOA(result.exceptions, excCols));
+    XLSX.utils.book_append_sheet(wb, wsExc, "Exceptions");
+
+    const wsSummary = XLSX.utils.aoa_to_sheet(rowsToAOA(result.processingSummary, ["Metric", "Value"]));
+    XLSX.utils.book_append_sheet(wb, wsSummary, "Processing Summary");
+
+    if (result.fixedComparison) {
+      const fcRows = [{ Section: "Total Fixed vs Previous Week", Value: result.fixedComparison.total }, { Section: "", Value: "" }, { Section: "By CSP", Value: "" }];
+      result.fixedComparison.byCSP.forEach(r => fcRows.push({ Section: r.CSP, Value: r.Fixed }));
+      fcRows.push({ Section: "", Value: "" });
+      fcRows.push({ Section: "By Application", Value: "" });
+      result.fixedComparison.byApp.forEach(r => fcRows.push({ Section: r.Application, Value: r.Fixed }));
+      const wsFixed = XLSX.utils.aoa_to_sheet(rowsToAOA(fcRows, ["Section", "Value"]));
+      XLSX.utils.book_append_sheet(wb, wsFixed, "Fixed vs Previous Week");
+    }
+    if (result.newVulnComparison) {
+      const nc = result.newVulnComparison;
+      const ncRows = [{ Section: "New Vulnerabilities (not in last week)", Value: nc.newTotal }, { Section: "Existing Vulnerabilities (also in last week)", Value: nc.existingTotal }, { Section: "", Value: "" }, { Section: "New — By Severity", Value: "" }];
+      nc.byRisk.forEach(r => ncRows.push({ Section: `${r.label} (Sev ${r.risk})`, Value: r.Count }));
+      ncRows.push({ Section: "", Value: "" });
+      ncRows.push({ Section: "New — By CSP", Value: "" });
+      nc.byCSP.forEach(r => ncRows.push({ Section: r.CSP, Value: r.Count }));
+      ncRows.push({ Section: "", Value: "" });
+      ncRows.push({ Section: "New — By Application", Value: "" });
+      nc.byApp.forEach(r => ncRows.push({ Section: r.Application, Value: r.Count }));
+      const wsNew = XLSX.utils.aoa_to_sheet(rowsToAOA(ncRows, ["Section", "Value"]));
+      XLSX.utils.book_append_sheet(wb, wsNew, "New vs Existing");
+    }
   }
   return wb;
 }
@@ -3260,7 +3341,8 @@ function ProcessView({
 function ReportView({
   result,
   onRefresh,
-  running
+  running,
+  reportMode = "iasp"
 }) {
   const [search, setSearch] = useState("");
   const [sevFilter, setSevFilter] = useState("all");
@@ -3292,7 +3374,7 @@ function ReportView({
       className: "pagehead"
     }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
       className: "eyebrow"
-    }, "Stage 04 — Report"), /*#__PURE__*/React.createElement("h1", null, "Final outcome report"))), /*#__PURE__*/React.createElement("div", {
+    }, reportMode === "powerbi" ? "PowerBI Data Matrix" : "Stage 04 — Report"), /*#__PURE__*/React.createElement("h1", null, reportMode === "powerbi" ? "PowerBI Vulnerability Data Model" : "IASP Final Outcome Report"))), /*#__PURE__*/React.createElement("div", {
       className: "card"
     }, /*#__PURE__*/React.createElement("div", {
       className: "empty-state"
@@ -3304,7 +3386,7 @@ function ReportView({
     className: "pagehead"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "eyebrow"
-  }, "Stage 04 — Report"), /*#__PURE__*/React.createElement("h1", null, "Final outcome report"), /*#__PURE__*/React.createElement("p", null, filtered.length.toLocaleString(), " of ", rows.length.toLocaleString(), " records shown")), /*#__PURE__*/React.createElement(RefreshButton, {
+  }, reportMode === "powerbi" ? "PowerBI Data Matrix" : "Stage 04 — Report"), /*#__PURE__*/React.createElement("h1", null, reportMode === "powerbi" ? "PowerBI Normalized Finding Matrix" : "IASP Enriched Outcome Report"), /*#__PURE__*/React.createElement("p", null, filtered.length.toLocaleString(), " of ", rows.length.toLocaleString(), ` records indexed (${reportMode === "powerbi" ? "57 Attributes · Relational PowerBI Schema" : "IASP Remediation Compliance Format"})`)), /*#__PURE__*/React.createElement(RefreshButton, {
     onRefresh: onRefresh,
     running: running
   })), /*#__PURE__*/React.createElement("div", {
@@ -4433,42 +4515,50 @@ function ExceptionsView({
 function ExportView({
   result,
   config,
-  auditTrail
+  auditTrail,
+  reportMode
 }) {
   const [busy, setBusy] = useState(false);
   const doXlsx = () => {
     if (!result) return;
     setBusy(true);
     setTimeout(() => {
-      const wb = buildWorkbook(result, config.reportDate);
-      downloadWorkbookXLSX(wb, `Weekly_Vulnerability_Outcome_${config.reportDate}.xlsx`);
+      const wb = buildWorkbook(result, config.reportDate, reportMode);
+      const prefix = reportMode === "iasp" ? "IASP_Enriched_Outcome" : "PowerBI_Vulnerability_Engine";
+      downloadWorkbookXLSX(wb, `${prefix}_${config.reportDate}.xlsx`);
       setBusy(false);
     }, 30);
   };
   const doCsv = () => {
     if (!result) return;
-    downloadFinalCSV(result, `Weekly_Vulnerability_Outcome_${config.reportDate}.csv`);
+    const prefix = reportMode === "iasp" ? "IASP_Final_Report" : "PowerBI_Matrix_Export";
+    downloadFinalCSV(result, `${prefix}_${config.reportDate}.csv`);
   };
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "pagehead"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "eyebrow"
-  }, "Stage 08 — Export"), /*#__PURE__*/React.createElement("h1", null, "Export & audit trail"), /*#__PURE__*/React.createElement("p", null, "Generate the downloadable weekly outcome files, and review the run history for this browser."))), /*#__PURE__*/React.createElement("div", {
+  }, "Stage 08 — Export & Deployment"), /*#__PURE__*/React.createElement("h1", null, `${reportMode === "iasp" ? "IASP Compliance" : "PowerBI Model"} Export & Audit Trail`), /*#__PURE__*/React.createElement("p", null, `Generate downloadable ${reportMode === "iasp" ? "IASP remediation outcome packages" : "PowerBI sanitized analytics datasets"}, and audit execution history.`))), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-2"
   }, /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "card-title",
     style: {
-      marginBottom: "6px"
+      marginBottom: "6px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between"
     }
-  }, "Excel workbook"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", null, reportMode === "iasp" ? "IASP Standard Workbook" : "PowerBI Master Workbook"), /*#__PURE__*/React.createElement("span", {
+    className: reportMode === "iasp" ? "badge badge-crit" : "badge badge-info"
+  }, reportMode === "iasp" ? "IASP Format" : "PowerBI Ready")), /*#__PURE__*/React.createElement("div", {
     className: "card-sub",
     style: {
       marginBottom: "14px"
     }
-  }, "7 sheets: Final Outcome, Weekly Metrics, Application Metrics, AWS, Azure, Exceptions, Processing Summary"), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-primary",
+  }, reportMode === "iasp" ? "7 sheets: Final Outcome (57 cols), Weekly Metrics, Application Metrics, AWS, Azure, Exceptions, Audit Summary" : "Multi-table relational schema: Fact_Vulnerabilities, Dim_Applications, Dim_Cloud_Assets, Measures_SLA, Exceptions_Log"), /*#__PURE__*/React.createElement("button", {
+    className: reportMode === "iasp" ? "btn btn-primary" : "btn btn-electric",
     disabled: !result || busy,
     onClick: doXlsx
   }, busy ? /*#__PURE__*/React.createElement("span", {
@@ -4476,19 +4566,24 @@ function ExportView({
   }) : /*#__PURE__*/React.createElement(Icon, {
     d: ICONS.download,
     size: 14
-  }), " Download .xlsx")), /*#__PURE__*/React.createElement("div", {
+  }), ` Download ${reportMode === "iasp" ? "IASP .xlsx" : "PowerBI .xlsx"}`)), /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "card-title",
     style: {
-      marginBottom: "6px"
+      marginBottom: "6px",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between"
     }
-  }, "CSV export"), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", null, "Master Flat CSV Data"), /*#__PURE__*/React.createElement("span", {
+    className: "badge badge-neutral"
+  }, "UTF-8 Encoded")), /*#__PURE__*/React.createElement("div", {
     className: "card-sub",
     style: {
       marginBottom: "14px"
     }
-  }, "Complete Final Outcome dataset, UTF-8, comma-safe, IPs and dates preserved as text"), /*#__PURE__*/React.createElement("button", {
+  }, reportMode === "iasp" ? "Raw IASP outcome sheet export for direct portal ingestion" : "Clean flat table export optimized for PowerBI desktop DirectQuery & Import"), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-ghost",
     disabled: !result,
     onClick: doCsv
@@ -4498,9 +4593,9 @@ function ExportView({
   }), " Download .csv"))), !result && /*#__PURE__*/React.createElement("div", {
     className: "note-box warn",
     style: {
-      marginTop: "4px"
+      marginTop: "16px"
     }
-  }, "Run the pipeline from the Process tab before exporting."), /*#__PURE__*/React.createElement("div", {
+  }, "Run the processing pipeline from the Process tab before exporting outcomes."), /*#__PURE__*/React.createElement("div", {
     className: "card",
     style: {
       marginTop: "16px"
@@ -4511,7 +4606,7 @@ function ExportView({
     className: "card-title"
   }, "Processing audit trail"), /*#__PURE__*/React.createElement("div", {
     className: "card-sub"
-  }, "Stored locally per browser — persists across sessions"))), auditTrail.length === 0 ? /*#__PURE__*/React.createElement("div", {
+  }, "Stored locally in browser state — maintains complete run history across sessions"))), auditTrail.length === 0 ? /*#__PURE__*/React.createElement("div", {
     className: "empty-state"
   }, /*#__PURE__*/React.createElement("div", {
     className: "glyph"
@@ -5148,55 +5243,113 @@ function App() {
     }, 40);
   };
   const canRun = selectedTool === "Qualys" && !!files.qualys;
-  const navItems = [{
-    key: "upload",
-    label: "Upload",
-    icon: ICONS.upload
-  }, {
-    key: "configure",
-    label: "Configure",
-    icon: ICONS.cog
-  }, {
-    key: "process",
-    label: "Process",
-    icon: ICONS.play
-  }, {
-    key: "report",
-    label: "Report",
-    icon: ICONS.table,
-    badge: result ? result.finalRows.length : null
-  }, {
-    key: "insights",
-    label: "Insights",
-    icon: ICONS.spark
-  }, {
-    key: "metrics",
-    label: "Metrics",
-    icon: ICONS.chart
-  }, {
-    key: "dashboard",
-    label: "Dashboard",
-    icon: ICONS.grid
-  }, {
-    key: "exceptions",
-    label: "Exceptions",
-    icon: ICONS.alert,
-    badge: result ? result.exceptions.length : null
-  }, {
-    key: "fixed",
-    label: "Fixed Vulns",
-    icon: ICONS.check,
-    badge: result && result.fixedComparison ? result.fixedComparison.total : null
-  }, {
-    key: "export",
-    label: "Export",
-    icon: ICONS.download
-  }];
-  const helpItems = [{
-    key: "howitworks",
-    label: "How It Works",
-    icon: ICONS.book
-  }];
+
+  // Mode-aware navigation items
+  const navItems = [
+    {
+      key: "upload",
+      label: "Ingestion Hub",
+      icon: ICONS.upload
+    },
+    {
+      key: "configure",
+      label: "Rule Engine & CMDB",
+      icon: ICONS.cog
+    },
+    {
+      key: "process",
+      label: "Process & Run",
+      icon: ICONS.play
+    }
+  ];
+
+  // Pipeline Data Views based on report mode
+  const dataItems = reportMode === "powerbi" ? [
+    {
+      key: "dashboard",
+      label: "PowerBI Analytics",
+      icon: ICONS.grid
+    },
+    {
+      key: "metrics",
+      label: "Executive KPI Metrics",
+      icon: ICONS.chart
+    },
+    {
+      key: "insights",
+      label: "Threat & Age Insights",
+      icon: ICONS.spark
+    },
+    {
+      key: "report",
+      label: "PowerBI Data Matrix",
+      icon: ICONS.table,
+      badge: result ? result.finalRows.length : null
+    },
+    {
+      key: "fixed",
+      label: "Remediated / Fixed",
+      icon: ICONS.check,
+      badge: result && result.fixedComparison ? result.fixedComparison.total : null
+    },
+    {
+      key: "exceptions",
+      label: "Exceptions & Audit",
+      icon: ICONS.alert,
+      badge: result ? result.exceptions.length : null
+    }
+  ] : [
+    {
+      key: "report",
+      label: "IASP Outcome Report",
+      icon: ICONS.table,
+      badge: result ? result.finalRows.length : null
+    },
+    {
+      key: "metrics",
+      label: "IASP Weekly Metrics",
+      icon: ICONS.chart
+    },
+    {
+      key: "fixed",
+      label: "Fixed Vulnerabilities",
+      icon: ICONS.check,
+      badge: result && result.fixedComparison ? result.fixedComparison.total : null
+    },
+    {
+      key: "insights",
+      label: "Application Insights",
+      icon: ICONS.spark
+    },
+    {
+      key: "dashboard",
+      label: "Compliance Dashboard",
+      icon: ICONS.grid
+    },
+    {
+      key: "exceptions",
+      label: "Data Quality Log",
+      icon: ICONS.alert,
+      badge: result ? result.exceptions.length : null
+    }
+  ];
+
+  const exportItems = [
+    {
+      key: "export",
+      label: reportMode === "powerbi" ? "PowerBI Data Export" : "IASP Sheet Export",
+      icon: ICONS.download
+    }
+  ];
+
+  const helpItems = [
+    {
+      key: "howitworks",
+      label: "Pipeline Architecture",
+      icon: ICONS.book
+    }
+  ];
+
   return /*#__PURE__*/React.createElement("div", {
     className: "app-shell"
   }, /*#__PURE__*/React.createElement("div", {
@@ -5211,9 +5364,76 @@ function App() {
     className: "t1"
   }, "SPECTRA FORGE"), /*#__PURE__*/React.createElement("div", {
     className: "t2"
-  }, `${reportMode === "iasp" ? "IASP" : "PowerBI"} · ${selectedTool}`))), /*#__PURE__*/React.createElement("div", {
+  }, `${reportMode === "powerbi" ? "POWERBI ENGINE" : "IASP COMPLIANCE"}`))),
+
+  /* Mode Switcher pill in sidebar */
+  React.createElement("div", {
+    style: {
+      padding: "0 6px 12px",
+      display: "flex",
+      gap: "4px"
+    }
+  },
+    React.createElement("button", {
+      type: "button",
+      style: {
+        flex: 1,
+        padding: "5px 4px",
+        fontSize: "10.5px",
+        fontFamily: "var(--mono)",
+        fontWeight: "700",
+        borderRadius: "6px",
+        border: "1px solid",
+        borderColor: reportMode === "iasp" ? "var(--accent)" : "var(--border)",
+        background: reportMode === "iasp" ? "rgba(225,18,44,0.18)" : "transparent",
+        color: reportMode === "iasp" ? "#FF4D6A" : "var(--text-dim)",
+        cursor: "pointer",
+        transition: "all .14s ease"
+      },
+      onClick: () => setReportMode("iasp")
+    }, "IASP"),
+    React.createElement("button", {
+      type: "button",
+      style: {
+        flex: 1,
+        padding: "5px 4px",
+        fontSize: "10.5px",
+        fontFamily: "var(--mono)",
+        fontWeight: "700",
+        borderRadius: "6px",
+        border: "1px solid",
+        borderColor: reportMode === "powerbi" ? "var(--electric-blue)" : "var(--border)",
+        background: reportMode === "powerbi" ? "rgba(0,210,255,0.18)" : "transparent",
+        color: reportMode === "powerbi" ? "var(--electric-blue)" : "var(--text-dim)",
+        cursor: "pointer",
+        transition: "all .14s ease"
+      },
+      onClick: () => setReportMode("powerbi")
+    }, "PowerBI")
+  ),
+
+  /* Sidebar Active Tool Tag */
+  React.createElement("div", {
+    style: {
+      margin: "0 6px 10px",
+      padding: "6px 8px",
+      background: "var(--surface-2)",
+      borderRadius: "6px",
+      border: "1px solid var(--border)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      fontSize: "11px"
+    }
+  },
+    React.createElement("span", { style: { color: "var(--text-faint)", fontFamily: "var(--mono)" } }, "Scanner"),
+    React.createElement("span", { style: { color: "var(--electric-blue)", fontWeight: "700", fontFamily: "var(--disp)" } }, selectedTool)
+  ),
+
+  React.createElement("div", {
     className: "nav-section-label"
-  }, "Pipeline"), /*#__PURE__*/React.createElement("div", {
+  }, "Pipeline Setup"),
+  React.createElement("div", {
     className: "nav"
   }, navItems.map(n => /*#__PURE__*/React.createElement(Nav, {
     key: n.key,
@@ -5222,9 +5442,45 @@ function App() {
     badge: n.badge,
     active: activeTab === n.key,
     onClick: () => setActiveTab(n.key)
-  }))), /*#__PURE__*/React.createElement("div", {
+  }))),
+
+  React.createElement("div", {
     className: "nav-section-label"
-  }, "Help"), /*#__PURE__*/React.createElement("div", {
+  },
+    React.createElement("span", null, reportMode === "powerbi" ? "PowerBI Workspace" : "IASP Workspace"),
+    React.createElement("span", { className: "section-tag " + (reportMode === "powerbi" ? "tag-pbi" : "tag-iasp") },
+      reportMode === "powerbi" ? "PBI" : "IASP"
+    )
+  ),
+  React.createElement("div", {
+    className: "nav"
+  }, dataItems.map(n => /*#__PURE__*/React.createElement(Nav, {
+    key: n.key,
+    icon: n.icon,
+    label: n.label,
+    badge: n.badge,
+    active: activeTab === n.key,
+    onClick: () => setActiveTab(n.key)
+  }))),
+
+  React.createElement("div", {
+    className: "nav-section-label"
+  }, "Export & Output"),
+  React.createElement("div", {
+    className: "nav"
+  }, exportItems.map(n => /*#__PURE__*/React.createElement(Nav, {
+    key: n.key,
+    icon: n.icon,
+    label: n.label,
+    badge: n.badge,
+    active: activeTab === n.key,
+    onClick: () => setActiveTab(n.key)
+  }))),
+
+  React.createElement("div", {
+    className: "nav-section-label"
+  }, "Docs"),
+  React.createElement("div", {
     className: "nav"
   }, helpItems.map(n => /*#__PURE__*/React.createElement(Nav, {
     key: n.key,
@@ -5233,13 +5489,18 @@ function App() {
     badge: n.badge,
     active: activeTab === n.key,
     onClick: () => setActiveTab(n.key)
-  }))), /*#__PURE__*/React.createElement("div", {
+  }))),
+
+  React.createElement("div", {
     className: "sidebar-foot"
   }, /*#__PURE__*/React.createElement("div", {
     className: "report-date-mini"
   }, "Report date · ", config.reportDate), /*#__PURE__*/React.createElement("div", {
     className: "credit"
-  }, "Built by IVM Team (Barath & Dhinakaran)"))), /*#__PURE__*/React.createElement("div", {
+  }, "Built by IVM Team (Barath & Dhinakaran)"))),
+
+  /* Main Workspace */
+  React.createElement("div", {
     className: "main"
   }, activeTab === "upload" && /*#__PURE__*/React.createElement(UploadView, {
     files: files,
@@ -5263,36 +5524,48 @@ function App() {
     result: result,
     onRun: runPipelineNow,
     running: running,
-    canRun: canRun
+    canRun: canRun,
+    reportMode: reportMode
   }), activeTab === "report" && /*#__PURE__*/React.createElement(ReportView, {
     result: result,
     onRefresh: runPipelineNow,
-    running: running
+    running: running,
+    reportMode: reportMode
   }), activeTab === "insights" && /*#__PURE__*/React.createElement(InsightsView, {
     result: result,
     onRefresh: runPipelineNow,
-    running: running
+    running: running,
+    reportMode: reportMode
   }), activeTab === "metrics" && /*#__PURE__*/React.createElement(MetricsView, {
     result: result,
     onRefresh: runPipelineNow,
-    running: running
+    running: running,
+    reportMode: reportMode
   }), activeTab === "dashboard" && /*#__PURE__*/React.createElement(DashboardView, {
     result: result,
     onRefresh: runPipelineNow,
-    running: running
+    running: running,
+    reportMode: reportMode
   }), activeTab === "exceptions" && /*#__PURE__*/React.createElement(ExceptionsView, {
     result: result,
     onRefresh: runPipelineNow,
-    running: running
+    running: running,
+    reportMode: reportMode
   }), activeTab === "fixed" && /*#__PURE__*/React.createElement(FixedVulnerabilitiesView, {
     result: result,
     onRefresh: runPipelineNow,
-    running: running
+    running: running,
+    reportMode: reportMode
   }), activeTab === "export" && /*#__PURE__*/React.createElement(ExportView, {
     result: result,
     config: config,
-    auditTrail: auditTrail
-  }), activeTab === "howitworks" && /*#__PURE__*/React.createElement(HowItWorksView, null)), /*#__PURE__*/React.createElement(Toast, {
+    auditTrail: auditTrail,
+    reportMode: reportMode
+  }), activeTab === "howitworks" && /*#__PURE__*/React.createElement(HowItWorksView, {
+    reportMode: reportMode
+  })),
+
+  React.createElement(Toast, {
     toast: toast,
     onClose: () => setToast(null)
   }));
