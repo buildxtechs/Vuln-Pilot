@@ -4451,12 +4451,12 @@ function App() {
   const [selectedVuln, setSelectedVuln] = useState(null);
   const [filters, setFilters] = useState({ severity: [], vulnStatus: [], infra: [], slaStatus: [], search: "", csp: [], ifPci: [], appName: "" });
 
-  const handleData = (computed, name, matched, total) => {
+  const handleData = (computed, name, matched, total, targetPage = "overview") => {
     const filtered = computed.filter((r) => r.sevNum >= 3);
     setAllRows(filtered);
     setFileName(name);
     setMatchInfo({ matched, total });
-    setPage("overview");
+    setPage(targetPage || "overview");
   };
 
   const infraOptions = useMemo(() => (allRows ? Array.from(new Set(allRows.map((r) => r.infra))).sort() : []), [allRows]);
@@ -4661,8 +4661,7 @@ function App() {
 
               <UploadPanel
                 onData={(computed, name, matched, total) => {
-                  handleData(computed, name, matched, total);
-                  setPage("followMail");
+                  handleData(computed, name, matched, total, "customDashboard");
                 }}
                 compact={true}
                 label="Drop PowerBI File / Master Sheet"
