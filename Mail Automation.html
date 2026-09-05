@@ -2819,59 +2819,67 @@ function MultiSelectDropdown({ label, options, selected, onChange, searchable = 
       <div 
         onClick={() => setIsOpen(!isOpen)} 
         style={{ 
-          background: selected.length > 0 ? C.accentDim : C.bgElevated, 
-          border: `1px solid ${selected.length > 0 ? C.accent : C.borderLight}`, 
+          background: selected.length > 0 ? "rgba(0, 242, 254, 0.12)" : "rgba(255, 255, 255, 0.04)", 
+          border: `1px solid ${selected.length > 0 ? "rgba(0, 242, 254, 0.5)" : C.borderLight}`, 
           borderRadius: 8, 
-          padding: "8px 14px", fontSize: 13, color: selected.length > 0 ? C.accent : C.textPrimary, cursor: "pointer",
-          display: "flex", alignItems: "center", justifyContent: "space-between", minWidth: 160,
-          fontWeight: selected.length > 0 ? 600 : 500, transition: "all 0.2s ease"
+          padding: "7px 12px", fontSize: 12.5, color: selected.length > 0 ? "#00f2fe" : C.textPrimary, cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "space-between", minWidth: 145,
+          fontWeight: selected.length > 0 ? 600 : 500, transition: "all 0.2s ease",
+          boxShadow: selected.length > 0 ? "0 0 12px rgba(0, 242, 254, 0.2)" : "none"
         }}
       >
-        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 120 }}>
-          {selected.length === 0 ? `All ${label}` : `${selected.length} ${label} selected`}
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 110 }}>
+          {selected.length === 0 ? label : `${selected.length} ${label}`}
         </span>
-        <ChevronDown size={14} color={selected.length > 0 ? C.accent : C.textMuted} style={{ marginLeft: 6, transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 4, marginLeft: 6 }}>
+          {selected.length > 0 && (
+            <span style={{ background: "#00f2fe", color: "#07090e", borderRadius: 10, padding: "1px 5px", fontSize: 10, fontWeight: 800 }}>
+              {selected.length}
+            </span>
+          )}
+          <ChevronDown size={13} color={selected.length > 0 ? "#00f2fe" : C.textMuted} style={{ transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }} />
+        </div>
       </div>
 
       {isOpen && (
         <div style={{ 
-          position: "absolute", top: "100%", left: 0, marginTop: 6, background: C.surface, 
-          border: `1px solid ${C.borderLight}`, borderRadius: 10, boxShadow: "0 10px 40px rgba(0,0,0,0.5)", 
-          zIndex: 100, minWidth: 220, maxHeight: 320, display: "flex", flexDirection: "column",
-          overflow: "hidden"
+          position: "absolute", top: "100%", left: 0, marginTop: 6, background: "#111622", 
+          border: "1px solid rgba(0, 242, 254, 0.35)", borderRadius: 10, boxShadow: "0 14px 40px rgba(0,0,0,0.8), 0 0 20px rgba(0, 242, 254, 0.15)", 
+          zIndex: 100, minWidth: 230, maxHeight: 320, display: "flex", flexDirection: "column",
+          overflow: "hidden", animation: "toastSlideIn 0.2s ease-out"
         }}>
           {searchable && (
-            <div style={{ padding: 10, borderBottom: `1px solid ${C.borderLight}`, background: C.bgElevated }}>
+            <div style={{ padding: 10, borderBottom: `1px solid ${C.borderLight}`, background: "rgba(255, 255, 255, 0.02)" }}>
               <input 
                 value={search} onChange={e => setSearch(e.target.value)}
                 placeholder={`Search ${label}...`}
-                style={{ width: "100%", background: C.surface, border: `1px solid ${C.borderLight}`, borderRadius: 6, padding: "8px 12px", fontSize: 13, color: C.textPrimary, outline: "none", transition: "border-color 0.2s" }}
-                onFocus={(e) => e.target.style.borderColor = C.accent}
+                style={{ width: "100%", background: "#090d16", border: `1px solid ${C.borderLight}`, borderRadius: 6, padding: "7px 10px", fontSize: 12, color: C.textPrimary, outline: "none", boxSizing: "border-box" }}
+                onFocus={(e) => e.target.style.borderColor = "#00f2fe"}
                 onBlur={(e) => e.target.style.borderColor = C.borderLight}
               />
             </div>
           )}
-          <div style={{ overflowY: "auto", padding: "6px 0" }}>
+          <div style={{ overflowY: "auto", padding: "6px 0", maxHeight: 260 }}>
             <div 
               onClick={() => onChange([])}
-              style={{ padding: "8px 16px", fontSize: 13, color: selected.length === 0 ? C.textPrimary : C.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", background: selected.length === 0 ? C.surfaceHover : "transparent", fontWeight: selected.length === 0 ? 600 : 400 }}
+              style={{ padding: "7px 14px", fontSize: 12.5, color: selected.length === 0 ? "#00f2fe" : C.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", background: selected.length === 0 ? "rgba(0, 242, 254, 0.08)" : "transparent", fontWeight: selected.length === 0 ? 600 : 400 }}
             >
-              <div style={{ width: 16, height: 16, border: `1px solid ${selected.length === 0 ? C.accent : C.borderLight}`, borderRadius: 4, marginRight: 10, display: "flex", alignItems: "center", justifyContent: "center", background: selected.length === 0 ? C.accent : "transparent", transition: "all 0.2s" }}>
-                {selected.length === 0 && <Check size={12} color="#fff" />}
+              <div style={{ width: 15, height: 15, border: `1px solid ${selected.length === 0 ? "#00f2fe" : C.borderLight}`, borderRadius: 4, marginRight: 10, display: "flex", alignItems: "center", justifyContent: "center", background: selected.length === 0 ? "#00f2fe" : "transparent", transition: "all 0.2s" }}>
+                {selected.length === 0 && <Check size={11} color="#07090e" strokeWidth={3} />}
               </div>
-              All {label}
+              All ({options.length})
             </div>
             {filteredOptions.map(opt => {
               const isSel = selected.includes(opt);
               return (
                 <div 
                   key={opt} onClick={() => toggleOption(opt)}
-                  style={{ padding: "8px 16px", fontSize: 13, color: isSel ? C.textPrimary : C.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", background: isSel ? C.surfaceHover : "transparent", fontWeight: isSel ? 600 : 400 }}
+                  style={{ padding: "7px 14px", fontSize: 12.5, color: isSel ? "#ffffff" : C.textSecondary, cursor: "pointer", display: "flex", alignItems: "center", background: isSel ? "rgba(0, 242, 254, 0.08)" : "transparent", fontWeight: isSel ? 600 : 400 }}
                 >
-                  <div style={{ width: 16, height: 16, border: `1px solid ${isSel ? C.accent : C.borderLight}`, borderRadius: 4, marginRight: 10, display: "flex", alignItems: "center", justifyContent: "center", background: isSel ? C.accent : "transparent", transition: "all 0.2s" }}>
-                    {isSel && <Check size={12} color="#fff" />}
+                  <div style={{ width: 15, height: 15, border: `1px solid ${isSel ? "#00f2fe" : C.borderLight}`, borderRadius: 4, marginRight: 10, display: "flex", alignItems: "center", justifyContent: "center", background: isSel ? "#00f2fe" : "transparent", transition: "all 0.2s" }}>
+                    {isSel && <Check size={11} color="#07090e" strokeWidth={3} />}
                   </div>
-                  {opt}
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{opt}</span>
                 </div>
               );
             })}
@@ -2884,6 +2892,7 @@ function MultiSelectDropdown({ label, options, selected, onChange, searchable = 
 
 function CustomDashboardFilterBar({ filters, setFilters, filterOptions }) {
   const isClean = Object.values(filters).every(arr => arr.length === 0);
+  const activeCount = Object.values(filters).reduce((acc, curr) => acc + curr.length, 0);
 
   const clearAll = () => {
     const fresh = {};
@@ -2892,23 +2901,61 @@ function CustomDashboardFilterBar({ filters, setFilters, filterOptions }) {
   };
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
-      <MultiSelectDropdown label="Vuln Status" options={filterOptions.vulnStatus || []} selected={filters.vulnStatus || []} onChange={(v) => setFilters(f => ({...f, vulnStatus: v}))} />
-      <MultiSelectDropdown label="IF/PCI" options={filterOptions.ifPci || []} selected={filters.ifPci || []} onChange={(v) => setFilters(f => ({...f, ifPci: v}))} />
-      <MultiSelectDropdown label="SLA Status" options={filterOptions.slaStatus || []} selected={filters.slaStatus || []} onChange={(v) => setFilters(f => ({...f, slaStatus: v}))} />
-      <MultiSelectDropdown label="Category" options={filterOptions.vulnCategory || []} selected={filters.vulnCategory || []} onChange={(v) => setFilters(f => ({...f, vulnCategory: v}))} searchable />
-      <MultiSelectDropdown label="Scan Type" options={filterOptions.scanType || []} selected={filters.scanType || []} onChange={(v) => setFilters(f => ({...f, scanType: v}))} />
-      <MultiSelectDropdown label="Risk Rating" options={filterOptions.riskRating || []} selected={filters.riskRating || []} onChange={(v) => setFilters(f => ({...f, riskRating: v}))} />
-      <MultiSelectDropdown label="Environment" options={filterOptions.environment || []} selected={filters.environment || []} onChange={(v) => setFilters(f => ({...f, environment: v}))} />
-      <MultiSelectDropdown label="CSP" options={filterOptions.csp || []} selected={filters.csp || []} onChange={(v) => setFilters(f => ({...f, csp: v}))} />
-      <MultiSelectDropdown label="App Name" options={filterOptions.appName || []} selected={filters.appName || []} onChange={(v) => setFilters(f => ({...f, appName: v}))} searchable />
-      <MultiSelectDropdown label="App Owner" options={filterOptions.appOwner || []} selected={filters.appOwner || []} onChange={(v) => setFilters(f => ({...f, appOwner: v}))} searchable />
-
-      {!isClean && (
-        <div onClick={clearAll} style={{ ...btnStyle(false), color: C.critical, borderColor: C.critical, padding: "6px 12px", display: "flex", alignItems: "center", gap: 4 }}>
-          <X size={14} /> Clear All
+    <div style={{ 
+      background: "rgba(14, 18, 26, 0.75)", 
+      border: "1px solid rgba(255, 255, 255, 0.08)", 
+      borderRadius: 12, 
+      padding: "16px 18px", 
+      marginBottom: 20 
+    }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Filter size={15} color="#00f2fe" />
+          <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8, color: C.textPrimary, fontFamily: "'JetBrains Mono', monospace" }}>
+            Operational Filter Matrix
+          </span>
+          {activeCount > 0 && (
+            <span style={{ background: "rgba(0, 242, 254, 0.15)", border: "1px solid rgba(0, 242, 254, 0.4)", color: "#00f2fe", fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 12 }}>
+              {activeCount} filter{activeCount > 1 ? "s" : ""} active
+            </span>
+          )}
         </div>
-      )}
+
+        {!isClean && (
+          <button 
+            onClick={clearAll} 
+            style={{ 
+              background: "rgba(239, 68, 68, 0.12)", 
+              color: "#f87171", 
+              border: "1px solid rgba(239, 68, 68, 0.35)", 
+              borderRadius: 6, 
+              padding: "4px 10px", 
+              fontSize: 11.5, 
+              fontWeight: 600, 
+              cursor: "pointer", 
+              display: "flex", 
+              alignItems: "center", 
+              gap: 5,
+              transition: "all 0.2s ease"
+            }}
+          >
+            <X size={13} /> Reset All Filters
+          </button>
+        )}
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <MultiSelectDropdown label="Vuln Status" options={filterOptions.vulnStatus || []} selected={filters.vulnStatus || []} onChange={(v) => setFilters(f => ({...f, vulnStatus: v}))} />
+        <MultiSelectDropdown label="IF/PCI" options={filterOptions.ifPci || []} selected={filters.ifPci || []} onChange={(v) => setFilters(f => ({...f, ifPci: v}))} />
+        <MultiSelectDropdown label="SLA Status" options={filterOptions.slaStatus || []} selected={filters.slaStatus || []} onChange={(v) => setFilters(f => ({...f, slaStatus: v}))} />
+        <MultiSelectDropdown label="Category" options={filterOptions.vulnCategory || []} selected={filters.vulnCategory || []} onChange={(v) => setFilters(f => ({...f, vulnCategory: v}))} searchable />
+        <MultiSelectDropdown label="Scan Type" options={filterOptions.scanType || []} selected={filters.scanType || []} onChange={(v) => setFilters(f => ({...f, scanType: v}))} />
+        <MultiSelectDropdown label="Risk Rating" options={filterOptions.riskRating || []} selected={filters.riskRating || []} onChange={(v) => setFilters(f => ({...f, riskRating: v}))} />
+        <MultiSelectDropdown label="Environment" options={filterOptions.environment || []} selected={filters.environment || []} onChange={(v) => setFilters(f => ({...f, environment: v}))} />
+        <MultiSelectDropdown label="CSP" options={filterOptions.csp || []} selected={filters.csp || []} onChange={(v) => setFilters(f => ({...f, csp: v}))} />
+        <MultiSelectDropdown label="App Name" options={filterOptions.appName || []} selected={filters.appName || []} onChange={(v) => setFilters(f => ({...f, appName: v}))} searchable />
+        <MultiSelectDropdown label="App Owner" options={filterOptions.appOwner || []} selected={filters.appOwner || []} onChange={(v) => setFilters(f => ({...f, appOwner: v}))} searchable />
+      </div>
     </div>
   );
 }
@@ -3217,7 +3264,7 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
         <KpiCard label="SLA Breached" value={slaCounts["Breached"] || 0} accentColor={C.critical} />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 20 }}>
         <Card>
           <SectionTitle icon={PieChartIcon}>Risk Rating Distribution</SectionTitle>
           <div style={{ height: 300, width: "100%" }}>
