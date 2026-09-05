@@ -162,13 +162,13 @@
       position: relative;
       display: inline-flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       background: linear-gradient(135deg, rgba(255, 42, 95, 0.12), rgba(157, 78, 221, 0.15));
       border: 1px solid rgba(255, 42, 95, 0.45);
       border-radius: 30px;
-      padding: 8px 18px;
+      padding: 7px 18px;
       font-family: var(--font-mono);
-      font-size: 12.5px;
+      font-size: 12px;
       font-weight: 600;
       color: #f8fafc;
       box-shadow: 0 0 15px rgba(255, 42, 95, 0.2);
@@ -183,11 +183,51 @@
       background: #ff2a5f;
       box-shadow: 0 0 10px #ff2a5f;
       animation: blink-dot 1.5s infinite;
+      flex-shrink: 0;
     }
 
     @keyframes blink-dot {
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .ivm-team-meta {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1px;
+    }
+
+    .ivm-team-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ivm-team-name {
+      font-weight: 700;
+      color: #ffffff;
+      font-size: 12.5px;
+      letter-spacing: 0.02em;
+    }
+
+    .ivm-live-time {
+      font-size: 11px;
+      color: var(--cyan);
+      background: rgba(0, 242, 254, 0.1);
+      border: 1px solid rgba(0, 242, 254, 0.3);
+      padding: 1px 7px;
+      border-radius: 10px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    .ivm-cyber-tagline {
+      font-size: 10px;
+      color: var(--text-dim);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-weight: 500;
     }
 
     .ivm-team-bookmark:hover {
@@ -200,20 +240,21 @@
     /* Popover Tooltip for IVM Team */
     .ivm-tooltip {
       position: absolute;
-      top: calc(100% + 12px);
+      top: calc(100% + 14px);
       right: 0;
       background: #0d121c;
       border: 1px solid var(--cyan);
-      border-radius: 12px;
-      padding: 16px 20px;
-      width: 280px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7), 0 0 20px var(--cyan-glow);
+      border-radius: 14px;
+      padding: 18px 20px;
+      width: 320px;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.8), 0 0 25px var(--cyan-glow);
       opacity: 0;
       visibility: hidden;
       transform: translateY(8px);
-      transition: all 0.25s ease-out;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
       pointer-events: none;
       z-index: 100;
+      text-align: left;
     }
 
     .ivm-team-bookmark:hover .ivm-tooltip {
@@ -226,7 +267,7 @@
       content: '';
       position: absolute;
       top: -6px;
-      right: 28px;
+      right: 32px;
       width: 10px;
       height: 10px;
       background: #0d121c;
@@ -241,12 +282,29 @@
       letter-spacing: 0.1em;
       color: var(--cyan);
       font-family: var(--font-mono);
-      margin-bottom: 10px;
+      margin-bottom: 12px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 6px;
+      padding-bottom: 8px;
+    }
+
+    .tooltip-help-banner {
+      background: rgba(0, 242, 254, 0.08);
+      border: 1px solid rgba(0, 242, 254, 0.25);
+      border-radius: 8px;
+      padding: 9px 12px;
+      margin-bottom: 14px;
+      font-size: 11.5px;
+      line-height: 1.45;
+      color: #e2e8f0;
+      font-family: var(--font-sans);
+    }
+
+    .tooltip-help-banner strong {
+      color: var(--cyan);
+      font-weight: 700;
     }
 
     .dev-list {
@@ -259,6 +317,10 @@
       display: flex;
       align-items: center;
       gap: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
     }
 
     .dev-avatar {
@@ -274,12 +336,20 @@
       font-weight: 700;
       font-size: 13px;
       color: var(--cyan);
+      flex-shrink: 0;
     }
 
     .dev-info .dev-name {
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 600;
       color: #ffffff;
+      font-family: var(--font-sans);
+    }
+
+    .dev-info .dev-role {
+      font-size: 11px;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
     }
 
     /* Main Container */
@@ -1252,31 +1322,44 @@
       </div>
     </div>
 
-    <!-- Bookmark Built by IVM Team with Hover Tooltip -->
+    <!-- Bookmark Built by IVM Team with Cyber Tagline, Live Time, and Hover Reachout Tooltip -->
     <div class="ivm-team-bookmark" tabindex="0" role="button" aria-haspopup="true" aria-label="Built by IVM Team">
       <span class="pulse-dot"></span>
-      <span>Built by IVM Team</span>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <div class="ivm-team-meta">
+        <div class="ivm-team-title-row">
+          <span class="ivm-team-name">Built by IVM Team</span>
+          <span class="ivm-live-time" id="header-live-time">00:00:00 UTC</span>
+        </div>
+        <span class="ivm-cyber-tagline">Continuous Posture &amp; Threat Defense</span>
+      </div>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-left: 2px;">
         <path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
       </svg>
 
-      <!-- Tooltip showing Barath and Dhinakaran -->
+      <!-- Tooltip showing reach out details for Barath & Dhinakaran -->
       <div class="ivm-tooltip">
         <div class="tooltip-header">
-          <span>Creators</span>
-          <span>IVM TEAM</span>
+          <span>IVM Engineering</span>
+          <span>Core Team</span>
         </div>
+
+        <div class="tooltip-help-banner">
+          💡 <strong>To save your time, reach Barath &amp; Dhina for related doubts and onboarding!</strong>
+        </div>
+
         <div class="dev-list">
           <div class="dev-item">
             <div class="dev-avatar">B</div>
             <div class="dev-info">
               <div class="dev-name">Barath</div>
+              <div class="dev-role">IVM Operations &amp; Architecture</div>
             </div>
           </div>
           <div class="dev-item">
             <div class="dev-avatar">D</div>
             <div class="dev-info">
               <div class="dev-name">Dhinakaran</div>
+              <div class="dev-role">SecOps &amp; Remediation Automation</div>
             </div>
           </div>
         </div>
@@ -1305,24 +1388,6 @@
         Unified cyber operations fabric engineered for enterprise SecOps, IVM, and AppSec teams. Streamline finding correlation, aging metrics calculation, and automated stakeholder remediation with zero data exfiltration.
       </p>
     </section>
-
-    <!-- Domain Scope Filter Bar -->
-    <div class="domain-scope-bar" id="domain-filters">
-      <span class="domain-pill active" data-domain="ALL">
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="9" /><path d="M12 8v8M8 12h8"/></svg>
-        All Domains
-      </span>
-      <span class="domain-pill" data-domain="IVM">IVM</span>
-      <span class="domain-pill" data-domain="CSPM">CSPM</span>
-      <span class="domain-pill" data-domain="SAST">SAST</span>
-      <span class="domain-pill" data-domain="DAST">DAST</span>
-      <span class="domain-pill" data-domain="M-PEN">M-PEN</span>
-      <span class="domain-pill" data-domain="VA">VA</span>
-      <span class="domain-pill" data-domain="VM">VM</span>
-      <span class="domain-pill" data-domain="AppSec">AppSec</span>
-      <span class="domain-pill" data-domain="CloudSec">CloudSec</span>
-      <span class="domain-pill" data-domain="AI">AI Analytics</span>
-    </div>
 
     <!-- 3 Interactive Tool Cards (SPECTRA Modules) -->
     <section class="tools-grid">
@@ -1948,30 +2013,19 @@
       });
     });
 
-    // Domain Scope Pills Click Handlers
-    const domainPills = document.querySelectorAll('.domain-pill');
-    domainPills.forEach(pill => {
-      pill.addEventListener('click', () => {
-        domainPills.forEach(p => p.classList.remove('active'));
-        pill.classList.add('active');
-        const domain = pill.getAttribute('data-domain');
-        const filterInput = document.getElementById('guide-filter-input');
-        
-        if (domain === 'ALL') {
-          if (filterInput) {
-            filterInput.value = '';
-            filterInput.dispatchEvent(new Event('input'));
-          }
-          showToast('Showing all SPECTRA capability domains');
-        } else {
-          if (filterInput) {
-            filterInput.value = domain;
-            filterInput.dispatchEvent(new Event('input'));
-          }
-          showToast(`Filtering by domain: ${domain}`);
-        }
-      });
-    });
+    // Live Time Clock for Built by IVM Team
+    function updateLiveTime() {
+      const timeElem = document.getElementById('header-live-time');
+      if (timeElem) {
+        const now = new Date();
+        const hours = String(now.getUTCHours()).padStart(2, '0');
+        const minutes = String(now.getUTCMinutes()).padStart(2, '0');
+        const seconds = String(now.getUTCSeconds()).padStart(2, '0');
+        timeElem.textContent = `${hours}:${minutes}:${seconds} UTC`;
+      }
+    }
+    updateLiveTime();
+    setInterval(updateLiveTime, 1000);
 
     // Interactive Tag click actions
     document.querySelectorAll('.tag-pill').forEach(pill => {
