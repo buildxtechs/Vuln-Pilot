@@ -1,134 +1,97 @@
-# 🛡️ VulnOps Automation Suite (Vuln-Pilot)
-### *Next-Generation Vulnerability Ingestion, Intelligence & Automated Remediation Framework*
+# 🚀 SPECTRA OPS CENTER
+### *Security Operations, Posture & Intelligence Platform*
+**Engineered by IVM Team (Barath & Dhinakaran) · Continuous Posture & Threat Defense**
 
 ---
 
-## 🌟 The Origin Story: The Genesis of VulnOps Automation
-
-In enterprise security operations, Infrastructure Vulnerability Management (IVM) teams face an overwhelming weekly operational hurdle: **fragmented scan data, massive spreadsheets, disparate cloud inventories, and manual correlation bottlenecks.**
-
 ```
-       [ MANUAL ENTERPRISE CHALLENGES ]
-  ┌────────────────────────────────────────┐
-  │  Qualys Server Raw Report (100k+ rows) │
-  │  Qualys Network Raw Report (+Tags)     │──┐
-  │  AWS & Azure Multi-Cloud Inventories   │  │
-  │  Complex CMDB Mapping (IP/Code/Host)   │  ├─► Manual Excel Chaos (Hours lost)
-  │  Lost Exception Approvals & Dates      │  │   VLOOKUP Failures & Formula Lag
-  │  Human Error in SLA & Asset Tracking   │  │   Delayed Remediation & Escalation
-  └────────────────────────────────────────┘──┘
+   ███████╗██████╗ ███████╗ ██████╗████████╗██████╗  █████╗ 
+   ██╔════╝██╔══██╗██╔════╝██╔════╝╚══██╔══╝██╔══██╗██╔══██╗
+   ███████╗██████╔╝█████╗  ██║        ██║   ██████╔╝███████║
+   ╚════██║██╔═══╝ ██╔══╝  ██║        ██║   ██╔══██╗██╔══██║
+   ███████║██║     ███████╗╚██████╗   ██║   ██║  ██║██║  ██║
+   ╚══════╝╚═╝     ╚══════╝ ╚═════╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝
+   
+      S E C U R I T Y   P O S T U R E ,   E V A L U A T I O N ,
+  C O M P L I A N C E ,   T H R E A T   &   R I S K   A N A L Y T I C S
 ```
 
-### The Problem Statement
-1. **Dual Report Silos**: Raw vulnerability exports are split across **Server** reports (system vulnerabilities) and **Network** reports (network findings with `Associated Tags`). Merging them manually without losing tags was error-prone and caused Excel memory crashes.
-2. **The Cloud Disconnect**: Cloud assets frequently change state (`stopped`, `deallocated`). Standard reporting often dropped non-running assets, causing visibility blind spots for compliance reporting like IASP.
-3. **Correlation Bottlenecks**: Mapping findings to Application Owners, APM IDs, and IF/PCI classifications via CMDB required multi-pass matching (IP address, 5-digit account correlation codes, and hostnames).
-4. **Exception Handling Gaps**: Approved risk exceptions lacked pre-processing, causing accepted vulnerabilities to be erroneously escalated as past-due SLAs.
-5. **Operational Fatigue**: Crafting individual follow-up emails for dozens of application owners took hours every week.
+> **NEXT-GEN UNIFIED CYBER COMMAND · 100% CLIENT-SIDE SECURE EXECUTION**  
+> Unified cyber operations fabric engineered for enterprise SecOps, IVM, and AppSec teams. Streamline finding correlation, aging metrics calculation, and automated stakeholder remediation with **zero data exfiltration**.
 
-### The Innovation: Building the VulnOps 3-Tool Ecosystem
-To resolve these challenges once and for all, this automation suite was architected as a **100% client-side, privacy-first, zero-infrastructure vulnerability operations ecosystem** comprising three interconnected platforms designed to execute in complete harmony.
+📖 **[Read the Full Origin Story & Engineering Genesis](STORYLINE.md)**
 
 ---
 
-## 🏗️ The 3 Core Platforms & Their Enterprise Usage
+## 🌟 Architecture & Operational Guide
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────┐
-│                            VULNOPS AUTOMATION SUITE                              │
+│                            SPECTRA OPERATIONS CENTER                             │
 ├──────────────────────────┬──────────────────────────┬────────────────────────────┤
-│   VulnOps Reporting      │    SecureMetrics Hub     │      Mail Automation       │
-│         Engine           │                          │                            │
-│  ──────────────────────  │  ──────────────────────  │  ────────────────────────  │
-│  • Dual Raw Ingestion    │  • Executive KPI Matrix  │  • SLA Threshold Escalator │
-│  • Sev 1 & 2 Auto-Filter │  • TruRisk / QDS Engine  │  • Dynamic Email Templates │
-│  • 3-Tier CMDB Engine    │  • Weekly Trend Deltas   │  • IST Timezone Precision  │
-│  • 54-Col IASP / PowerBI │  • Age Distribution      │  • Batch Follow-up Engine  │
+│      SPECTRA RADAR       │      SPECTRA FORGE       │      SPECTRA DISPATCH      │
+│  (Risk & Metrics Hub)    │   (Correlation Engine)   │  (Remediation Automator)   │
+│ ──────────────────────── │ ──────────────────────── │ ────────────────────────── │
+│ • 0–365+ Day Age Bands   │ • Dual Ingestion (Srv+Net│ • Automated Owner Nudges   │
+│ • Executive Heatmaps     │ • Sev 1 & 2 Auto-Strip   │ • Aptos 11 Outlook HTML    │
+│ • IF / PCI Segmentation  │ • Multi-Cloud State Ret. │ • SLA Breach Escalation    │
+│ • PowerPoint/PDF Export  │ • 3-Tier CMDB Ownership  │ • IST Timezone Precision   │
+│ • 23-Col Normalizer      │ • 54-Col IASP & PowerBI  │ • DOSS Timeline Matrices   │
 └──────────────────────────┴──────────────────────────┴────────────────────────────┘
 ```
 
-### 1. ⚙️ VulnOps Reporting Engine (`VulnOps_Reporting_Engine.html`)
-*The Core Ingestion, Normalization & Correlation Engine*
-- **Dual Raw Ingestion (Server + Network)**: Ingests both Qualys Server and Network raw exports, concatenates datasets seamlessly, and preserves `Associated Tags` and `Associated Malware`.
-- **Automated Severity Filtering**: Automatically strips out low-risk noise (Severity 1 & 2), focusing remediation solely on actionable risk (Severities 3, 4, and 5).
-- **Multi-Cloud Asset State Retention**: Retains and matches all AWS (EC2/VPC) and Azure (VM/Subscriptions) assets, ensuring stopped and deallocated machines remain properly mapped for IASP compliance.
-- **3-Tier Fallback CMDB Matcher**:
-  1. *Priority 1*: Direct IP Address match.
-  2. *Priority 2*: 5-digit cloud account/subscription correlation code extraction.
-  3. *Priority 3*: Hostname / NetBIOS fallback.
-- **Exception Approval Pre-Processor**: Configures APM ID and vulnerability acceptance rules before generation, auto-stamping `Exception Approved` status with `Exception Start Date` and `Exception End Date`.
-- **Dual-Mode Output Packages**:
-  - **IASP Outcome Report**: Exact 54-column compliance format ready for direct portal ingestion.
-  - **PowerBI Relational Model**: Star-schema workbook (`Fact_Vulnerabilities`, `Dim_Applications`, `Dim_Cloud_Assets`, `Measures_SLA_Summary`, `Fact_Exceptions`).
+### 1. 📡 SPECTRA RADAR (`SecureMetrics Hub.html`)
+*Risk & Metrics Intelligence · Aging calculation, SLA compliance, and cross-framework analytics.*
+* **100% In-Browser Analytical Processing**: Parses raw vulnerability scan reports, computes real-time aging matrix buckets (`0–365+` days), verifies SLA status, and presents executive dashboards without sending a single byte to an external server.
+* **Asset Criticality Segmentation**: Real-time division across **IF (Internet Facing)**, **PCI**, and internal corporate infrastructure.
+* **Executive Multi-Format Reporting**: One-click exports to **Excel, PDF, CSV & PowerPoint**.
 
-### 2. 📊 SecureMetrics Hub (`SecureMetrics_Hub.html`)
-*The Executive Security Telemetry & SLA Analytics Portal*
-- **Executive Security Dashboard**: High-level visual telemetry over total vulnerability volume, remediated items, and SLA breach rates.
-- **Asset Criticality & Compliance**: Segmented risk distribution across **IF (Internet Facing)**, **PCI (Payment Card Industry)**, and internal assets.
-- **Vulnerability Aging Spectrum**: Deep breakdown of vulnerability age buckets (`0-7d`, `8-30d`, `31-60d`, `61-90d`, `90d+`) to track aging technical debt.
-- **Week-over-Week Trend Tracker**: Delta comparison evaluating new findings vs. remediated/closed findings.
+### 2. ⚙️ SPECTRA FORGE (`VulnOps_Reporting_Engine.html`)
+*Report & Correlation Engine · Master report generation, cloud inventory correlation, and audit logging.*
+* **Automated Multi-Layer Correlation**: Correlates findings against running and stopped AWS/Azure cloud instances, enriches ownership via 3-tier CMDB resolution, applies SLA matrices, and documents all discrepancies in the audit log.
+* **Dual Raw Ingestion (Server + Network)**: Merges standard Server raw reports and Network raw reports (preserving `Associated Tags`), while auto-filtering Severity 1 & 2 findings.
+* **Multi-Cloud Asset State Retention**: Retains and matches stopped/deallocated AWS and Azure assets for compliance reporting.
+* **3-Tier CMDB Ownership Resolution**: Matches via `IP Address` $\rightarrow$ `5-Digit Account Correlation Code` $\rightarrow$ `Hostname / NetBIOS`.
+* **Exception Approval Pre-Processor**: Pre-configures APM ID and vulnerability waivers with `Exception Start Date` and `Exception End Date`.
+* **Dual Output Schemas**:
+  * **IASP Final Outcome**: Exact 54-column compliance schema.
+  * **PowerBI Relational Model**: 57-column star-schema (`Fact_Vulnerabilities`, `Dim_Applications`, `Dim_Cloud_Assets`, `Measures_SLA_Summary`, `Fact_Exceptions`).
 
-### 3. 📬 Mail Automation (`Mail_Automation.html`)
-*The Automated SLA Remediation & Application Owner Escalation Engine*
-- **Automated Follow-Up Generation**: Automatically clusters findings by Application Owner and APM ID to draft personalized, professional remediation emails.
-- **SLA Breach Threshold Indicators**: Highlights Critical and Past-Due SLA findings with urgency tags.
-- **IST Timezone Localization**: All timestamps and follow-up schedules are stamped in Indian Standard Time (IST) for synchronized operations.
-- **Interactive Template Customization**: Allows security analysts to tweak templates, insert custom action items, and preview live email drafts before dispatching.
+### 3. 📬 SPECTRA DISPATCH (`Mail Automation.html`)
+*Remediation Automation · Stakeholder outreach, SLA breach escalations, Aptos 11 formatting, and PowerBI intelligence.*
+* **Accelerated Remediation Cycle**: Closes the loop between technical findings and application teams. Aggregates vulnerabilities per custodian, prepares compliant Outlook HTML email drafts with verified resource links, and renders DOSS timeline matrices formatted in **Aptos 11**.
+* **SLA Escalation Matrix**: Highlights critical and overdue items with real-time days-overdue calculations.
+* **IST Timezone Localization**: Fully localized in Indian Standard Time (IST) for operational synchronization.
 
 ---
 
 ## 🎯 The S.P.E.C.T.R.A. Framework Alignment
 
-This suite was architected around the enterprise **SPECTRA** lifecycle model to guarantee end-to-end vulnerability governance:
-
 | Letter | SPECTRA Phase | Enterprise Automation Capability |
 | :---: | :--- | :--- |
-| **S** | **Scan & Ingest** | Ingests disparate scanner reports (Server & Network raw Qualys reports) with automated column alias resolution. |
-| **P** | **Prioritize & Filter** | Filters out Severity 1 & 2 noise; classifies risk tiers (5 - Critical, 4 - High, 3 - Medium) and TruRisk scores. |
-| **E** | **Evaluate & Except** | Pre-processes formalized risk exception approvals with validity date ranges (`Exception Start/End Dates`). |
-| **C** | **Correlate & Enrich** | Multi-pass CMDB correlation (IP $\rightarrow$ 5-digit code $\rightarrow$ Hostname) and AWS/Azure cloud asset tagging. |
-| **T** | **Track & SLA Matrix** | Computes precise SLA deadlines based on asset exposure (IF, PCI, Internal) and vulnerability age. |
-| **R** | **Remediate & Escalate** | Generates automated, formatted email communications with target remediation tables for App Owners. |
-| **A** | **Audit & Export** | Maintains local browser audit trails, week-over-week deltas, and dual export models (54-col IASP & PowerBI Star Schema). |
+| **S** | **Scan & Ingest** | **FORGE** ingests Server & Network raw Qualys reports with automated column alias resolution. |
+| **P** | **Prioritize & Filter** | **FORGE** strips Severity 1 & 2 noise; **RADAR** evaluates TruRisk, QDS, and CVSS severity profiles. |
+| **E** | **Evaluate & Except** | **FORGE** pre-processes formal risk exceptions with strict **Exception Start & End Dates**. |
+| **C** | **Correlate & Enrich** | **FORGE** applies 3-tier CMDB matching (IP $\rightarrow$ Code $\rightarrow$ Host) & multi-cloud asset retention. |
+| **T** | **Track & SLA Matrix** | **RADAR** computes aging matrix buckets and SLA compliance against IF/PCI asset tiers. |
+| **R** | **Remediate & Escalate** | **DISPATCH** drafts personalized Aptos 11 Outlook HTML emails with copyable Excel matrices. |
+| **A** | **Audit & Export** | **FORGE** logs all data-quality exceptions and exports 54-col IASP and PowerBI star schemas. |
 
 ---
 
-## 🚀 Quick Start Guide
+## 🔍 Audit Transparency: Exception Categories
 
-### 1. Local Execution (Zero-Install)
-All tools run completely in modern web browsers (Chrome, Edge, Safari, Firefox) with no backend server or Node.js runtime required.
-
-```bash
-# Clone the repository
-git clone https://github.com/buildxtechs/Vuln-Pilot.git
-
-# Navigate to the folder
-cd Vuln-Pilot
-
-# Open the central suite portal
-open index.html   # On macOS
-# or start on Windows: start index.html
-```
-
-### 2. Recommended Operational Workflow
-1. Open **`index.html`** and launch the **VulnOps Reporting Engine**.
-2. Select your pipeline mode (**IASP** or **PowerBI**).
-3. Upload raw reports in **Ingestion Hub**:
-   - Qualys Server Raw Report & Qualys Network Raw Report
-   - AWS Inventory & Azure Inventory
-   - CMDB Asset Repository
-   - Previous Week's Final Outcome *(Optional, for Week-over-Week Fixed tracking)*
-4. Configure any active risk waivers in **Rule Engine & CMDB $\rightarrow$ Exception Approvals**.
-5. Click **Generate Final Report** in **Process & Run**.
-6. Export the processed workbook (`.xlsx`) or flat table (`.csv`) in **Export Packages**.
-7. Switch to **Mail Automation** to dispatch automated remediation notifications to application owners.
-8. Review metrics and executive trends in **SecureMetrics Hub**.
+Every data ambiguity in **SPECTRA FORGE** is transparently captured in the Exception Log:
+* `Invalid Severity` / `Invalid IP` / `Missing QID`
+* `AWS/Azure IP Not Running` *(flagged in PowerBI, retained in IASP)*
+* `Duplicate AWS/Azure IP`
+* `No Cloud Inventory Match`
+* `CMDB Duplicate Match` / `CMDB Match Missing`
+* `Missing SLA Config`
 
 ---
 
-## 📋 IASP 54-Column Outcome Schema Specification
-
-The IASP export package strictly adheres to the following 54 enterprise column headers:
+## 📋 IASP 54-Column Outcome Schema
 
 ```tsv
 1. IP                     19. Date Last Fixed          37. ARS
@@ -153,14 +116,23 @@ The IASP export package strictly adheres to the following 54 enterprise column h
 
 ---
 
-## 🔒 Security & Privacy by Design
+## 🚀 Quick Launch
 
-- **100% In-Browser Computation**: Client-side JavaScript execution via Web Workers & SheetJS. No sensitive asset inventory or vulnerability data is ever sent to external cloud APIs or remote servers.
-- **Encrypted Local Storage**: User preferences, rule configurations, and audit trail records remain confined to the local browser context.
-- **Deterministic & Auditable**: Every row transformation, exception override, and CMDB link is logged with exact traceability.
+```bash
+# Clone the repository
+git clone https://github.com/buildxtechs/Vuln-Pilot.git
+
+# Navigate to folder
+cd Vuln-Pilot
+
+# Launch the SPECTRA Operations Center
+open index.html   # On macOS
+# or start index.html on Windows
+```
 
 ---
 
 ### 👨‍💻 Engineering Credits
-Developed and maintained by the **IVM Operations & Cyber Engineering Team**.
-*Designed for enterprise scale, auditor compliance, and operational excellence.*
+**SPECTRA Operations Center**  
+*Engineered with excellence by the IVM Team (Barath & Dhinakaran)*  
+*Continuous Posture & Threat Defense*
