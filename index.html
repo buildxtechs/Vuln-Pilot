@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VulnPilot 🚀 · Vulnerability Operations & Intelligence Platform</title>
+  <title>SPECTRA 🚀 · Security Operations & Intelligence Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg-dark: #07090e;
@@ -107,44 +107,44 @@
     }
 
     .brand-icon {
-      width: 42px;
-      height: 42px;
+      width: 44px;
+      height: 44px;
       background: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #9d4edd 100%);
-      border-radius: 10px;
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 20px var(--cyan-glow);
+      box-shadow: 0 0 24px var(--cyan-glow);
     }
 
     .brand-icon svg {
-      width: 24px;
-      height: 24px;
+      width: 26px;
+      height: 26px;
       color: #07090e;
     }
 
     .brand-text h1 {
       font-family: var(--font-disp);
-      font-size: 20px;
-      font-weight: 700;
+      font-size: 22px;
+      font-weight: 800;
       letter-spacing: -0.02em;
-      background: linear-gradient(90deg, #ffffff 0%, #cbd5e1 100%);
+      background: linear-gradient(90deg, #ffffff 0%, #e2e8f0 100%);
       -webkit-background-clip: text;
       background-clip: text;
       -webkit-text-fill-color: transparent;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
     }
 
     .brand-text .badge-cyber {
-      font-size: 10px;
+      font-size: 10.5px;
       font-family: var(--font-mono);
-      font-weight: 600;
+      font-weight: 700;
       background: rgba(0, 242, 254, 0.12);
       border: 1px solid rgba(0, 242, 254, 0.4);
       color: var(--cyan);
-      padding: 2px 8px;
+      padding: 2px 9px;
       border-radius: 20px;
       text-transform: uppercase;
       letter-spacing: 0.08em;
@@ -282,12 +282,6 @@
       color: #ffffff;
     }
 
-    .dev-info .dev-role {
-      font-size: 11px;
-      color: var(--text-dim);
-      font-family: var(--font-mono);
-    }
-
     /* Main Container */
     main {
       position: relative;
@@ -300,7 +294,7 @@
     /* Hero Section */
     .hero {
       text-align: center;
-      margin-bottom: 50px;
+      margin-bottom: 40px;
       position: relative;
     }
 
@@ -308,12 +302,13 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 16px;
+      padding: 6px 18px;
       background: rgba(0, 242, 254, 0.08);
       border: 1px solid rgba(0, 242, 254, 0.3);
       border-radius: 30px;
       font-family: var(--font-mono);
       font-size: 12px;
+      font-weight: 600;
       color: var(--cyan);
       margin-bottom: 20px;
       box-shadow: 0 0 15px rgba(0, 242, 254, 0.1);
@@ -321,11 +316,11 @@
 
     .hero h2 {
       font-family: var(--font-disp);
-      font-size: 44px;
+      font-size: 48px;
       font-weight: 800;
       letter-spacing: -0.03em;
       line-height: 1.15;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .hero h2 .highlight-cyan {
@@ -341,12 +336,74 @@
       -webkit-text-fill-color: transparent;
     }
 
+    .hero-acronym {
+      font-family: var(--font-disp);
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      margin-bottom: 14px;
+      text-transform: uppercase;
+    }
+    .hero-acronym span {
+      color: #ffffff;
+      border-bottom: 2px solid var(--cyan);
+      padding-bottom: 2px;
+    }
+
     .hero p {
-      font-size: 16px;
+      font-size: 15.5px;
       color: var(--text-dim);
-      max-width: 680px;
+      max-width: 740px;
       margin: 0 auto;
       font-weight: 400;
+      line-height: 1.6;
+    }
+
+    /* Capability Domain Pills */
+    .domain-scope-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 28px auto 46px;
+      max-width: 1050px;
+    }
+
+    .domain-pill {
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      color: #cbd5e1;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
+    }
+
+    .domain-pill:hover, .domain-pill.active {
+      background: rgba(0, 242, 254, 0.12);
+      border-color: var(--cyan);
+      color: #ffffff;
+      box-shadow: 0 0 16px var(--cyan-glow);
+      transform: translateY(-2px);
+    }
+
+    .domain-pill.active {
+      background: linear-gradient(135deg, rgba(0, 242, 254, 0.2), rgba(157, 78, 221, 0.25));
+    }
+
+    .domain-pill svg {
+      width: 13px;
+      height: 13px;
+      color: var(--cyan);
     }
 
     /* Cards Grid */
@@ -367,8 +424,8 @@
       position: relative;
       background: var(--bg-card);
       border: 1px solid var(--border);
-      border-radius: 18px;
-      padding: 30px 26px;
+      border-radius: 20px;
+      padding: 32px 28px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
@@ -395,7 +452,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      border-radius: 18px;
+      border-radius: 20px;
       padding: 1px;
       background: linear-gradient(135deg, var(--card-accent, var(--cyan)), transparent 60%);
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
@@ -499,8 +556,8 @@
 
     .card-title {
       font-family: var(--font-disp);
-      font-size: 23px;
-      font-weight: 700;
+      font-size: 24px;
+      font-weight: 800;
       margin-bottom: 10px;
       color: #ffffff;
       display: flex;
@@ -587,7 +644,7 @@
       display: flex;
       align-items: center;
       gap: 20px;
-      margin: 60px 0 50px;
+      margin: 60px 0 35px;
     }
 
     .docs-divider .line {
@@ -610,18 +667,149 @@
       box-shadow: 0 0 15px rgba(0, 242, 254, 0.1);
     }
 
+    /* Enhanced Filter Bar */
+    .filter-panel {
+      background: linear-gradient(135deg, rgba(14, 18, 26, 0.95), rgba(19, 24, 36, 0.85));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 18px 22px;
+      margin-bottom: 30px;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.3);
+      backdrop-filter: blur(12px);
+    }
+
+    .filter-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .filter-panel-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-disp);
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--cyan);
+    }
+
+    .filter-controls-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .guide-tabs {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(7, 9, 14, 0.6);
+      padding: 4px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .guide-tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-dim);
+      font-family: var(--font-disp);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+
+    .guide-tab-btn:hover {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .guide-tab-btn.active {
+      color: #ffffff;
+      background: var(--tab-bg, rgba(0, 242, 254, 0.12));
+      border-color: var(--tab-border, var(--cyan));
+      box-shadow: 0 0 16px var(--tab-glow, var(--cyan-glow));
+    }
+
+    .guide-tab-btn[data-target="all"].active { --tab-bg: rgba(255, 255, 255, 0.08); --tab-border: var(--border-bright); --tab-glow: rgba(255, 255, 255, 0.05); }
+    .guide-tab-btn[data-target="securemetrics-guide"].active { --tab-bg: rgba(45, 212, 191, 0.15); --tab-border: #2dd4bf; --tab-glow: rgba(45, 212, 191, 0.25); }
+    .guide-tab-btn[data-target="vulnops-guide"].active { --tab-bg: rgba(255, 42, 95, 0.15); --tab-border: #ff2a5f; --tab-glow: rgba(255, 42, 95, 0.25); }
+    .guide-tab-btn[data-target="mail-guide"].active { --tab-bg: rgba(139, 92, 246, 0.15); --tab-border: #8b5cf6; --tab-glow: rgba(139, 92, 246, 0.25); }
+
+    .guide-search-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(7, 9, 14, 0.8);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 8px 16px;
+      min-width: 300px;
+      flex: 1;
+      max-width: 440px;
+      transition: all 0.2s ease;
+    }
+
+    .guide-search-box:focus-within {
+      border-color: var(--cyan);
+      box-shadow: 0 0 16px var(--cyan-glow);
+    }
+
+    .guide-search-box input {
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #ffffff;
+      font-size: 13px;
+      font-family: var(--font-sans);
+      width: 100%;
+    }
+
+    .guide-search-box svg {
+      width: 16px;
+      height: 16px;
+      color: var(--text-muted);
+      flex-shrink: 0;
+    }
+
+    .search-clear-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: none;
+      padding: 2px;
+    }
+    .search-clear-btn:hover {
+      color: #fff;
+    }
+
     /* Architecture / Deep-Dive Documentation Sections */
     .docs-section {
       display: flex;
       flex-direction: column;
-      gap: 50px;
+      gap: 40px;
     }
 
     .doc-block {
       background: var(--bg-surface);
       border: 1px solid var(--border);
       border-radius: 20px;
-      padding: 40px;
+      padding: 36px;
       position: relative;
       overflow: hidden;
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
@@ -726,94 +914,6 @@
       color: var(--doc-accent);
       flex-shrink: 0;
       margin-top: 3px;
-    }
-
-    /* Interactive Guide Navigation & Filter */
-    .guide-nav-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      margin-bottom: 28px;
-      flex-wrap: wrap;
-    }
-
-    .guide-tabs {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: rgba(14, 18, 26, 0.9);
-      padding: 6px;
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      backdrop-filter: blur(10px);
-    }
-
-    .guide-tab-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 18px;
-      border-radius: 9px;
-      border: 1px solid transparent;
-      background: transparent;
-      color: var(--text-dim);
-      font-family: var(--font-disp);
-      font-size: 13.5px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.25s ease;
-    }
-
-    .guide-tab-btn:hover {
-      color: #ffffff;
-      background: rgba(255, 255, 255, 0.04);
-    }
-
-    .guide-tab-btn.active {
-      color: #ffffff;
-      background: var(--tab-bg, rgba(0, 242, 254, 0.12));
-      border-color: var(--tab-border, var(--cyan));
-      box-shadow: 0 0 16px var(--tab-glow, var(--cyan-glow));
-    }
-
-    .guide-tab-btn[data-target="all"].active { --tab-bg: rgba(255, 255, 255, 0.08); --tab-border: var(--border-bright); --tab-glow: rgba(255, 255, 255, 0.05); }
-    .guide-tab-btn[data-target="securemetrics-guide"].active { --tab-bg: rgba(45, 212, 191, 0.15); --tab-border: #2dd4bf; --tab-glow: rgba(45, 212, 191, 0.25); }
-    .guide-tab-btn[data-target="vulnops-guide"].active { --tab-bg: rgba(255, 42, 95, 0.15); --tab-border: #ff2a5f; --tab-glow: rgba(255, 42, 95, 0.25); }
-    .guide-tab-btn[data-target="mail-guide"].active { --tab-bg: rgba(139, 92, 246, 0.15); --tab-border: #8b5cf6; --tab-glow: rgba(139, 92, 246, 0.25); }
-
-    .guide-search-box {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      background: var(--bg-surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 8px 16px;
-      min-width: 280px;
-      transition: all 0.2s ease;
-    }
-
-    .guide-search-box:focus-within {
-      border-color: var(--cyan);
-      box-shadow: 0 0 16px var(--cyan-glow);
-    }
-
-    .guide-search-box input {
-      background: transparent;
-      border: none;
-      outline: none;
-      color: #ffffff;
-      font-size: 13px;
-      font-family: var(--font-sans);
-      width: 100%;
-    }
-
-    .guide-search-box svg {
-      width: 16px;
-      height: 16px;
-      color: var(--text-muted);
-      flex-shrink: 0;
     }
 
     /* Pipeline Step Cards - Enhanced Interactivity */
@@ -1145,10 +1245,10 @@
       </div>
       <div class="brand-text">
         <h1>
-          VULNPILOT 🚀
+          SPECTRA 🚀
           <span class="badge-cyber">OPS CENTER</span>
         </h1>
-        <p>Vulnerability Operations & Intelligence Platform</p>
+        <p>Security Operations &amp; Intelligence Platform</p>
       </div>
     </div>
 
@@ -1191,23 +1291,44 @@
     <section class="hero">
       <div class="hero-pill">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
         </svg>
-        FIND IT. TRACK IT. FIX IT. · 100% CLIENT-SIDE SECURE EXECUTION
+        NEXT-GEN UNIFIED CYBER COMMAND · 100% CLIENT-SIDE SECURE EXECUTION
       </div>
       <h2>
-        Vulnerability Operations <span class="highlight-cyan">Command Center</span>
+        SPECTRA <span class="highlight-cyan">Operations Center</span>
       </h2>
+      <div class="hero-acronym">
+        <span>S</span>ecurity <span>P</span>osture, <span>E</span>valuation, <span>C</span>ompliance, <span>T</span>hreat &amp; <span>R</span>isk <span>A</span>nalytics
+      </div>
       <p>
-        From raw findings to remediation action — without the reporting headache. Engineered for Security & IVM teams to dramatically speed up weekly reporting cycles with zero data exfiltration.
+        Unified cyber operations fabric engineered for enterprise SecOps, IVM, and AppSec teams. Streamline finding correlation, aging metrics calculation, and automated stakeholder remediation with zero data exfiltration.
       </p>
     </section>
 
-    <!-- 3 Interactive Tool Cards -->
+    <!-- Domain Scope Filter Bar -->
+    <div class="domain-scope-bar" id="domain-filters">
+      <span class="domain-pill active" data-domain="ALL">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="9" /><path d="M12 8v8M8 12h8"/></svg>
+        All Domains
+      </span>
+      <span class="domain-pill" data-domain="IVM">IVM</span>
+      <span class="domain-pill" data-domain="CSPM">CSPM</span>
+      <span class="domain-pill" data-domain="SAST">SAST</span>
+      <span class="domain-pill" data-domain="DAST">DAST</span>
+      <span class="domain-pill" data-domain="M-PEN">M-PEN</span>
+      <span class="domain-pill" data-domain="VA">VA</span>
+      <span class="domain-pill" data-domain="VM">VM</span>
+      <span class="domain-pill" data-domain="AppSec">AppSec</span>
+      <span class="domain-pill" data-domain="CloudSec">CloudSec</span>
+      <span class="domain-pill" data-domain="AI">AI Analytics</span>
+    </div>
+
+    <!-- 3 Interactive Tool Cards (SPECTRA Modules) -->
     <section class="tools-grid">
 
-      <!-- Tool 1: Radar (Pilot Metrics) -->
-      <a href="SecureMetrics Hub.html" class="tool-card card-metrics" title="Launch Radar (Pilot Metrics)">
+      <!-- Tool 1: SPECTRA RADAR -->
+      <a href="SecureMetrics Hub.html" class="tool-card card-metrics" title="Launch SPECTRA RADAR">
         <div>
           <div class="card-top">
             <div class="card-icon-box">
@@ -1215,18 +1336,18 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
             </div>
-            <span class="launch-tag">Pilot Metrics ↗</span>
+            <span class="launch-tag">Risk &amp; Metrics ↗</span>
           </div>
 
-          <h3 class="card-title">Radar <span style="font-size: 13.5px; font-weight: 500; opacity: 0.8; color: var(--cyan);">— Find the risk</span></h3>
+          <h3 class="card-title">SPECTRA RADAR</h3>
           <p class="card-desc">
-            Executive metrics, aging buckets (0–365+ days), productivity tracking, live heatmaps, and multi-format reporting exports.
+            Executive metrics, aging buckets (0–365+ days), compliance tracking, live heatmaps, and multi-format presentation reporting.
           </p>
 
           <ul class="card-features">
             <li>
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span>Qualys CSV/XLSX 23-Column Schema Normalizer</span>
+              <span>Multi-Source 23-Column Schema Normalizer</span>
             </li>
             <li>
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
@@ -1234,7 +1355,7 @@
             </li>
             <li>
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span>Excel, PDF, CSV & PowerPoint Presentation Export</span>
+              <span>Excel, PDF, CSV &amp; PowerPoint Export</span>
             </li>
           </ul>
         </div>
@@ -1242,14 +1363,14 @@
         <div class="card-action-bar">
           <div class="engine-status">
             <span class="status-indicator"></span>
-            <span>Pilot Metrics Ready</span>
+            <span>RADAR Online</span>
           </div>
-          <span class="open-btn-text">Launch Radar ➔</span>
+          <span class="open-btn-text">Launch RADAR ➔</span>
         </div>
       </a>
 
-      <!-- Tool 2: Forge (Pilot Engine) -->
-      <a href="VulnOps_Reporting_Engine.html" class="tool-card card-vulnops" title="Launch Forge (Pilot Engine)">
+      <!-- Tool 2: SPECTRA FORGE -->
+      <a href="VulnOps_Reporting_Engine.html" class="tool-card card-vulnops" title="Launch SPECTRA FORGE">
         <div>
           <div class="card-top">
             <div class="card-icon-box">
@@ -1257,10 +1378,10 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
               </svg>
             </div>
-            <span class="launch-tag">Pilot Engine ↗</span>
+            <span class="launch-tag">Report &amp; Correlation ↗</span>
           </div>
 
-          <h3 class="card-title">Forge <span style="font-size: 13.5px; font-weight: 500; opacity: 0.8; color: var(--red);">— Build the report</span></h3>
+          <h3 class="card-title">SPECTRA FORGE</h3>
           <p class="card-desc">
             57-column master report generation with AWS/Azure IP-to-instance matching, 3-tier CMDB enrichment, and zero silent data drop audit.
           </p>
@@ -1268,15 +1389,15 @@
           <ul class="card-features">
             <li>
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span>AWS & Azure Running Instance Correlation</span>
+              <span>Multi-Cloud Asset &amp; Instance Correlation</span>
             </li>
             <li>
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span>3-Tier CMDB Ownership (IP → Correlation Code → Host)</span>
+              <span>3-Tier CMDB Ownership (IP → Code → Host)</span>
             </li>
             <li>
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span>Deterministic IP/QID Unique Tracking & Exceptions Log</span>
+              <span>Deterministic Unique Tracking &amp; Exceptions Log</span>
             </li>
           </ul>
         </div>
@@ -1284,14 +1405,14 @@
         <div class="card-action-bar">
           <div class="engine-status">
             <span class="status-indicator"></span>
-            <span>Pilot Engine Ready</span>
+            <span>FORGE Online</span>
           </div>
-          <span class="open-btn-text">Launch Forge ➔</span>
+          <span class="open-btn-text">Launch FORGE ➔</span>
         </div>
       </a>
 
-      <!-- Tool 3: Dispatch (Pilot Mail) -->
-      <a href="Mail Automation.html" class="tool-card card-mail" title="Launch Dispatch (Pilot Mail)">
+      <!-- Tool 3: SPECTRA DISPATCH -->
+      <a href="Mail Automation.html" class="tool-card card-mail" title="Launch SPECTRA DISPATCH">
         <div>
           <div class="card-top">
             <div class="card-icon-box">
@@ -1299,26 +1420,26 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
             </div>
-            <span class="launch-tag">Pilot Mail ↗</span>
+            <span class="launch-tag">Remediation Automation ↗</span>
           </div>
 
-          <h3 class="card-title">Dispatch <span style="font-size: 13.5px; font-weight: 500; opacity: 0.8; color: var(--purple);">— Chase the owners 😄</span></h3>
+          <h3 class="card-title">SPECTRA DISPATCH</h3>
           <p class="card-desc">
-            Automated stakeholder outreach, remediation notification drafting, SLA breach escalations, and customizable cyber security notification mailers.
+            Automated stakeholder outreach, remediation notification drafting, SLA breach escalations, and PowerBI follow-up intelligence.
           </p>
 
           <ul class="card-features">
             <li>
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span>Application Owner & Custodian Email Dispatch</span>
+              <span>Application Owner &amp; Custodian Dispatch</span>
             </li>
             <li>
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span>Automated Overdue & Escalation Notice Generator</span>
+              <span>Aptos 11 Formatted Outlook HTML &amp; Excel Copier</span>
             </li>
             <li>
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              <span>Custom HTML Templates with Embedded Metric Summaries</span>
+              <span>Pre-Flight Link Configuration Verification</span>
             </li>
           </ul>
         </div>
@@ -1326,9 +1447,9 @@
         <div class="card-action-bar">
           <div class="engine-status">
             <span class="status-indicator"></span>
-            <span>Pilot Mail Ready</span>
+            <span>DISPATCH Online</span>
           </div>
-          <span class="open-btn-text">Launch Dispatch ➔</span>
+          <span class="open-btn-text">Launch DISPATCH ➔</span>
         </div>
       </a>
 
@@ -1337,41 +1458,56 @@
     <!-- Divider -->
     <div class="docs-divider">
       <div class="line"></div>
-      <div class="section-badge">Comprehensive Architecture & Operational Guide</div>
+      <div class="section-badge">Architecture &amp; Operational Guide</div>
       <div class="line"></div>
     </div>
 
-    <!-- Interactive Navigation & Filter Bar for the Guide -->
-    <div class="guide-nav-bar">
-      <div class="guide-tabs">
-        <button class="guide-tab-btn active" data-target="all">
-          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
-          All Modules (3)
-        </button>
-        <button class="guide-tab-btn" data-target="securemetrics-guide">
-          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-          Radar (Metrics)
-        </button>
-        <button class="guide-tab-btn" data-target="vulnops-guide">
-          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-          Forge (Engine)
-        </button>
-        <button class="guide-tab-btn" data-target="mail-guide">
-          <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
-          Dispatch (Mailer)
-        </button>
+    <!-- Enhanced Filter Panel for Guide Navigation -->
+    <div class="filter-panel">
+      <div class="filter-panel-header">
+        <div class="filter-panel-title">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
+          <span>Module Filter &amp; Search</span>
+        </div>
+        <div style="font-family: var(--font-mono); font-size: 11.5px; color: var(--text-muted);">
+          Showing: <span id="module-count-badge" style="color: var(--cyan); font-weight: 700;">3 Modules</span>
+        </div>
       </div>
 
-      <div class="guide-search-box">
-        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        <input type="text" id="guide-filter-input" placeholder="Search architecture, SLA rules, steps..." />
+      <div class="filter-controls-row">
+        <div class="guide-tabs">
+          <button class="guide-tab-btn active" data-target="all">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            All Modules
+          </button>
+          <button class="guide-tab-btn" data-target="securemetrics-guide">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+            RADAR
+          </button>
+          <button class="guide-tab-btn" data-target="vulnops-guide">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            FORGE
+          </button>
+          <button class="guide-tab-btn" data-target="mail-guide">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            DISPATCH
+          </button>
+        </div>
+
+        <div class="guide-search-box">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          <input type="text" id="guide-filter-input" placeholder="Search architecture, algorithms, SLA rules, steps..." />
+          <button class="search-clear-btn" id="search-clear-btn" title="Clear search">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
       </div>
     </div>
 
     <!-- Deep-Dive Explanations Section -->
     <div class="docs-section">
 
-      <!-- 1. SecureMetrics Hub Explanation -->
+      <!-- 1. SPECTRA RADAR Explanation -->
       <article class="doc-block doc-securemetrics" id="securemetrics-guide">
         <div class="doc-header">
           <div class="doc-header-left">
@@ -1381,11 +1517,11 @@
               </svg>
             </div>
             <div class="doc-title-area">
-              <h3>How Radar (Pilot Metrics) Works</h3>
-              <p>A quick tour of the pipeline, the data it expects, and how the SLA math is done.</p>
+              <h3>How SPECTRA RADAR Works</h3>
+              <p>Risk &amp; Metrics Intelligence · Aging calculation, SLA compliance, and cross-framework analytics.</p>
             </div>
           </div>
-          <a href="SecureMetrics Hub.html" class="doc-launch-action">Launch Radar ↗</a>
+          <a href="SecureMetrics Hub.html" class="doc-launch-action">Launch RADAR ↗</a>
         </div>
 
         <div class="doc-summary-banner">
@@ -1393,7 +1529,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <div>
-            <strong>100% In-Browser Analytical Processing:</strong> SecureMetrics Hub parses your raw vulnerability scan reports, computes real-time aging matrix buckets, verifies SLA status, and presents executive dashboards without sending a single byte to an external server.
+            <strong>100% In-Browser Analytical Processing:</strong> SPECTRA RADAR parses your raw vulnerability scan reports, computes real-time aging matrix buckets, verifies SLA status, and presents executive dashboards without sending a single byte to an external server.
           </div>
         </div>
 
@@ -1405,7 +1541,7 @@
             </div>
             <h4 class="step-title">Upload your export</h4>
             <p class="step-desc">
-              Drag a Qualys-style CSV or XLSX export onto the Upload page, or click to browse. Everything runs locally in your browser — the file never leaves your machine, there is no server and no account.
+              Drag a Qualys, IVM, or CSPM export onto the Upload page, or click to browse. Everything runs locally in your browser — zero external telemetry, zero server overhead.
             </p>
             <div class="step-extra-content">
               ⚡ <strong>Local Sandbox:</strong> FileReader API parses raw byte buffers on client CPU. Memory is purged upon tab closure for maximum privacy.
@@ -1419,10 +1555,10 @@
             </div>
             <h4 class="step-title">Automatic column matching</h4>
             <p class="step-desc">
-              Headers are normalized and matched against the expected 23-column schema, even if capitalization or spacing differs between weekly exports. Any missing mandatory column is flagged before you continue, with a checklist showing exactly what was and wasn't found.
+              Headers are normalized and matched against the expected 23-column schema, even if capitalization or spacing differs between weekly exports. Any missing mandatory column is flagged before you continue.
             </p>
             <div class="step-extra-content">
-              🔍 <strong>Schema Validation:</strong> Tolerates casing (e.g. "IP" vs "ip"), whitespace, and alias variants.
+              🔍 <strong>Schema Validation:</strong> Tolerates casing (e.g. "IP" vs "ip"), whitespace, and alias variants across scanner types.
             </div>
           </div>
 
@@ -1447,7 +1583,7 @@
             </div>
             <h4 class="step-title">Read the dashboards</h4>
             <p class="step-desc">
-              Summary gives you the headline KPIs; Aging breaks findings into 0–30 through 365+ day buckets with a heat map by application; Productivity tracks closure and SLA compliance; Risk Analytics isolates critical/high exposure by age and environment; Age Averages gives copy-ready tables for status reporting.
+              Summary gives you the headline KPIs; Aging breaks findings into 0–30 through 365+ day buckets with a heat map by application; Productivity tracks closure and SLA compliance; Risk Analytics isolates critical/high exposure by age and environment.
             </p>
             <div class="step-extra-content">
               📊 <strong>Aging Matrix:</strong> Dynamic bucketing: [0-30d], [31-60d], [61-90d], [91-180d], [181-365d], [365d+].
@@ -1461,7 +1597,7 @@
             </div>
             <h4 class="step-title">Export or save your view</h4>
             <p class="step-desc">
-              Export the current filtered scope to Excel, CSV, PDF or PowerPoint from the Export page. Save recurring filter combinations as presets, or bookmark a specific page + filter state to reopen later — both are stored locally on this device.
+              Export the current filtered scope to Excel, CSV, PDF or PowerPoint from the Export page. Save recurring filter combinations as presets, or bookmark a specific page + filter state to reopen later.
             </p>
             <div class="step-extra-content">
               💾 <strong>Universal Generators:</strong> Generates formatted multi-tab XLSX (SheetJS), vector PDFs, and styled PPTX decks.
@@ -1470,7 +1606,7 @@
         </div>
       </article>
 
-      <!-- 2. VulnOps Reporting Engine Explanation -->
+      <!-- 2. SPECTRA FORGE Explanation -->
       <article class="doc-block doc-vulnops" id="vulnops-guide">
         <div class="doc-header">
           <div class="doc-header-left">
@@ -1480,11 +1616,11 @@
               </svg>
             </div>
             <div class="doc-title-area">
-              <h3>How Forge (Pilot Engine) Works</h3>
-              <p>A plain-English walkthrough of the pipeline — what happens to your data from upload to final report, and where to look for what.</p>
+              <h3>How SPECTRA FORGE Works</h3>
+              <p>Report &amp; Correlation Engine · 57-column master report generation, cloud inventory correlation, and audit logging.</p>
             </div>
           </div>
-          <a href="VulnOps_Reporting_Engine.html" class="doc-launch-action">Launch Forge ↗</a>
+          <a href="VulnOps_Reporting_Engine.html" class="doc-launch-action">Launch FORGE ↗</a>
         </div>
 
         <div class="doc-summary-banner">
@@ -1492,7 +1628,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
           <div>
-            <strong>The Short Version:</strong> Everything runs entirely in your browser — there's no server and no database. When you click Generate Final Report, the app filters your Qualys export, matches each vulnerability to a running AWS or Azure asset by IP, enriches it with CMDB ownership data, applies your configured SLA rules, and produces a searchable report plus dashboards. Nothing is ever silently dropped — anything excluded or ambiguous is logged to the Exceptions tab with a reason.
+            <strong>Automated Multi-Layer Correlation:</strong> When you generate a report, SPECTRA FORGE correlates findings against running AWS/Azure cloud instances, enriches ownership via 3-tier CMDB resolution, applies SLA matrices, and documents all discrepancies in the audit log.
           </div>
         </div>
 
@@ -1517,7 +1653,7 @@
               <div class="step-num">2</div>
               <span class="step-badge-interactive">Click to inspect ▾</span>
             </div>
-            <h4 class="step-title">Unique ID & Vulnerability ID</h4>
+            <h4 class="step-title">Unique ID &amp; Vulnerability ID</h4>
             <p class="step-desc">
               Every surviving row gets IP/QID as both its Unique ID and Vulnerability ID — deterministic, so the same vulnerability gets the same ID every week. This is what makes week-over-week comparison possible.
             </p>
@@ -1561,7 +1697,7 @@
             </div>
             <h4 class="step-title">Vulnerability Category — self-decided</h4>
             <p class="step-desc">
-              No CMDB mapping needed: each vulnerability is automatically classified as Operating System or Application by scanning Qualys's own Category, Title and OS fields for keyword signals (Windows/Linux/kernel → OS; Apache/database/browser → Application).
+              No CMDB mapping needed: each vulnerability is automatically classified as Operating System or Application by scanning scanner Category, Title and OS fields for keyword signals (Windows/Linux/kernel → OS; Apache/database/browser → Application).
             </p>
             <div class="step-extra-content">
               🏷️ <strong>Keyword Heuristic:</strong> Real-time regex scanner classifies findings into OS or Application layers.
@@ -1573,7 +1709,7 @@
               <div class="step-num">6</div>
               <span class="step-badge-interactive">Click to inspect ▾</span>
             </div>
-            <h4 class="step-title">SLA & Vulnerability Age</h4>
+            <h4 class="step-title">SLA &amp; Vulnerability Age</h4>
             <p class="step-desc">
               SLA days come from your configurable table (Critical/High/Medium × IF/PCI classification). Vulnerability Age is always today's actual date minus First Found date — recalculated fresh every time you generate, regardless of the Report Date field. Past the SLA? It's flagged Past Due SLA.
             </p>
@@ -1589,7 +1725,7 @@
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            Nothing gets silently dropped — Exception Log Categories (Click to filter)
+            Audit Transparency — Exception Log Categories (Click to filter)
           </h4>
           <p style="font-size: 13.5px; color: var(--text-dim); margin-bottom: 12px;">
             Every exclusion or ambiguity is written to the Exceptions log with the record's IP/QID, a reason, the source system, and a plain-language detail. Severity/IP/QID failures are hard exclusions; cloud and CMDB ambiguities remain flagged in the report.
@@ -1613,30 +1749,30 @@
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            Where to Look in the Tool
+            Where to Look in SPECTRA FORGE
           </h4>
           <div class="where-to-look-grid">
-            <div class="look-card" onclick="showToast('Navigating to VulnOps Report view...')">
-              <strong>Report <span>57-COL</span></strong>
+            <div class="look-card" onclick="showToast('Navigating to FORGE Master Report view...')">
+              <strong>Master Report <span>57-COL</span></strong>
               <span>The full 57-column table — searchable, filterable, paginated with instant export capabilities.</span>
             </div>
-            <div class="look-card" onclick="showToast('Navigating to Insights view...')">
-              <strong>Insights <span>ANALYTICS</span></strong>
+            <div class="look-card" onclick="showToast('Navigating to FORGE Insights view...')">
+              <strong>Risk Insights <span>ANALYTICS</span></strong>
               <span>Top vulnerabilities, top CVEs, aging distributions, exploitability status, and risk concentration by environment.</span>
             </div>
             <div class="look-card" onclick="showToast('Navigating to Metrics & Dashboard...')">
-              <strong>Metrics & Dashboard <span>LIVE KPIS</span></strong>
+              <strong>Metrics &amp; Dashboard <span>LIVE KPIS</span></strong>
               <span>Weekly totals, SLA/severity/cloud breakdowns, fixed-vs-last-week by CSP and Application. Live filters by status, severity and SLA state.</span>
             </div>
-            <div class="look-card" onclick="showToast('Navigating to Exceptions & Export...')">
-              <strong>Exceptions & Export <span>AUDIT</span></strong>
+            <div class="look-card" onclick="showToast('Navigating to Audit Exceptions & Export...')">
+              <strong>Exceptions &amp; Export <span>AUDIT</span></strong>
               <span>Full data-quality log, plus 7-sheet XLSX and CSV downloads and complete run audit trail. Refresh button on all tabs allows re-running pipeline immediately.</span>
             </div>
           </div>
         </div>
       </article>
 
-      <!-- 3. Mail Automation Explanation -->
+      <!-- 3. SPECTRA DISPATCH Explanation -->
       <article class="doc-block doc-mail" id="mail-guide">
         <div class="doc-header">
           <div class="doc-header-left">
@@ -1646,11 +1782,11 @@
               </svg>
             </div>
             <div class="doc-title-area">
-              <h3>How Dispatch (Pilot Mail) Works</h3>
-              <p>Automated stakeholder communication, remediation alerts, SLA breach escalations, and bulk outreach workflow.</p>
+              <h3>How SPECTRA DISPATCH Works</h3>
+              <p>Remediation Automation · Stakeholder outreach, SLA breach escalations, Aptos 11 formatting, and PowerBI intelligence.</p>
             </div>
           </div>
-          <a href="Mail Automation.html" class="doc-launch-action">Launch Dispatch ↗</a>
+          <a href="Mail Automation.html" class="doc-launch-action">Launch DISPATCH ↗</a>
         </div>
 
         <div class="doc-summary-banner">
@@ -1658,7 +1794,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
           </svg>
           <div>
-            <strong>Streamlined Vulnerability Remediation Outreach:</strong> Mail Automation bridges the gap between technical vulnerability findings and custodian action. It parses weekly report outputs, aggregates vulnerabilities by application custodian, formats executive summary tables, and prepares customized email notifications with pre-set escalation matrices.
+            <strong>Accelerated Remediation Cycle:</strong> SPECTRA DISPATCH closes the loop between technical findings and application teams. It aggregates vulnerabilities per custodian, prepares compliant Outlook HTML email drafts with verified resource links, and renders DOSS timeline matrices formatted in Aptos 11.
           </div>
         </div>
 
@@ -1668,9 +1804,9 @@
               <div class="step-num">1</div>
               <span class="step-badge-interactive">Click to inspect ▾</span>
             </div>
-            <h4 class="step-title">Ingest Report or Master Data</h4>
+            <h4 class="step-title">Ingest Report or PowerBI Sheet</h4>
             <p class="step-desc">
-              Import processed report exports from the Vuln Reporting Engine or SecureMetrics Hub. The engine identifies unique application owners, custodians, email contacts, and team distribution lists.
+              Import processed report exports from SPECTRA FORGE or the PowerBI vulnerability dataset. The engine identifies unique application owners, custodians, email contacts, and team distribution lists.
             </p>
             <div class="step-extra-content">
               📥 <strong>Automatic Contact Extraction:</strong> Resolves owner email syntax and matches APM application contacts.
@@ -1682,7 +1818,7 @@
               <div class="step-num">2</div>
               <span class="step-badge-interactive">Click to inspect ▾</span>
             </div>
-            <h4 class="step-title">Group by Owner & Risk Tier</h4>
+            <h4 class="step-title">Group by Owner &amp; Risk Tier</h4>
             <p class="step-desc">
               Vulnerabilities are automatically grouped per Application, APM ID, and assigned owner. Metrics are calculated for Critical/High counts, past-due SLA items, and upcoming deadlines.
             </p>
@@ -1696,12 +1832,12 @@
               <div class="step-num">3</div>
               <span class="step-badge-interactive">Click to inspect ▾</span>
             </div>
-            <h4 class="step-title">Dynamic Template Population</h4>
+            <h4 class="step-title">Pre-Flight Link Verification</h4>
             <p class="step-desc">
-              Select standard reminders, overdue escalations, or executive roll-ups. The tool injects personalized greetings, impacted server lists, top CVEs, and direct remediation guidelines into structured HTML mail drafts.
+              Before opening any template, the system checks whether required organization endpoints (AIST Dashboard, REM Portal, Saviynt Documentation) are configured, prompting the user if links are missing.
             </p>
             <div class="step-extra-content">
-              📝 <strong>Rich HTML Builder:</strong> Creates responsive email bodies with CSS tables and one-click copy buttons.
+              🔗 <strong>Config Safety Guard:</strong> Prevents sending broken links or unconfigured placeholders to application owners.
             </div>
           </div>
 
@@ -1710,12 +1846,12 @@
               <div class="step-num">4</div>
               <span class="step-badge-interactive">Click to inspect ▾</span>
             </div>
-            <h4 class="step-title">Preview & Quality Control</h4>
+            <h4 class="step-title">Aptos 11 HTML Generation</h4>
             <p class="step-desc">
-              Review live interactive previews of every generated email. Filter and verify recipient addresses, copy individual emails directly to your mail client, or generate a bulk dispatch file.
+              Generates clean, native Outlook-compatible HTML with executive summaries, visual scan-type progress bars, and compact DOSS remediation timeline tables formatted in Aptos 11.
             </p>
             <div class="step-extra-content">
-              👁️ <strong>WYSIWYG Inspector:</strong> Live rendering test ensures zero format breakages in Outlook / webmail clients.
+              📋 <strong>Zero-Loss Clipboard Engine:</strong> Utilizes <code>ClipboardItem</code> text/html blobs for 1-click Outlook paste with exact fidelity.
             </div>
           </div>
 
@@ -1724,9 +1860,9 @@
               <div class="step-num">5</div>
               <span class="step-badge-interactive">Click to inspect ▾</span>
             </div>
-            <h4 class="step-title">Audit Trail & Tracking</h4>
+            <h4 class="step-title">Audit Trail &amp; Tracking</h4>
             <p class="step-desc">
-              Track communication rounds (First Notice, 15-Day Warning, SLA Escalation) to maintain clear compliance evidence during external audits and internal governance reviews.
+              Track communication rounds (Initial Mail, Follow-Up, SLA Escalation) to maintain clear compliance evidence during external audits and internal governance reviews.
             </p>
             <div class="step-extra-content">
               ⚖️ <strong>Governance Proof:</strong> Generates timestamped compliance logs for ISO/PCI audit verification.
@@ -1739,7 +1875,7 @@
             <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            Key Capabilities & Outreach Workflows
+            Key Capabilities &amp; Outreach Workflows
           </h4>
           <div class="tag-container">
             <span class="tag-pill tag-purple" data-tag="Remediation Notice Generator">Remediation Notice Generator</span>
@@ -1759,17 +1895,17 @@
   <!-- Interactive Cyber Toast -->
   <div id="cyber-toast">
     <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="var(--cyan)" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-    <span id="toast-msg">Cyber notification</span>
+    <span id="toast-msg">SPECTRA Cyber notification</span>
   </div>
 
   <!-- Footer -->
   <footer>
     <div class="footer-content">
       <div>
-        <strong>VulnPilot Platform</strong> · Vulnerability Operations & Intelligence Command Center.
+        <strong>SPECTRA</strong> · Security Posture, Evaluation, Compliance, Threat &amp; Risk Analytics Platform.
       </div>
       <div>
-        Engineered with excellence by the <strong style="color: var(--cyan);">IVM Team (Barath & Dhinakaran)</strong>
+        Engineered with excellence by the <strong style="color: var(--cyan);">IVM Team (Barath &amp; Dhinakaran)</strong>
       </div>
     </div>
   </footer>
@@ -1801,13 +1937,38 @@
         }
         if (!wasExpanded) {
           const title = step.querySelector('.step-title')?.textContent || 'Step';
-          showToast(`Expanded details: ${title}`);
+          showToast(`Expanded: ${title}`);
         }
       });
       step.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           step.click();
+        }
+      });
+    });
+
+    // Domain Scope Pills Click Handlers
+    const domainPills = document.querySelectorAll('.domain-pill');
+    domainPills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        domainPills.forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        const domain = pill.getAttribute('data-domain');
+        const filterInput = document.getElementById('guide-filter-input');
+        
+        if (domain === 'ALL') {
+          if (filterInput) {
+            filterInput.value = '';
+            filterInput.dispatchEvent(new Event('input'));
+          }
+          showToast('Showing all SPECTRA capability domains');
+        } else {
+          if (filterInput) {
+            filterInput.value = domain;
+            filterInput.dispatchEvent(new Event('input'));
+          }
+          showToast(`Filtering by domain: ${domain}`);
         }
       });
     });
@@ -1826,9 +1987,10 @@
       });
     });
 
-    // Navigation Tabs Filter (All / SecureMetrics / VulnOps / Mail)
+    // Navigation Tabs Filter (All / RADAR / FORGE / DISPATCH)
     const tabButtons = document.querySelectorAll('.guide-tab-btn');
     const docBlocks = document.querySelectorAll('.doc-block');
+    const moduleBadge = document.getElementById('module-count-badge');
 
     tabButtons.forEach(btn => {
       btn.addEventListener('click', () => {
@@ -1836,24 +1998,36 @@
         btn.classList.add('active');
         const target = btn.getAttribute('data-target');
 
+        let visibleCount = 0;
         docBlocks.forEach(block => {
           if (target === 'all' || block.id === target) {
             block.style.display = 'block';
             block.style.animation = 'fadeIn 0.3s ease-out';
+            visibleCount++;
           } else {
             block.style.display = 'none';
           }
         });
+
+        if (moduleBadge) {
+          moduleBadge.textContent = target === 'all' ? '3 Modules' : '1 Module';
+        }
         showToast(`Viewing: ${btn.textContent.trim()}`);
       });
     });
 
     // Real-time Search Filter for Architecture Steps & Content
     const filterInput = document.getElementById('guide-filter-input');
+    const clearBtn = document.getElementById('search-clear-btn');
+
     if (filterInput) {
       filterInput.addEventListener('input', (e) => {
         const query = e.target.value.toLowerCase().trim();
+        if (clearBtn) {
+          clearBtn.style.display = query.length > 0 ? 'inline-block' : 'none';
+        }
         
+        let visibleBlocks = 0;
         docBlocks.forEach(block => {
           const blockText = block.innerText.toLowerCase();
           const steps = block.querySelectorAll('.pipeline-step');
@@ -1871,10 +2045,25 @@
 
           if (query === '' || blockText.includes(query) || hasMatchingStep) {
             block.style.display = 'block';
+            visibleBlocks++;
           } else {
             block.style.display = 'none';
           }
         });
+
+        if (moduleBadge) {
+          moduleBadge.textContent = `${visibleBlocks} Module${visibleBlocks === 1 ? '' : 's'}`;
+        }
+      });
+    }
+
+    if (clearBtn && filterInput) {
+      clearBtn.addEventListener('click', () => {
+        filterInput.value = '';
+        filterInput.dispatchEvent(new Event('input'));
+        clearBtn.style.display = 'none';
+        filterInput.focus();
+        showToast('Search cleared');
       });
     }
   </script>
