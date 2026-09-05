@@ -920,7 +920,9 @@ function Sidebar({ page, setPage, fileName, rowCount, onReset }) {
   return (
     <div style={{
       width: 240, flexShrink: 0, background: C.bgElevated, borderRight: `1px solid ${C.border}`,
-      padding: "20px 12px", display: "flex", flexDirection: "column", gap: 4, minHeight: "100%",
+      padding: "20px 12px", display: "flex", flexDirection: "column", gap: 4, 
+      position: "sticky", top: 0, height: "100vh", alignSelf: "flex-start",
+      boxSizing: "border-box", zIndex: 40
     }}>
       <div style={{ padding: "0 10px 24px", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ background: `linear-gradient(135deg, ${C.accent}, #8b5cf6)`, padding: 6, borderRadius: 8 }}>
