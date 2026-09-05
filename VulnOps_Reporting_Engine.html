@@ -732,6 +732,20 @@ const {
    ============================================================ */
 
 const FINAL_COLUMNS = ["Application Name", "APM ID", "Scan Type", "IP", "DNS", "NetBIOS", "Tracking Method", "OS", "IP Status", "Unique id", "Vulnerability Name", "Vulnerability Status", "Type", "Risk Rating", "Port", "Protocol", "FQDN", "SSL", "First Found date", "Last Detected", "Times Detected", "Date Last Fixed", "First Reopened", "Last Reopened", "Times Reopened", "CVE ID", "Vendor Reference", "Bugtraq ID", "Threat", "Impact", "Recommendation", "Exploitability", "Results", "PCI Vuln", "Ticket State", "Instance", "Category", "QDS", "ARS", "ACS", "TruRisk Score", "IF or PCI", "Source", "SLA", "Vulnerability Age", "App Owner", "Organization", "IF", "PCI", "Impacted Asset", "Cloud Account Name", "Environment", "CSP", "Vulnerability ID", "Vulnerability Category", "Within SLA/Past due SLA", "Weekly Metrics"];
+
+const IASP_FINAL_COLUMNS = [
+  "IP", "DNS", "NetBIOS", "Tracking Method", "OS", "IP Status", "Unique Id",
+  "Vulnerability Name", "Vulnerability Status", "Type", "Risk Rating", "Port",
+  "Protocol", "FQDN", "SSL", "First Detected", "Last Detected", "Times Detected",
+  "Date Last Fixed", "First Reopened", "Last Reopened", "Times Reopened", "CVE ID",
+  "Vendor Reference", "Bugtraq ID", "Threat", "Impact", "Recommendation",
+  "Exploitability", "Associated Malware", "Results", "PCI Vuln", "Ticket State",
+  "Instance", "Category", "QDS", "ARS", "ACS", "TruRisk Score", "IF or PCI",
+  "Scan Type", "APM ID", "SLA", "App Owner", "Organization",
+  "Exception Start Date", "Exception End Date", "IF", "PCI", "CSP",
+  "Cloud Account Name", "Environment", "Impacted Asset", "Vulnerability Category"
+];
+
 const QUALYS_ALIASES = {
   IP: ["IP"],
   DNS: ["DNS"],
@@ -760,14 +774,15 @@ const QUALYS_ALIASES = {
   BugtraqID: ["Bugtraq ID"],
   Threat: ["Threat"],
   Impact: ["Impact"],
-  Solution: ["Solution"],
+  Solution: ["Solution", "Recommendation"],
   Exploitability: ["Exploitability"],
+  AssociatedMalware: ["Associated Malware", "Malware"],
   Results: ["Results"],
   PCIVuln: ["PCI Vuln"],
   TicketState: ["Ticket State"],
   Instance: ["Instance"],
   Category: ["Category"],
-  AssociatedTags: ["Associated Tags"],
+  AssociatedTags: ["Associated Tags", "Tags"],
   QDS: ["QDS"],
   ARS: ["ARS"],
   ACS: ["ACS"],
@@ -1256,14 +1271,15 @@ function classifyIfPci(ifVal, pciVal, ifMapped, pciMapped) {
   };
 }
 function lookupSla(slaRules, classification, risk) {
-  let rule = slaRules.find(r => r.classification === classification && Number(r.risk) === Number(risk));
+  const rules = slaRules && slaRules.length ? slaRules : DEFAULT_SLA_RULES;
+  let rule = rules.find(r => r.classification === classification && Number(r.risk) === Number(risk));
   if (rule) return {
     days: Number(rule.days),
     matched: true
   };
   if (classification === "IF & PCI") {
-    const ifR = slaRules.find(r => r.classification === "IF" && Number(r.risk) === Number(risk));
-    const pciR = slaRules.find(r => r.classification === "PCI" && Number(r.risk) === Number(risk));
+    const ifR = rules.find(r => r.classification === "IF" && Number(r.risk) === Number(risk));
+    const pciR = rules.find(r => r.classification === "PCI" && Number(r.risk) === Number(risk));
     if (ifR || pciR) {
       const days = Math.min(...[ifR, pciR].filter(Boolean).map(r => Number(r.days)));
       return {
@@ -1272,7 +1288,7 @@ function lookupSla(slaRules, classification, risk) {
       };
     }
   }
-  rule = slaRules.find(r => r.classification === "Non-IF/Non-PCI" && Number(r.risk) === Number(risk));
+  rule = rules.find(r => r.classification === "Non-IF/Non-PCI" && Number(r.risk) === Number(risk));
   if (rule) return {
     days: Number(rule.days),
     matched: false
@@ -1285,7 +1301,8 @@ function lookupSla(slaRules, classification, risk) {
 function deriveScanType(trackingMethod, scanTypeRules) {
   const tm = normTextLower(trackingMethod);
   if (!tm) return "Unknown";
-  for (const rule of scanTypeRules) {
+  const rules = scanTypeRules && scanTypeRules.length ? scanTypeRules : DEFAULT_SCAN_TYPE_RULES;
+  for (const rule of rules) {
     if (tm.includes(normTextLower(rule.match))) return rule.scanType;
   }
   return "Unknown";
@@ -1335,16 +1352,21 @@ function computeWeeklyMetricsFromRows(rows){
 }
 
 function runPipeline({
+  qualysServerData,
+  qualysNetworkData,
   qualysData,
   awsData,
   azureData,
   cmdbData,
   cmdbMapping,
   config,
-  previousFinalRows
+  previousFinalRows,
+  reportMode = "iasp"
 }) {
   const stats = {
     qualysTotal: 0,
+    serverReportRows: 0,
+    networkReportRows: 0,
     sev1Removed: 0,
     sev2Removed: 0,
     invalidSeverity: 0,
@@ -1371,7 +1393,26 @@ function runPipeline({
       Details: details || ""
     });
   };
-  const qHeaders = qualysData ? qualysData.headers : [];
+
+  // Combine Qualys Server and Network raw reports if provided, or use qualysData fallback
+  let qualysRows = [];
+  let combinedHeaders = [];
+  if (qualysServerData && qualysServerData.rows && qualysServerData.rows.length) {
+    stats.serverReportRows = qualysServerData.rows.length;
+    qualysRows = qualysRows.concat(qualysServerData.rows);
+    combinedHeaders = Array.from(new Set([...combinedHeaders, ...(qualysServerData.headers || [])]));
+  }
+  if (qualysNetworkData && qualysNetworkData.rows && qualysNetworkData.rows.length) {
+    stats.networkReportRows = qualysNetworkData.rows.length;
+    qualysRows = qualysRows.concat(qualysNetworkData.rows);
+    combinedHeaders = Array.from(new Set([...combinedHeaders, ...(qualysNetworkData.headers || [])]));
+  }
+  if (!qualysRows.length && qualysData && qualysData.rows) {
+    qualysRows = qualysData.rows;
+    combinedHeaders = qualysData.headers || [];
+  }
+
+  const qHeaders = combinedHeaders;
   const qMap = resolveAliasSet(qHeaders, QUALYS_ALIASES);
   const aHeaders = awsData ? awsData.headers : [];
   const aMap = resolveAliasSet(aHeaders, AWS_ALIASES);
@@ -1380,13 +1421,17 @@ function runPipeline({
   const awsIndex = buildAwsIndex(awsData ? awsData.rows : [], aMap);
   const azureIndex = buildAzureIndex(azureData ? azureData.rows : [], zMap);
   const cmdbIndex = buildCmdbIndex(cmdbData ? cmdbData.rows : [], cmdbMapping);
-  const exceptionApprovalSet = new Set();
+  
+  // Exception Approvals lookup map (APM ID + Vulnerability Name -> Rule with Start/End Dates)
+  const exceptionMap = new Map();
   (config.exceptionApprovals || []).forEach(rule => {
     const apm = normTextLower(rule.apmId);
     if (!apm) return;
-    (rule.vulnNames || []).forEach(vn => exceptionApprovalSet.add(apm + "|||" + normTextLower(vn)));
+    (rule.vulnNames || []).forEach(vn => {
+      exceptionMap.set(apm + "|||" + normTextLower(vn), rule);
+    });
   });
-  const qualysRows = qualysData ? qualysData.rows : [];
+
   stats.qualysTotal = qualysRows.length;
   stats.exceptionApprovedCount = 0;
   const reportDate = parseDateFlexible(config.reportDate) || new Date();
@@ -1397,7 +1442,7 @@ function runPipeline({
   // previous week index for New/Existing/Reopened/Fixed comparison
   let prevIdSet = null;
   if (previousFinalRows && previousFinalRows.length) {
-    prevIdSet = new Set(previousFinalRows.map(r => r["Unique id"]));
+    prevIdSet = new Set(previousFinalRows.map(r => r["Unique id"] || r["Unique Id"]));
   }
   const finalRows = [];
   const awsOnly = [];
@@ -1410,6 +1455,7 @@ function runPipeline({
       addException(row, "Invalid Severity", "Qualys", `Severity value: ${sevRaw}`);
       return;
     }
+    // Remove Severity 1 and 2
     if (sev === 1) {
       stats.sev1Removed++;
       return;
@@ -1444,12 +1490,16 @@ function runPipeline({
       impactedAsset = ip,
       cloudEnv = "";
     let matchedCloud = false;
+
+    // Check AWS inventory
     const awsHit = awsIndex.idx.get(ip);
     if (awsHit && awsHit.length) {
       if (awsIndex.dupes.has(ip)) addException(row, "Duplicate AWS IP", "AWS", `${awsHit.length} AWS records share IP ${ip}`);
       const rec = awsHit[0];
       const state = normTextLower(rec[aMap.InstanceState]);
-      if (state === "running") {
+      
+      // In IASP Mode: Do NOT remove stopped / deallocated / non-running assets
+      if (reportMode === "iasp" || state === "running") {
         matchedCloud = true;
         csp = "AWS";
         cloudAccountName = normText(rec[aMap.AccountName]);
@@ -1462,17 +1512,22 @@ function runPipeline({
           qrow: row
         });
       } else {
+        // In PowerBI mode: non-running assets are flagged as not-running
         stats.awsNotRunning++;
         addException(row, "AWS IP Not Running", "AWS", `InstanceState=${rec[aMap.InstanceState]}`);
       }
     }
+
+    // Check Azure inventory
     if (!matchedCloud) {
       const azHit = azureIndex.idx.get(ip);
       if (azHit && azHit.length) {
         if (azureIndex.dupes.has(ip)) addException(row, "Duplicate Azure IP", "Azure", `${azHit.length} Azure records share IP ${ip}`);
         const rec = azHit[0];
         const state = normTextLower(rec[zMap.STATUS]);
-        if (state === "running") {
+        
+        // In IASP Mode: Do NOT remove stopped / deallocated / non-running assets
+        if (reportMode === "iasp" || state === "running") {
           matchedCloud = true;
           csp = "Azure";
           cloudAccountName = normText(rec[zMap.SUBSCRIPTION]);
@@ -1485,6 +1540,7 @@ function runPipeline({
             qrow: row
           });
         } else {
+          // In PowerBI mode: non-running assets are flagged as not-running
           stats.azureNotRunning++;
           addException(row, "Azure IP Not Running", "Azure", `STATUS=${rec[zMap.STATUS]}`);
         }
@@ -1492,7 +1548,7 @@ function runPipeline({
     }
     if (!matchedCloud) {
       stats.noCloudMatch++;
-      addException(row, "No Cloud Inventory Match", "Cloud", `IP ${ip} not found running in AWS or Azure`);
+      addException(row, "No Cloud Inventory Match", "Cloud", `IP ${ip} not found in AWS or Azure`);
     }
 
     // CMDB matching — priority: IP, then Correlation ID (5-digit code shared between
@@ -1583,21 +1639,28 @@ function runPipeline({
       weeklyBucket = daysBetween(reportDate, firstFound) <= 7 ? "New" : "Existing";
     }
     const vulnerabilityName = normText(row[qMap.Title]);
+    
+    // Exception Approval Processing: Check if APM ID + Vulnerability Name is approved
     let displayVulnStatus = vulnStatus;
-    if (exceptionApprovalSet.has(normTextLower(apmId) + "|||" + normTextLower(vulnerabilityName))) {
+    let exceptionStartDate = "";
+    let exceptionEndDate = "";
+    const excMatch = exceptionMap.get(normTextLower(apmId) + "|||" + normTextLower(vulnerabilityName));
+    if (excMatch) {
       displayVulnStatus = "Exception Approved";
+      exceptionStartDate = excMatch.startDate ? fmtDate(parseDateFlexible(excMatch.startDate)) || excMatch.startDate : "";
+      exceptionEndDate = excMatch.endDate ? fmtDate(parseDateFlexible(excMatch.endDate)) || excMatch.endDate : "";
       stats.exceptionApprovedCount++;
     }
+
     const finalObj = {
-      "Application Name": appName,
-      "APM ID": apmId,
-      "Scan Type": scanType,
+      // Common & IASP 54 Columns
       "IP": ip,
       "DNS": normText(row[qMap.DNS]),
       "NetBIOS": normText(row[qMap.NetBIOS]),
       "Tracking Method": normText(row[qMap.TrackingMethod]),
       "OS": normText(row[qMap.OS]),
       "IP Status": normText(row[qMap.IPStatus]),
+      "Unique Id": uniqueId,
       "Unique id": uniqueId,
       "Vulnerability Name": vulnerabilityName,
       "Vulnerability Status": displayVulnStatus,
@@ -1607,6 +1670,7 @@ function runPipeline({
       "Protocol": normText(row[qMap.Protocol]),
       "FQDN": normText(row[qMap.FQDN]),
       "SSL": normText(row[qMap.SSL]),
+      "First Detected": preserveOriginalDate(row[qMap.FirstDetected]),
       "First Found date": preserveOriginalDate(row[qMap.FirstDetected]),
       "Last Detected": preserveOriginalDate(row[qMap.LastDetected]),
       "Times Detected": normText(row[qMap.TimesDetected]),
@@ -1621,6 +1685,8 @@ function runPipeline({
       "Impact": normText(row[qMap.Impact]),
       "Recommendation": normText(row[qMap.Solution]),
       "Exploitability": normText(row[qMap.Exploitability]),
+      "Associated Malware": normText(row[qMap.AssociatedMalware]),
+      "Associated Tags": normText(row[qMap.AssociatedTags]),
       "Results": normText(row[qMap.Results]),
       "PCI Vuln": normText(row[qMap.PCIVuln]),
       "Ticket State": normText(row[qMap.TicketState]),
@@ -1631,19 +1697,26 @@ function runPipeline({
       "ACS": normText(row[qMap.ACS]),
       "TruRisk Score": normText(row[qMap.TruRiskScore]),
       "IF or PCI": ifPci.classification,
-      "Source": source,
+      "Scan Type": scanType,
+      "APM ID": apmId,
       "SLA": slaDays,
-      "Vulnerability Age": age === null ? "" : age,
       "App Owner": appOwner,
       "Organization": organization,
+      "Exception Start Date": exceptionStartDate,
+      "Exception End Date": exceptionEndDate,
       "IF": ifPci.IF,
       "PCI": ifPci.PCI,
-      "Impacted Asset": impactedAsset,
+      "CSP": csp || "Unknown",
       "Cloud Account Name": cloudAccountName,
       "Environment": environment,
-      "CSP": csp || "Unknown",
-      "Vulnerability ID": vulnerabilityId,
+      "Impacted Asset": impactedAsset,
       "Vulnerability Category": vulnCategory,
+
+      // PowerBI specific columns
+      "Application Name": appName,
+      "Source": source,
+      "Vulnerability Age": age === null ? "" : age,
+      "Vulnerability ID": vulnerabilityId,
       "Within SLA/Past due SLA": withinSla,
       "Weekly Metrics": weeklyBucket
     };
@@ -1667,23 +1740,17 @@ function runPipeline({
     };
   }
 
-  // Fixed vulnerabilities — identified three ways:
-  //  1) Qualys marks it Fixed in the current processed report on its own (works even with
-  //     only the Qualys raw report uploaded — no previous week or cloud/CMDB data needed).
-  //  2) It existed in last week's processed Final Outcome but no longer appears in this
-  //     week's (i.e. it was remediated) — requires the optional previous-week upload.
-  //  3) Comparing last week's processed report against this week's processed report is what
-  //     powers the severity-wise fixed breakdown below.
+  // Fixed vulnerabilities
   let fixedComparison = null;
   if (finalRows.length) {
     const hasPreviousWeek = !!(previousFinalRows && previousFinalRows.length);
     const currentIds = new Set(finalRows.map(r => r["Unique id"]));
-    const disappeared = hasPreviousWeek ? previousFinalRows.filter(r => !currentIds.has(r["Unique id"])) : [];
+    const disappeared = hasPreviousWeek ? previousFinalRows.filter(r => !currentIds.has(r["Unique id"] || r["Unique Id"])) : [];
     const explicitlyFixedNow = finalRows.filter(r => r["Within SLA/Past due SLA"] === "Fixed");
     const seen = new Set();
     const fixedRecords = [];
     disappeared.forEach(r => {
-      const id = r["Unique id"];
+      const id = r["Unique id"] || r["Unique Id"];
       if (!seen.has(id)) {
         seen.add(id);
         const idParts = String(id).split("/");
@@ -1691,7 +1758,7 @@ function runPipeline({
       }
     });
     explicitlyFixedNow.forEach(r => {
-      const id = r["Unique id"];
+      const id = r["Unique id"] || r["Unique Id"];
       if (!seen.has(id)) {
         seen.add(id);
         const idParts = String(id).split("/");
@@ -1716,10 +1783,7 @@ function runPipeline({
     fixedComparison = { total: fixedRecords.length, byCSP, byApp, byRisk, hasPreviousWeek, records: fixedRecords };
   }
 
-  // New vs Existing vulnerabilities — compares this week's report against last week's by
-  // Vulnerability ID (== Unique id, IP/QID). Anything whose Vulnerability ID wasn't present
-  // last week is "New"; anything that was already there is "Existing". Only meaningful once
-  // a previous week's Final Outcome file has been uploaded.
+  // New vs Existing vulnerabilities
   let newVulnComparison = null;
   if (finalRows.length && previousFinalRows && previousFinalRows.length) {
     const newRecords = finalRows.filter(r => r["Weekly Metrics"] === "New");
@@ -1767,8 +1831,14 @@ function runPipeline({
   });
   const appMetrics = Array.from(appGroups.values()).sort((a, b) => b.Total - a.Total);
   const processingSummary = [{
-    Metric: "Total Qualys Records",
+    Metric: "Total Qualys Records Ingested",
     Value: stats.qualysTotal
+  }, {
+    Metric: "Server Raw Report Records",
+    Value: stats.serverReportRows
+  }, {
+    Metric: "Network Raw Report Records",
+    Value: stats.networkReportRows
   }, {
     Metric: "Severity 1 Removed",
     Value: stats.sev1Removed
@@ -1788,16 +1858,16 @@ function runPipeline({
     Metric: "After Severity Filter",
     Value: stats.afterSeverityFilter
   }, {
-    Metric: "AWS Running Matches",
+    Metric: "AWS Cloud Matches",
     Value: stats.awsRunningMatches
   }, {
-    Metric: "AWS Not-Running Excluded From Cloud Match",
+    Metric: "AWS Non-Running Excluded (PowerBI)",
     Value: stats.awsNotRunning
   }, {
-    Metric: "Azure Running Matches",
+    Metric: "Azure Cloud Matches",
     Value: stats.azureRunningMatches
   }, {
-    Metric: "Azure Not-Running Excluded From Cloud Match",
+    Metric: "Azure Non-Running Excluded (PowerBI)",
     Value: stats.azureNotRunning
   }, {
     Metric: "No Cloud Inventory Match",
@@ -1864,7 +1934,7 @@ function buildWorkbook(result, reportDateStr, reportMode = "iasp") {
   const wb = XLSX.utils.book_new();
 
   if (reportMode === "powerbi") {
-    // POWERBI RELATIONAL MODEL EXPORT
+    // POWERBI RELATIONAL MODEL EXPORT (57 Attributes)
     // 1. Fact_Vulnerabilities
     const wsFact = XLSX.utils.aoa_to_sheet(rowsToAOA(result.finalRows, FINAL_COLUMNS));
     XLSX.utils.book_append_sheet(wb, wsFact, "Fact_Vulnerabilities");
@@ -1899,8 +1969,8 @@ function buildWorkbook(result, reportDateStr, reportMode = "iasp") {
     const wsExc = XLSX.utils.aoa_to_sheet(rowsToAOA(result.exceptions, excCols));
     XLSX.utils.book_append_sheet(wb, wsExc, "Fact_Exceptions");
   } else {
-    // IASP COMPLIANCE STANDARD EXPORT
-    const wsFinal = XLSX.utils.aoa_to_sheet(rowsToAOA(result.finalRows, FINAL_COLUMNS));
+    // IASP OUTCOME REPORT EXPORT (Strict 54 Column Header Schema)
+    const wsFinal = XLSX.utils.aoa_to_sheet(rowsToAOA(result.finalRows, IASP_FINAL_COLUMNS));
     XLSX.utils.book_append_sheet(wb, wsFinal, "Final Outcome");
 
     const wmRows = Object.keys(result.weeklyMetrics).map(k => ({
@@ -1919,10 +1989,10 @@ function buildWorkbook(result, reportDateStr, reportMode = "iasp") {
     const wsApp = XLSX.utils.aoa_to_sheet(rowsToAOA(result.appMetrics, appCols));
     XLSX.utils.book_append_sheet(wb, wsApp, "Application Metrics");
 
-    const wsAws = XLSX.utils.aoa_to_sheet(rowsToAOA(result.awsRows, FINAL_COLUMNS));
+    const wsAws = XLSX.utils.aoa_to_sheet(rowsToAOA(result.awsRows, IASP_FINAL_COLUMNS));
     XLSX.utils.book_append_sheet(wb, wsAws, "AWS Vulnerabilities");
 
-    const wsAzure = XLSX.utils.aoa_to_sheet(rowsToAOA(result.azureRows, FINAL_COLUMNS));
+    const wsAzure = XLSX.utils.aoa_to_sheet(rowsToAOA(result.azureRows, IASP_FINAL_COLUMNS));
     XLSX.utils.book_append_sheet(wb, wsAzure, "Azure Vulnerabilities");
 
     const excCols = ["IP", "QID", "Reason", "Source", "Details"];
@@ -1960,8 +2030,9 @@ function buildWorkbook(result, reportDateStr, reportMode = "iasp") {
 function downloadWorkbookXLSX(wb, filename) {
   XLSX.writeFile(wb, filename);
 }
-function downloadFinalCSV(result, filename) {
-  const ws = XLSX.utils.aoa_to_sheet(rowsToAOA(result.finalRows, FINAL_COLUMNS));
+function downloadFinalCSV(result, filename, reportMode = "iasp") {
+  const cols = reportMode === "powerbi" ? FINAL_COLUMNS : IASP_FINAL_COLUMNS;
+  const ws = XLSX.utils.aoa_to_sheet(rowsToAOA(result.finalRows, cols));
   const csv = XLSX.utils.sheet_to_csv(ws, {
     FS: ",",
     RS: "\n"
@@ -2469,7 +2540,7 @@ function UploadView({
   setSelectedTool
 }) {
   const [categoryFilter, setCategoryFilter] = useState("All Tools");
-  const hasAnyFile = !!(files.qualys || files.aws || files.azure || files.cmdb || files.previous || files.generic);
+  const hasAnyFile = !!(files.qualys || files.qualysServer || files.qualysNetwork || files.aws || files.azure || files.cmdb || files.previous || files.generic);
   const currentToolObj = SECURITY_TOOLS.find(t => t.id === selectedTool) || SECURITY_TOOLS[0];
 
   const filteredTools = categoryFilter === "All Tools" 
@@ -2490,15 +2561,38 @@ function UploadView({
         }
       },
         React.createElement("div", { style: { fontWeight: "700", fontSize: "14.5px", fontFamily: "var(--disp)", color: "var(--text)" } },
-          `Step 3: Upload Ingestion Files for ${reportMode === "iasp" ? "IASP Report" : "PowerBI Engine"}`
+          `Step 3: Upload Ingestion Files for ${reportMode === "iasp" ? "Qualys IASP Ingestion Pipeline" : "PowerBI Vulnerability Engine"}`
         ),
         React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "8px" } },
-          React.createElement("span", { className: "badge badge-ok" }, "5-Stage Pipeline Active"),
-          React.createElement("span", { className: "badge badge-neutral" }, "Schema Strict")
+          React.createElement("span", { className: reportMode === "iasp" ? "badge badge-crit" : "badge badge-ok" }, reportMode === "iasp" ? "IASP Server+Network Mode" : "PowerBI Schema Active"),
+          React.createElement("span", { className: "badge badge-neutral" }, "Sev 1 & 2 Auto-Filtered")
         )
       ),
       React.createElement("div", { className: "upload-grid" },
-        React.createElement(UploadCard, {
+        reportMode === "iasp" ? React.createElement(React.Fragment, null,
+          React.createElement(UploadCard, {
+            stageNo: "1A",
+            title: "Qualys Server Raw Report",
+            requirement: "Server vulnerability export (standard headers, all severities 1 to 5)",
+            accept: ".xlsx,.csv",
+            fileData: files.qualysServer,
+            onFile: d => setFile("qualysServer", d),
+            onRemove: () => setFile("qualysServer", null),
+            requiredFields: QUALYS_REQUIRED,
+            aliasDict: QUALYS_ALIASES
+          }),
+          React.createElement(UploadCard, {
+            stageNo: "1B",
+            title: "Qualys Network Raw Report",
+            requirement: "Network vulnerability export (standard headers + Associated Tags column)",
+            accept: ".xlsx,.csv",
+            fileData: files.qualysNetwork,
+            onFile: d => setFile("qualysNetwork", d),
+            onRemove: () => setFile("qualysNetwork", null),
+            requiredFields: QUALYS_REQUIRED,
+            aliasDict: QUALYS_ALIASES
+          })
+        ) : React.createElement(UploadCard, {
           stageNo: "1",
           title: "Qualys Raw Report",
           requirement: "Full vulnerability export, all severities (Severity 1 to 5)",
@@ -2512,7 +2606,9 @@ function UploadView({
         React.createElement(UploadCard, {
           stageNo: "2",
           title: "AWS Inventory Report",
-          requirement: "EC2 instance inventory export with Account ID & Tags",
+          requirement: reportMode === "iasp" 
+            ? "EC2 inventory with Account ID & Tags (stopped & deallocated assets retained)"
+            : "EC2 instance inventory export with Account ID & Tags (running instances)",
           accept: ".xlsx,.csv",
           fileData: files.aws,
           onFile: d => setFile("aws", d),
@@ -2523,7 +2619,9 @@ function UploadView({
         React.createElement(UploadCard, {
           stageNo: "3",
           title: "Azure Inventory Report",
-          requirement: "Virtual Machine inventory export with Subscription metadata",
+          requirement: reportMode === "iasp"
+            ? "Virtual Machine inventory with Subscription metadata (stopped/deallocated retained)"
+            : "Virtual Machine inventory export with Subscription metadata (running VMs)",
           accept: ".xlsx,.csv",
           fileData: files.azure,
           onFile: d => setFile("azure", d),
@@ -2962,7 +3060,9 @@ function ConfigureView({
   }, "Remove")))))))), tab === "exceptions" && /*#__PURE__*/React.createElement(ExceptionApprovalsTab, {
     config: config,
     setConfig: setConfig,
-    result: result
+    result: result,
+    files: files,
+    cmdbMapping: cmdbMapping
   }), tab === "general" && /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
@@ -3004,19 +3104,30 @@ function ConfigureView({
     }
   }, "Severity 1 and 2 are always excluded — this is a fixed business rule and cannot be lowered further.")));
 }
+
 function ExceptionApprovalsTab({
   config,
   setConfig,
-  result
+  result,
+  files,
+  cmdbMapping
 }) {
   const finalRows = result ? result.finalRows : [];
-  const apmOptions = useMemo(() => Array.from(new Set(finalRows.map(r => r["APM ID"]).filter(Boolean))).sort(), [finalRows]);
+  const cmdbRows = files && files.cmdb ? files.cmdb.rows : [];
+  const cmdbApms = cmdbMapping && cmdbMapping.apmId && cmdbRows.length
+    ? cmdbRows.map(r => normText(r[cmdbMapping.apmId])).filter(Boolean)
+    : [];
+  const reportApms = finalRows.map(r => r["APM ID"]).filter(Boolean);
+  const apmOptions = useMemo(() => Array.from(new Set([...cmdbApms, ...reportApms])).sort(), [cmdbApms, reportApms]);
   const rules = config.exceptionApprovals || [];
+
   const addRule = () => setConfig({
     ...config,
     exceptionApprovals: [...rules, {
       apmId: "",
-      vulnNames: []
+      vulnNames: [],
+      startDate: config.reportDate || todayISO(),
+      endDate: ""
     }]
   });
   const removeRule = idx => setConfig({
@@ -3027,8 +3138,18 @@ function ExceptionApprovalsTab({
     const next = [...rules];
     next[idx] = {
       ...next[idx],
-      apmId,
-      vulnNames: []
+      apmId
+    };
+    setConfig({
+      ...config,
+      exceptionApprovals: next
+    });
+  };
+  const updateRuleDates = (idx, field, val) => {
+    const next = [...rules];
+    next[idx] = {
+      ...next[idx],
+      [field]: val
     };
     setConfig({
       ...config,
@@ -3038,8 +3159,8 @@ function ExceptionApprovalsTab({
   const toggleVuln = (idx, vulnName) => {
     const next = [...rules];
     const rule = next[idx];
-    const has = rule.vulnNames.includes(vulnName);
-    const vulnNames = has ? rule.vulnNames.filter(v => v !== vulnName) : [...rule.vulnNames, vulnName];
+    const has = (rule.vulnNames || []).includes(vulnName);
+    const vulnNames = has ? (rule.vulnNames || []).filter(v => v !== vulnName) : [...(rule.vulnNames || []), vulnName];
     next[idx] = {
       ...rule,
       vulnNames
@@ -3049,6 +3170,23 @@ function ExceptionApprovalsTab({
       exceptionApprovals: next
     });
   };
+  const addCustomVuln = (idx, customName) => {
+    if (!customName || !customName.trim()) return;
+    const trimmed = customName.trim();
+    const next = [...rules];
+    const rule = next[idx];
+    if (!(rule.vulnNames || []).includes(trimmed)) {
+      next[idx] = {
+        ...rule,
+        vulnNames: [...(rule.vulnNames || []), trimmed]
+      };
+      setConfig({
+        ...config,
+        exceptionApprovals: next
+      });
+    }
+  };
+
   const totalSelected = rules.reduce((sum, r) => sum + (r.vulnNames ? r.vulnNames.length : 0), 0);
   return /*#__PURE__*/React.createElement("div", {
     className: "card"
@@ -3056,17 +3194,12 @@ function ExceptionApprovalsTab({
     className: "card-head"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "card-title"
-  }, "Exception approvals"), /*#__PURE__*/React.createElement("div", {
+  }, "Exception Approval Pre-Processing"), /*#__PURE__*/React.createElement("div", {
     className: "card-sub"
-  }, "Pick one or more APM IDs, then choose which of their vulnerabilities are formally accepted. Those rows get \"Vulnerability Status\" set to ", /*#__PURE__*/React.createElement("b", null, "Exception Approved"), " when you generate the report.")), /*#__PURE__*/React.createElement("button", {
+  }, "Configure accepted risk exceptions before outcome generation. Matched vulnerabilities receive ", /*#__PURE__*/React.createElement("b", null, "Exception Approved"), " status and have their ", /*#__PURE__*/React.createElement("b", null, "Exception Start Date"), " & ", /*#__PURE__*/React.createElement("b", null, "Exception End Date"), " populated in the final 54-column IASP outcome report.")), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-ghost btn-sm",
     onClick: addRule
-  }, "+ Add APM ID")), !result && /*#__PURE__*/React.createElement("div", {
-    className: "note-box warn",
-    style: {
-      marginBottom: "14px"
-    }
-  }, "Run the pipeline once first so vulnerability names can be picked from your actual data — otherwise you'll need to type the APM ID manually and come back to select vulnerabilities after processing."), rules.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, "+ Add Exception Rule")), rules.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "kv-strip",
     style: {
       marginBottom: "14px"
@@ -3081,58 +3214,71 @@ function ExceptionApprovalsTab({
     className: "kv"
   }, /*#__PURE__*/React.createElement("div", {
     className: "k"
-  }, "Vulnerabilities selected"), /*#__PURE__*/React.createElement("div", {
+  }, "Vulnerabilities excepted"), /*#__PURE__*/React.createElement("div", {
     className: "v"
   }, totalSelected))), rules.length === 0 && /*#__PURE__*/React.createElement("div", {
     className: "empty-state"
   }, /*#__PURE__*/React.createElement("div", {
     className: "glyph"
-  }, "☑"), /*#__PURE__*/React.createElement("h3", null, "No exception rules yet"), /*#__PURE__*/React.createElement("p", null, "Add an APM ID, then choose which of its vulnerabilities should be marked Exception Approved.")), rules.map((rule, idx) => /*#__PURE__*/React.createElement(ExceptionRuleCard, {
+  }, "☑"), /*#__PURE__*/React.createElement("h3", null, "No exception approval rules configured"), /*#__PURE__*/React.createElement("p", null, "Add an APM ID, specify Exception Start & End dates, and select or enter vulnerabilities to mark as Exception Approved.")), rules.map((rule, idx) => /*#__PURE__*/React.createElement(ExceptionRuleCard, {
     key: idx,
     rule: rule,
     idx: idx,
     apmOptions: apmOptions,
     finalRows: finalRows,
     onApmChange: v => updateRuleApm(idx, v),
+    onDatesChange: (f, v) => updateRuleDates(idx, f, v),
     onToggleVuln: vn => toggleVuln(idx, vn),
+    onAddCustomVuln: vn => addCustomVuln(idx, vn),
     onRemove: () => removeRule(idx)
   })));
 }
+
 function ExceptionRuleCard({
   rule,
   idx,
   apmOptions,
   finalRows,
   onApmChange,
+  onDatesChange,
   onToggleVuln,
+  onAddCustomVuln,
   onRemove
 }) {
   const [search, setSearch] = useState("");
+  const [customVulnText, setCustomVulnText] = useState("");
+
   const vulnOptions = useMemo(() => {
     if (!rule.apmId) return [];
     const names = finalRows.filter(r => r["APM ID"] === rule.apmId).map(r => r["Vulnerability Name"]);
-    return Array.from(new Set(names)).sort();
-  }, [finalRows, rule.apmId]);
+    const distinct = Array.from(new Set(names.filter(Boolean)));
+    // Include any custom added vuln names
+    (rule.vulnNames || []).forEach(vn => {
+      if (!distinct.includes(vn)) distinct.push(vn);
+    });
+    return distinct.sort();
+  }, [finalRows, rule.apmId, rule.vulnNames]);
+
   const filteredOptions = vulnOptions.filter(v => v.toLowerCase().includes(search.toLowerCase()));
+
   return /*#__PURE__*/React.createElement("div", {
     className: "card",
     style: {
-      marginTop: idx === 0 ? 0 : "12px",
-      background: "var(--surface-2)"
+      marginTop: idx === 0 ? 0 : "14px",
+      background: "var(--surface-2)",
+      border: "1px solid var(--border-strong)"
     }
   }, /*#__PURE__*/React.createElement("div", {
     style: {
-      display: "flex",
+      display: "grid",
+      gridTemplateColumns: "1.4fr 1fr 1fr auto",
       gap: "10px",
       alignItems: "flex-end",
-      marginBottom: "10px"
+      marginBottom: "12px"
     }
   }, /*#__PURE__*/React.createElement("div", {
     className: "field",
-    style: {
-      flex: 1,
-      marginBottom: 0
-    }
+    style: { marginBottom: 0 }
   }, /*#__PURE__*/React.createElement("label", null, "APM ID"), apmOptions.length ? /*#__PURE__*/React.createElement("select", {
     value: rule.apmId,
     onChange: e => onApmChange(e.target.value)
@@ -3146,63 +3292,126 @@ function ExceptionRuleCard({
     placeholder: "e.g. APM12345",
     value: rule.apmId,
     onChange: e => onApmChange(e.target.value)
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "field",
+    style: { marginBottom: 0 }
+  }, /*#__PURE__*/React.createElement("label", null, "Exception Start Date"), /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: rule.startDate || "",
+    onChange: e => onDatesChange("startDate", e.target.value)
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "field",
+    style: { marginBottom: 0 }
+  }, /*#__PURE__*/React.createElement("label", null, "Exception End Date"), /*#__PURE__*/React.createElement("input", {
+    type: "date",
+    value: rule.endDate || "",
+    onChange: e => onDatesChange("endDate", e.target.value)
   })), /*#__PURE__*/React.createElement("button", {
     className: "btn btn-danger btn-sm",
+    style: { height: "35px" },
     onClick: onRemove
-  }, "Remove")), rule.apmId && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("label", {
-    style: {
-      display: "block",
-      fontSize: "11.5px",
-      color: "var(--text-dim)",
-      fontWeight: 600,
-      marginBottom: "8px"
-    }
-  }, "Vulnerabilities for ", rule.apmId, " (", rule.vulnNames.length, " selected)"), /*#__PURE__*/React.createElement("input", {
-    type: "text",
-    placeholder: "Search vulnerabilities…",
-    value: search,
-    onChange: e => setSearch(e.target.value),
-    style: {
-      width: "100%",
-      background: "var(--surface-3)",
-      border: "1px solid var(--border-strong)",
-      borderRadius: "7px",
-      padding: "7px 10px",
-      color: "var(--text)",
-      fontSize: "12.5px",
-      marginBottom: "8px"
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      maxHeight: "220px",
-      overflow: "auto",
-      border: "1px solid var(--border)",
-      borderRadius: "8px",
-      padding: "6px"
-    }
-  }, filteredOptions.length === 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: "10px",
-      fontSize: "12px",
-      color: "var(--text-faint)"
-    }
-  }, "No vulnerabilities found for this APM ID."), filteredOptions.map(vn => /*#__PURE__*/React.createElement("label", {
-    key: vn,
-    style: {
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-      padding: "5px 6px",
-      fontSize: "12px",
-      color: "var(--text-dim)",
-      cursor: "pointer",
-      borderRadius: "5px"
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    type: "checkbox",
-    checked: rule.vulnNames.includes(vn),
-    onChange: () => onToggleVuln(vn)
-  }), /*#__PURE__*/React.createElement("span", null, vn))))));
+  }, "Remove")), rule.apmId && /*#__PURE__*/React.createElement("div", null,
+    /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: "8px"
+      }
+    },
+      /*#__PURE__*/React.createElement("label", {
+        style: {
+          fontSize: "11.5px",
+          color: "var(--text-dim)",
+          fontWeight: 600
+        }
+      }, "Approved Vulnerabilities for ", rule.apmId, " (", (rule.vulnNames || []).length, " active)"),
+      (rule.startDate || rule.endDate) && /*#__PURE__*/React.createElement("span", {
+        className: "badge badge-neutral",
+        style: { fontSize: "10.5px" }
+      }, `Validity: ${rule.startDate || "N/A"} → ${rule.endDate || "No Expiry"}`)
+    ),
+    /*#__PURE__*/React.createElement("div", {
+      style: {
+        display: "flex",
+        gap: "8px",
+        marginBottom: "8px"
+      }
+    },
+      /*#__PURE__*/React.createElement("input", {
+        type: "text",
+        placeholder: "Search list below…",
+        value: search,
+        onChange: e => setSearch(e.target.value),
+        style: {
+          flex: 1,
+          background: "var(--surface-3)",
+          border: "1px solid var(--border)",
+          borderRadius: "6px",
+          padding: "6px 10px",
+          color: "var(--text)",
+          fontSize: "12px"
+        }
+      }),
+      /*#__PURE__*/React.createElement("input", {
+        type: "text",
+        placeholder: "Or type custom vuln name…",
+        value: customVulnText,
+        onChange: e => setCustomVulnText(e.target.value),
+        style: {
+          flex: 1.2,
+          background: "var(--surface-3)",
+          border: "1px solid var(--border)",
+          borderRadius: "6px",
+          padding: "6px 10px",
+          color: "var(--text)",
+          fontSize: "12px"
+        }
+      }),
+      /*#__PURE__*/React.createElement("button", {
+        className: "btn btn-ghost btn-sm",
+        type: "button",
+        onClick: () => {
+          onAddCustomVuln(customVulnText);
+          setCustomVulnText("");
+        }
+      }, "+ Add Vuln")
+    ),
+    /*#__PURE__*/React.createElement("div", {
+      style: {
+        maxHeight: "180px",
+        overflow: "auto",
+        border: "1px solid var(--border)",
+        borderRadius: "7px",
+        padding: "6px",
+        background: "var(--surface-3)"
+      }
+    }, filteredOptions.length === 0 && /*#__PURE__*/React.createElement("div", {
+      style: {
+        padding: "10px",
+        fontSize: "12px",
+        color: "var(--text-faint)"
+      }
+    }, "No vulnerabilities matched. Type the vulnerability name above and click '+ Add Vuln' to register an advance exception."),
+    filteredOptions.map(vn => /*#__PURE__*/React.createElement("label", {
+      key: vn,
+      style: {
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        padding: "4px 6px",
+        fontSize: "12px",
+        color: "var(--text-dim)",
+        cursor: "pointer",
+        borderRadius: "4px"
+      }
+    }, /*#__PURE__*/React.createElement("input", {
+      type: "checkbox",
+      checked: (rule.vulnNames || []).includes(vn),
+      onChange: () => onToggleVuln(vn)
+    }), /*#__PURE__*/React.createElement("span", {
+    }, vn))))
+  ));
 }
 
 /* ============================================================
@@ -3274,14 +3483,15 @@ function ProcessView({
   result,
   onRun,
   running,
-  canRun
+  canRun,
+  reportMode
 }) {
   return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
     className: "pagehead"
   }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
     className: "eyebrow"
-  }, "Stage 03 — Process"), /*#__PURE__*/React.createElement("h1", null, "Run the vulnerability pipeline"), /*#__PURE__*/React.createElement("p", null, "Filters severity, matches running cloud assets by private IP, enriches with CMDB, applies SLA rules, and produces the final outcome dataset.")), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-primary",
+  }, reportMode === "iasp" ? "IASP Stage 03 — Process" : "PowerBI Stage 03 — Process"), /*#__PURE__*/React.createElement("h1", null, reportMode === "iasp" ? "Generate IASP Outcome Report" : "Run PowerBI Vulnerability Engine"), /*#__PURE__*/React.createElement("p", null, reportMode === "iasp" ? "Combines Server & Network raw reports, removes Severity 1 & 2, correlates with AWS/Azure (retaining stopped/deallocated assets), CMDB & exception approvals into a 54-column outcome dataset." : "Filters severity, matches running cloud assets by private IP, enriches with CMDB, applies SLA rules, and produces normalized fact-dimension model.")), /*#__PURE__*/React.createElement("button", {
+    className: reportMode === "iasp" ? "btn btn-primary" : "btn btn-electric",
     disabled: !canRun || running,
     onClick: onRun
   }, running ? /*#__PURE__*/React.createElement("span", {
@@ -3289,13 +3499,13 @@ function ProcessView({
   }) : /*#__PURE__*/React.createElement(Icon, {
     d: ICONS.play,
     size: 14
-  }), running ? "Processing…" : "Generate Final Report")), /*#__PURE__*/React.createElement("div", {
+  }), running ? "Processing…" : reportMode === "iasp" ? "Generate 54-Col IASP Outcome Report" : "Generate PowerBI Star Schema")), /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "card-head"
   }, /*#__PURE__*/React.createElement("div", {
     className: "card-title"
-  }, "Pipeline")), /*#__PURE__*/React.createElement(PipelineRail, {
+  }, "Pipeline Execution Stages")), /*#__PURE__*/React.createElement(PipelineRail, {
     stats: result ? result.stats : null,
     running: running
   })), !canRun && /*#__PURE__*/React.createElement("div", {
@@ -3303,9 +3513,7 @@ function ProcessView({
     style: {
       marginTop: "16px"
     }
-  }, "Upload the Qualys report at minimum to run processing. AWS, Azure and CMDB are optional but strongly recommended for full enrichment — unmatched records still appear in the final report with ", /*#__PURE__*/React.createElement("code", {
-    className: "inline"
-  }, "CSP = Unknown"), " and are logged to Exceptions."), result && /*#__PURE__*/React.createElement("div", {
+  }, reportMode === "iasp" ? "Upload at least one Qualys Raw Report (Server or Network) on the Ingestion Hub to run processing. AWS, Azure and CMDB will be correlated with stopped/deallocated assets retained." : "Upload the Qualys report at minimum to run processing. AWS, Azure and CMDB are optional but strongly recommended for full enrichment."), result && /*#__PURE__*/React.createElement("div", {
     className: "card",
     style: {
       marginTop: "16px"
@@ -5115,6 +5323,8 @@ function App() {
   const [selectedTool, setSelectedTool] = useState("Qualys"); // "Qualys", "SCA", "CSPM", "DXC IVM", "SAST", "DAST", "SAAS-Config", "SAAS Manual", "MPEN"
   const [files, setFiles] = useState({
     qualys: null,
+    qualysServer: null,
+    qualysNetwork: null,
     aws: null,
     azure: null,
     cmdb: null,
@@ -5179,6 +5389,8 @@ function App() {
   const resetAll = () => {
     setFiles({
       qualys: null,
+      qualysServer: null,
+      qualysNetwork: null,
       aws: null,
       azure: null,
       cmdb: null,
@@ -5194,8 +5406,15 @@ function App() {
       showToast(`The automated processing pipeline for ${selectedTool} is currently scheduled for future release. Qualys pipeline is active.`, "err");
       return;
     }
-    if (!files.qualys) {
-      showToast("Upload the Qualys report first.", "err");
+    const hasQualys = reportMode === "iasp"
+      ? (files.qualysServer || files.qualysNetwork || files.qualys)
+      : files.qualys;
+    if (!hasQualys) {
+      if (reportMode === "iasp") {
+        showToast("Upload at least one Qualys Raw Report (Server or Network) first.", "err");
+      } else {
+        showToast("Upload the Qualys report first.", "err");
+      }
       return;
     }
     setRunning(true);
@@ -5204,21 +5423,27 @@ function App() {
         const previousFinalRows = files.previous ? files.previous.rows : null;
         const t0 = performance.now();
         const res = runPipeline({
+          qualysServerData: files.qualysServer,
+          qualysNetworkData: files.qualysNetwork,
           qualysData: files.qualys,
           awsData: files.aws,
           azureData: files.azure,
           cmdbData: files.cmdb,
           cmdbMapping,
           config,
-          previousFinalRows
+          previousFinalRows,
+          reportMode
         });
         const durationMs = Math.round(performance.now() - t0);
         setResult(res);
+        const qualysName = reportMode === "iasp"
+          ? [files.qualysServer && files.qualysServer.fileName, files.qualysNetwork && files.qualysNetwork.fileName].filter(Boolean).join(" + ") || (files.qualys && files.qualys.fileName) || "Qualys Raw"
+          : (files.qualys && files.qualys.fileName) || "Qualys Raw";
         const run = {
           runId: "RUN-" + uid().toUpperCase(),
           reportDate: config.reportDate,
           runAt: new Date().toLocaleString(),
-          qualysFile: files.qualys.fileName,
+          qualysFile: qualysName,
           finalCount: res.finalRows.length,
           exceptionCount: res.exceptions.length,
           durationMs,
@@ -5234,7 +5459,7 @@ function App() {
           reportMode,
           selectedTool
         }), false).catch(() => {});
-        showToast(`Report generated: ${res.finalRows.length.toLocaleString()} final records (${reportMode === "iasp" ? "IASP Format" : "PowerBI Format"}).`);
+        showToast(`Report generated: ${res.finalRows.length.toLocaleString()} final records (${reportMode === "iasp" ? "IASP 54-Col Format" : "PowerBI Format"}).`);
       } catch (e) {
         console.error(e);
         showToast("Processing failed: " + e.message, "err");
@@ -5242,7 +5467,11 @@ function App() {
       setRunning(false);
     }, 40);
   };
-  const canRun = selectedTool === "Qualys" && !!files.qualys;
+  const canRun = selectedTool === "Qualys" && (
+    reportMode === "iasp"
+      ? !!(files.qualysServer || files.qualysNetwork || files.qualys)
+      : !!files.qualys
+  );
 
   // Mode-aware navigation items
   const navItems = [
