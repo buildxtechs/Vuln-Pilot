@@ -151,25 +151,84 @@ input,select,textarea{ font-family:var(--sans); }
 .btn-icon{ padding:8px; }
 
 /* upload cards */
-.upload-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+.upload-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
 @media (max-width:900px){ .upload-grid{ grid-template-columns:1fr; } }
 .upload-card{
-  border:1.5px dashed var(--border-strong); border-radius:var(--radius); padding:18px; position:relative;
-  background:var(--surface); transition:border-color .15s ease;
+  border:1.5px dashed var(--border-strong); border-radius:var(--radius); padding:20px; position:relative;
+  background:var(--surface); transition:all .2s ease; display:flex; flex-direction:column;
 }
-.upload-card.filled{ border-style:solid; border-color:var(--accent-dim); background:linear-gradient(180deg, rgba(225,18,44,0.06), var(--surface) 40%); }
-.upload-card .stage-no{ font-family:var(--mono); font-size:11px; color:var(--text-faint); letter-spacing:1px; }
-.upload-card h3{ font-family:var(--disp); font-size:15px; margin:4px 0 2px; }
-.upload-card .req{ font-size:11.5px; color:var(--text-faint); margin-bottom:12px; }
-.dropzone{ border:1px solid var(--border); border-radius:8px; padding:16px; text-align:center; background:var(--surface-2); }
+.upload-card:hover{
+  border-color:#4a5264;
+  box-shadow:0 6px 20px -8px rgba(0,0,0,0.4);
+}
+.upload-card.filled{
+  border-style:solid; border-color:rgba(225,18,44,0.35);
+  background:linear-gradient(180deg, rgba(225,18,44,0.08), var(--surface) 50%);
+  box-shadow:0 4px 18px -4px rgba(225,18,44,0.18);
+}
+.upload-card .stage-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.upload-card .stage-no{ font-family:var(--mono); font-size:10.5px; color:var(--text-faint); letter-spacing:1px; }
+.upload-card.filled .stage-no{ color:var(--accent); font-weight:700; }
+.upload-card h3{ font-family:var(--disp); font-size:15.5px; margin:2px 0 4px; font-weight:700; color:var(--text); display:flex; align-items:center; gap:8px; }
+.upload-card .req{ font-size:12px; color:var(--text-dim); margin-bottom:14px; min-height:18px; line-height:1.4; }
+
+.dropzone{
+  border:1.5px dashed var(--border-strong); border-radius:9px; padding:18px 14px; text-align:center;
+  background:var(--surface-2); transition:all .18s ease; cursor:pointer; position:relative;
+}
+.dropzone:hover{
+  border-color:var(--accent);
+  background:var(--surface-3);
+}
+.dropzone.drag-active{
+  border-color:var(--accent);
+  background:rgba(225,18,44,0.12);
+  box-shadow:0 0 16px rgba(225,18,44,0.35);
+}
 .dropzone input{ display:none; }
-.dropzone label{ cursor:pointer; color:var(--accent); font-weight:600; font-size:12.5px; }
-.file-meta{ margin-top:12px; font-family:var(--mono); font-size:11.5px; color:var(--text-dim); line-height:1.9; }
-.file-meta .row{ display:flex; justify-content:space-between; gap:10px; }
-.file-meta .ok{ color:var(--ok); }
-.file-meta .warn{ color:var(--med); }
+.dropzone label{ cursor:pointer; color:var(--accent); font-weight:600; font-size:13px; display:flex; align-items:center; justify-content:center; gap:8px; }
+.dropzone:hover label{ color:#FF4D6A; }
+
+.file-meta{
+  margin-top:14px; font-family:var(--mono); font-size:11.5px; color:var(--text-dim); line-height:1.8;
+  background:var(--surface-2); padding:10px 14px; border-radius:8px; border:1px solid var(--border);
+}
+.file-meta .row{ display:flex; justify-content:space-between; gap:10px; align-items:center; }
+.file-meta .file-name-row{ display:flex; align-items:center; gap:6px; overflow:hidden; text-overflow:ellipsis; }
+.file-meta .ok{ color:var(--ok); font-weight:600; }
+.file-meta .warn{ color:var(--med); font-weight:600; }
 .chip-row{ display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
 .mini-chip{ font-family:var(--mono); font-size:10px; padding:2px 7px; border-radius:20px; background:var(--surface-3); border:1px solid var(--border-strong); color:var(--text-dim); }
+.file-action-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+.btn-remove-file {
+  background: transparent;
+  border: 1px solid rgba(225,18,44,0.4);
+  color: #FF4D6A;
+  font-size: 11px;
+  font-family: var(--mono);
+  padding: 3px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .14s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.btn-remove-file:hover {
+  background: rgba(225,18,44,0.18);
+  border-color: var(--accent);
+}
 
 /* pipeline rail - signature element */
 .pipeline-rail{ display:flex; align-items:stretch; gap:0; overflow-x:auto; padding:6px 0 10px; }
@@ -254,25 +313,46 @@ table.data tbody tr:last-child td{ border-bottom:none; }
   background: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
-  padding: 16px 20px;
-  margin-bottom: 20px;
+  padding: 18px 22px;
+  margin-bottom: 22px;
+  position: relative;
+  overflow: hidden;
+}
+.mode-selector-container::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent 60%);
 }
 .mode-selector-title {
   font-family: var(--disp);
-  font-size: 13px;
+  font-size: 13.5px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: var(--text-dim);
-  margin-bottom: 12px;
+  color: var(--text);
+  margin-bottom: 14px;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
+}
+.mode-selector-title .step-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--surface-3);
+  color: var(--text-dim);
+  border: 1px solid var(--border-strong);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
 }
 .mode-tabs {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  gap: 14px;
 }
 @media (max-width: 650px) {
   .mode-tabs { grid-template-columns: 1fr; }
@@ -280,28 +360,30 @@ table.data tbody tr:last-child td{ border-bottom:none; }
 .mode-card {
   border: 1.5px solid var(--border);
   background: var(--surface-2);
-  border-radius: 9px;
-  padding: 14px 16px;
+  border-radius: 10px;
+  padding: 16px 18px;
   cursor: pointer;
-  transition: all .18s ease;
+  transition: all .2s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   align-items: flex-start;
   gap: 14px;
+  position: relative;
 }
 .mode-card:hover {
   border-color: var(--border-strong);
   background: var(--surface-3);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -10px rgba(0,0,0,0.6);
 }
 .mode-card.active {
   border-color: var(--accent);
-  background: linear-gradient(145deg, rgba(225,18,44,0.12), var(--surface-2));
-  box-shadow: 0 0 16px -4px rgba(225,18,44,0.3);
+  background: linear-gradient(145deg, rgba(225,18,44,0.14), var(--surface-2) 70%);
+  box-shadow: 0 0 20px -4px rgba(225,18,44,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 .mode-card-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
   background: var(--surface);
   border: 1px solid var(--border-strong);
   display: flex;
@@ -309,109 +391,232 @@ table.data tbody tr:last-child td{ border-bottom:none; }
   justify-content: center;
   color: var(--accent);
   flex-shrink: 0;
+  transition: all .2s ease;
 }
 .mode-card.active .mode-card-icon {
   background: var(--accent);
   color: #fff;
   border-color: var(--accent);
+  box-shadow: 0 0 14px rgba(225,18,44,0.5);
+  transform: scale(1.05);
 }
 .mode-card-title {
   font-family: var(--disp);
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 700;
   color: var(--text);
-  margin-bottom: 3px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .mode-card-desc {
-  font-size: 11.5px;
+  font-size: 12px;
   color: var(--text-dim);
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
-/* Tool Selector Grid */
+/* Tool Filter Pills and Container */
 .tool-selector-container {
   background: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
-  padding: 16px 20px;
-  margin-bottom: 22px;
+  padding: 18px 22px;
+  margin-bottom: 24px;
+  position: relative;
+  overflow: hidden;
 }
+.tool-selector-container::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, #FF9900, #E1122C, transparent 70%);
+}
+.tool-filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+.tool-category-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tool-pill {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-dim);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .16s ease;
+}
+.tool-pill:hover {
+  background: var(--surface-3);
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.tool-pill.active {
+  background: var(--surface-3);
+  color: #FF4D6A;
+  border-color: var(--accent);
+  box-shadow: 0 0 10px -2px rgba(225,18,44,0.3);
+}
+
+/* Tool Interactive Cards */
 .tool-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
 }
 .tool-card {
   border: 1.5px solid var(--border);
   background: var(--surface-2);
-  border-radius: 8px;
-  padding: 10px 12px;
+  border-radius: 10px;
+  padding: 12px 14px;
   cursor: pointer;
-  transition: all .15s ease;
-  text-align: center;
+  transition: all .2s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   position: relative;
+  text-align: center;
+  overflow: hidden;
+}
+.tool-card::after {
+  content: "";
+  position: absolute;
+  bottom: 0; left: 0; right: 0; height: 2px;
+  background: transparent;
+  transition: background .2s ease;
 }
 .tool-card:hover {
   border-color: var(--border-strong);
   background: var(--surface-3);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 22px -8px rgba(0,0,0,0.6);
 }
 .tool-card.active {
   border-color: var(--accent);
-  background: linear-gradient(160deg, rgba(225,18,44,0.16), var(--surface-2));
-  box-shadow: 0 4px 12px -2px rgba(225,18,44,0.35);
+  background: linear-gradient(160deg, rgba(225,18,44,0.18), var(--surface-2) 80%);
+  box-shadow: 0 6px 18px -3px rgba(225,18,44,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+.tool-card.active::after {
+  background: var(--accent);
+}
+.tool-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-dim);
+  transition: all .2s ease;
+}
+.tool-card:hover .tool-icon-wrap {
+  color: var(--text);
+  border-color: #4a5264;
+}
+.tool-card.active .tool-icon-wrap {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(225,18,44,0.5);
 }
 .tool-name {
-  font-family: var(--mono);
-  font-size: 12.5px;
+  font-family: var(--disp);
+  font-size: 13px;
   font-weight: 700;
   color: var(--text);
+  letter-spacing: 0.2px;
 }
 .tool-card.active .tool-name {
   color: #FF4D6A;
 }
+.tool-format-tag {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--text-faint);
+  letter-spacing: 0.3px;
+}
 .tool-status-tag {
   font-family: var(--mono);
   font-size: 9px;
-  padding: 1px 6px;
+  padding: 2px 7px;
   border-radius: 12px;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
+  font-weight: 600;
 }
 .tool-status-active {
-  background: rgba(34,199,102,0.15);
-  border: 1px solid rgba(34,199,102,0.4);
+  background: rgba(34,199,102,0.14);
+  border: 1px solid rgba(34,199,102,0.45);
   color: var(--ok);
 }
 .tool-status-planned {
   background: rgba(245,168,0,0.12);
-  border: 1px solid rgba(245,168,0,0.3);
+  border: 1px solid rgba(245,168,0,0.35);
   color: var(--med);
 }
-.tool-banner-note {
-  border-radius: var(--radius);
-  padding: 14px 18px;
-  background: linear-gradient(145deg, rgba(245,168,0,0.08), var(--surface-2));
-  border: 1px solid rgba(245,168,0,0.3);
+
+/* Tool Details Header Strip */
+.tool-info-strip {
+  margin-top: 14px;
+  padding: 12px 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 18px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.tool-info-strip-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.tool-info-desc {
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+.tool-info-chips {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tool-banner-note {
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  background: linear-gradient(145deg, rgba(245,168,0,0.09), var(--surface-2));
+  border: 1px solid rgba(245,168,0,0.35);
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 22px;
 }
 .tool-banner-note h4 {
   font-family: var(--disp);
-  font-size: 13.5px;
+  font-size: 14px;
   margin: 0 0 4px 0;
   color: var(--med);
 }
 .tool-banner-note p {
   margin: 0;
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--text-dim);
+  line-height: 1.5;
 }
 .config-table td{ padding:5px 8px; border-bottom:1px solid var(--border); }
 .config-table input, .config-table select{ width:100%; background:var(--surface-2); border:1px solid var(--border); border-radius:5px; padding:5px 7px; color:var(--text); font-family:var(--mono); font-size:12px; }
@@ -1827,6 +2032,63 @@ const ICONS = {
     d: "M3 6h18"
   }), /*#__PURE__*/React.createElement("path", {
     d: "M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z"
+  })),
+  shield: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+    d: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+  })),
+  server: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+    x: "2",
+    y: "2",
+    width: "20",
+    height: "8",
+    rx: "2",
+    ry: "2"
+  }), /*#__PURE__*/React.createElement("rect", {
+    x: "2",
+    y: "14",
+    width: "20",
+    height: "8",
+    rx: "2",
+    ry: "2"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "6",
+    y1: "6",
+    x2: "6.01",
+    y2: "6"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "6",
+    y1: "18",
+    x2: "6.01",
+    y2: "18"
+  })),
+  cloud: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+    d: "M18 10h-1.26A8 8 0 109 20h9a5 5 0 000-10z"
+  })),
+  code: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("polyline", {
+    points: "16 18 22 12 16 6"
+  }), /*#__PURE__*/React.createElement("polyline", {
+    points: "8 6 2 12 8 18"
+  })),
+  terminal: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("polyline", {
+    points: "4 17 10 11 4 5"
+  }), /*#__PURE__*/React.createElement("line", {
+    x1: "12",
+    y1: "19",
+    x2: "20",
+    y2: "19"
+  })),
+  lock: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("rect", {
+    x: "3",
+    y: "11",
+    width: "18",
+    height: "11",
+    rx: "2",
+    ry: "2"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: "M7 11V7a5 5 0 0110 0v4"
+  })),
+  zap: /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("polygon", {
+    points: "13 2 3 14 12 14 11 22 21 10 12 10 13 2"
   }))
 };
 function Nav({
@@ -1952,6 +2214,7 @@ function UploadCard({
   accept,
   fileData,
   onFile,
+  onRemove,
   requiredFields,
   aliasDict,
   colorTag,
@@ -1960,6 +2223,8 @@ function UploadCard({
   const inputRef = useRef(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [isDragOver, setIsDragOver] = useState(false);
+
   const handleFiles = async fileList => {
     const f = fileList[0];
     if (!f) return;
@@ -1973,6 +2238,7 @@ function UploadCard({
     }
     setBusy(false);
   };
+
   let foundReq = [],
     missingReq = [];
   if (fileData && requiredFields && aliasDict) {
@@ -1981,54 +2247,101 @@ function UploadCard({
       (resolved[f] ? foundReq : missingReq).push(f);
     });
   }
+
   return /*#__PURE__*/React.createElement("div", {
     className: "upload-card" + (fileData ? " filled" : "")
   }, /*#__PURE__*/React.createElement("div", {
+    className: "stage-header"
+  }, /*#__PURE__*/React.createElement("div", {
     className: "stage-no"
-  }, "STAGE ", stageNo, optional ? " · OPTIONAL" : ""), /*#__PURE__*/React.createElement("h3", null, title), /*#__PURE__*/React.createElement("div", {
+  }, "STAGE 0", stageNo, optional ? " · OPTIONAL" : ""), fileData ? /*#__PURE__*/React.createElement("span", {
+    className: "badge badge-ok"
+  }, "✓ INGESTED") : optional ? /*#__PURE__*/React.createElement("span", {
+    className: "badge badge-neutral"
+  }, "OPTIONAL") : /*#__PURE__*/React.createElement("span", {
+    className: "badge badge-neutral"
+  }, "PENDING")), /*#__PURE__*/React.createElement("h3", null, title), /*#__PURE__*/React.createElement("div", {
     className: "req"
   }, requirement), /*#__PURE__*/React.createElement("div", {
-    className: "dropzone",
-    onDragOver: e => e.preventDefault(),
+    className: "dropzone" + (isDragOver ? " drag-active" : ""),
+    onDragOver: e => {
+      e.preventDefault();
+      setIsDragOver(true);
+    },
+    onDragLeave: () => setIsDragOver(false),
     onDrop: e => {
       e.preventDefault();
+      setIsDragOver(false);
       handleFiles(e.dataTransfer.files);
+    },
+    onClick: () => {
+      if (inputRef.current) inputRef.current.click();
     }
   }, /*#__PURE__*/React.createElement("input", {
     ref: inputRef,
     type: "file",
     accept: accept,
     id: "file-" + stageNo,
-    onChange: e => handleFiles(e.target.files)
+    onChange: e => handleFiles(e.target.files),
+    style: { display: "none" }
   }), /*#__PURE__*/React.createElement("label", {
-    htmlFor: "file-" + stageNo
-  }, busy ? "Parsing..." : fileData ? "Replace file" : "Choose file or drop here"), /*#__PURE__*/React.createElement("div", {
+    htmlFor: "file-" + stageNo,
+    onClick: e => e.stopPropagation()
+  }, busy ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
+    className: "spinner"
+  }), " Parsing Data...") : fileData ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Icon, {
+    d: ICONS.check,
+    size: 14
+  }), " Replace File") : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Icon, {
+    d: ICONS.upload,
+    size: 14
+  }), " Click to Browse or Drop File")), /*#__PURE__*/React.createElement("div", {
     style: {
       fontSize: "11px",
       color: "var(--text-faint)",
       marginTop: "6px"
     }
-  }, ".xlsx or .csv")), err && /*#__PURE__*/React.createElement("div", {
+  }, accept ? accept.replace(/,/g, " / ") : ".xlsx or .csv")), err && /*#__PURE__*/React.createElement("div", {
     style: {
       color: "var(--danger)",
       fontSize: "11.5px",
-      marginTop: "8px"
+      marginTop: "10px",
+      padding: "6px 10px",
+      background: "rgba(225,18,44,0.1)",
+      borderRadius: "6px",
+      border: "1px solid rgba(225,18,44,0.3)"
     }
-  }, err), fileData && /*#__PURE__*/React.createElement("div", {
+  }, "⚠ ", err), fileData && /*#__PURE__*/React.createElement("div", {
     className: "file-meta"
   }, /*#__PURE__*/React.createElement("div", {
     className: "row"
-  }, /*#__PURE__*/React.createElement("span", null, "File"), /*#__PURE__*/React.createElement("span", {
-    className: "ok"
-  }, fileData.fileName)), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", {
+    style: { color: "var(--text-faint)" }
+  }, "Target File"), /*#__PURE__*/React.createElement("span", {
+    className: "ok file-name-row",
+    title: fileData.fileName
+  }, /*#__PURE__*/React.createElement(Icon, {
+    d: ICONS.file,
+    size: 13
+  }), " ", fileData.fileName)), /*#__PURE__*/React.createElement("div", {
     className: "row"
-  }, /*#__PURE__*/React.createElement("span", null, "Records"), /*#__PURE__*/React.createElement("span", null, fileData.recordCount.toLocaleString())), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", {
+    style: { color: "var(--text-faint)" }
+  }, "Records Ingested"), /*#__PURE__*/React.createElement("span", {
+    style: { fontWeight: "600", color: "var(--text)" }
+  }, fileData.recordCount.toLocaleString(), " rows")), /*#__PURE__*/React.createElement("div", {
     className: "row"
-  }, /*#__PURE__*/React.createElement("span", null, "Columns detected"), /*#__PURE__*/React.createElement("span", null, fileData.headers.length)), requiredFields && /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("span", {
+    style: { color: "var(--text-faint)" }
+  }, "Columns Detected"), /*#__PURE__*/React.createElement("span", {
+    style: { color: "var(--text)" }
+  }, fileData.headers.length, " attributes")), requiredFields && /*#__PURE__*/React.createElement("div", {
     className: "row"
-  }, /*#__PURE__*/React.createElement("span", null, "Required columns"), /*#__PURE__*/React.createElement("span", {
+  }, /*#__PURE__*/React.createElement("span", {
+    style: { color: "var(--text-faint)" }
+  }, "Schema Match"), /*#__PURE__*/React.createElement("span", {
     className: missingReq.length ? "warn" : "ok"
-  }, missingReq.length ? `${foundReq.length}/${requiredFields.length} found` : "All required columns detected")), missingReq.length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, missingReq.length ? `${foundReq.length}/${requiredFields.length} matched` : "100% schema aligned")), missingReq.length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "chip-row"
   }, missingReq.map(m => /*#__PURE__*/React.createElement("span", {
     key: m,
@@ -2036,19 +2349,34 @@ function UploadCard({
     style: {
       color: "var(--med)"
     }
-  }, "missing: ", m)))));
+  }, "missing: ", m))), onRemove && /*#__PURE__*/React.createElement("div", {
+    className: "file-action-row"
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    className: "btn-remove-file",
+    onClick: e => {
+      e.stopPropagation();
+      onRemove();
+    }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    d: ICONS.trash,
+    size: 12
+  }), " Remove"))));
 }
+
 const SECURITY_TOOLS = [
-  { id: "Qualys", label: "Qualys", desc: "VM / Host Infrastructure Vulnerability Scanning", active: true, format: "XLSX / CSV" },
-  { id: "SCA", label: "SCA", desc: "Software Composition Analysis & Dependency Vulnerabilities", active: false, format: "JSON / CSV" },
-  { id: "CSPM", label: "CSPM", desc: "Cloud Security Posture Management & Misconfigurations", active: false, format: "CSV / JSON" },
-  { id: "DXC IVM", label: "DXC IVM", desc: "Infrastructure Vulnerability Management Feed", active: false, format: "XLSX / CSV" },
-  { id: "SAST", label: "SAST", desc: "Static Application Security Testing Source Flaws", active: false, format: "SARIF / CSV" },
-  { id: "DAST", label: "DAST", desc: "Dynamic Application Security Testing (Web & API)", active: false, format: "XML / CSV" },
-  { id: "SAAS-Config", label: "SAAS-Config", desc: "SaaS Security & Configuration Compliance Checks", active: false, format: "JSON / XLSX" },
-  { id: "SAAS Manual", label: "SAAS Manual", desc: "Manual SaaS Assessment & Pentest Findings", active: false, format: "XLSX" },
-  { id: "MPEN", label: "MPEN", desc: "Mobile & Perimeter Penetration Testing Reports", active: false, format: "PDF / XLSX" }
+  { id: "Qualys", label: "Qualys", desc: "VM / Host Infrastructure Vulnerability Scanning", active: true, format: "XLSX / CSV", category: "Infra & Cloud", icon: "server" },
+  { id: "SCA", label: "SCA", desc: "Software Composition Analysis & Dependency Vulnerabilities", active: false, format: "JSON / CSV", category: "AppSec & Code", icon: "code" },
+  { id: "CSPM", label: "CSPM", desc: "Cloud Security Posture Management & Misconfigurations", active: false, format: "CSV / JSON", category: "Infra & Cloud", icon: "cloud" },
+  { id: "DXC IVM", label: "DXC IVM", desc: "Infrastructure Vulnerability Management Feed", active: false, format: "XLSX / CSV", category: "Infra & Cloud", icon: "server" },
+  { id: "SAST", label: "SAST", desc: "Static Application Security Testing Source Flaws", active: false, format: "SARIF / CSV", category: "AppSec & Code", icon: "code" },
+  { id: "DAST", label: "DAST", desc: "Dynamic Application Security Testing (Web & API)", active: false, format: "XML / CSV", category: "AppSec & Code", icon: "zap" },
+  { id: "SAAS-Config", label: "SAAS-Config", desc: "SaaS Security & Configuration Compliance Checks", active: false, format: "JSON / XLSX", category: "SaaS & Audit", icon: "shield" },
+  { id: "SAAS Manual", label: "SAAS Manual", desc: "Manual SaaS Assessment & Pentest Findings", active: false, format: "XLSX", category: "SaaS & Audit", icon: "lock" },
+  { id: "MPEN", label: "MPEN", desc: "Mobile & Perimeter Penetration Testing Reports", active: false, format: "PDF / XLSX", category: "SaaS & Audit", icon: "terminal" }
 ];
+
+const TOOL_CATEGORIES = ["All Tools", "Infra & Cloud", "AppSec & Code", "SaaS & Audit"];
 
 function UploadView({
   files,
@@ -2059,8 +2387,13 @@ function UploadView({
   selectedTool,
   setSelectedTool
 }) {
+  const [categoryFilter, setCategoryFilter] = useState("All Tools");
   const hasAnyFile = !!(files.qualys || files.aws || files.azure || files.cmdb || files.previous || files.generic);
   const currentToolObj = SECURITY_TOOLS.find(t => t.id === selectedTool) || SECURITY_TOOLS[0];
+
+  const filteredTools = categoryFilter === "All Tools" 
+    ? SECURITY_TOOLS 
+    : SECURITY_TOOLS.filter(t => t.category === categoryFilter);
 
   let ingestionSection = null;
   if (selectedTool === "Qualys") {
@@ -2070,80 +2403,94 @@ function UploadView({
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          marginBottom: "12px"
+          marginBottom: "14px",
+          flexWrap: "wrap",
+          gap: "8px"
         }
       },
-        React.createElement("div", { style: { fontWeight: "700", fontSize: "14px", fontFamily: "var(--disp)" } },
-          `Step 3: Upload ${reportMode === "iasp" ? "IASP" : "PowerBI"} Ingestion Files for Qualys VM Pipeline`
+        React.createElement("div", { style: { fontWeight: "700", fontSize: "14.5px", fontFamily: "var(--disp)", color: "var(--text)" } },
+          `Step 3: Upload Ingestion Files for ${reportMode === "iasp" ? "IASP Report" : "PowerBI Engine"}`
         ),
-        React.createElement("span", { className: "badge badge-ok" }, "5-Stage Pipeline Active")
+        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "8px" } },
+          React.createElement("span", { className: "badge badge-ok" }, "5-Stage Pipeline Active"),
+          React.createElement("span", { className: "badge badge-neutral" }, "Schema Strict")
+        )
       ),
       React.createElement("div", { className: "upload-grid" },
         React.createElement(UploadCard, {
           stageNo: "1",
           title: "Qualys Raw Report",
-          requirement: "Full vulnerability export, all severities",
+          requirement: "Full vulnerability export, all severities (Severity 1 to 5)",
           accept: ".xlsx,.csv",
           fileData: files.qualys,
           onFile: d => setFile("qualys", d),
+          onRemove: () => setFile("qualys", null),
           requiredFields: QUALYS_REQUIRED,
           aliasDict: QUALYS_ALIASES
         }),
         React.createElement(UploadCard, {
           stageNo: "2",
           title: "AWS Inventory Report",
-          requirement: "EC2 instance inventory export",
+          requirement: "EC2 instance inventory export with Account ID & Tags",
           accept: ".xlsx,.csv",
           fileData: files.aws,
           onFile: d => setFile("aws", d),
+          onRemove: () => setFile("aws", null),
           requiredFields: AWS_REQUIRED,
           aliasDict: AWS_ALIASES
         }),
         React.createElement(UploadCard, {
           stageNo: "3",
           title: "Azure Inventory Report",
-          requirement: "VM inventory export",
+          requirement: "Virtual Machine inventory export with Subscription metadata",
           accept: ".xlsx,.csv",
           fileData: files.azure,
           onFile: d => setFile("azure", d),
+          onRemove: () => setFile("azure", null),
           requiredFields: AZURE_REQUIRED,
           aliasDict: AZURE_ALIASES
         }),
         React.createElement(UploadCard, {
           stageNo: "4",
           title: "CMDB Report",
-          requirement: "Application ownership & classification data",
+          requirement: "Application ownership, APM ID, & classification repository",
           accept: ".xlsx,.csv",
           fileData: files.cmdb,
-          onFile: d => setFile("cmdb", d)
+          onFile: d => setFile("cmdb", d),
+          onRemove: () => setFile("cmdb", null)
         }),
         React.createElement(UploadCard, {
           stageNo: "5",
           title: "Previous Week Final Outcome",
-          requirement: "Enables week-over-week New/Existing/Reopened comparison",
+          requirement: "Enables week-over-week New/Existing/Reopened status correlation",
           accept: ".xlsx,.csv",
           fileData: files.previous,
           onFile: d => setFile("previous", d),
+          onRemove: () => setFile("previous", null),
           optional: true
         })
       ),
       React.createElement("div", {
         className: "note-box",
-        style: { marginTop: "16px" }
+        style: { marginTop: "18px" }
       },
-        "CMDB column names vary week to week, so mapping happens on the ",
+        "💡 ",
+        React.createElement("b", null, "CMDB Correlation Engine:"),
+        " CMDB column headers vary across operational workflows. You can fine-tune column mappings on the ",
         React.createElement("b", null, "Configure"),
-        " tab once the CMDB file is uploaded — the system auto-guesses the mapping and you can override it. Qualys, AWS and Azure use fixed column names, matched automatically regardless of case or spacing. CMDB enrichment tries ",
-        React.createElement("b", null, "IP"),
-        " first, then the ",
-        React.createElement("b", null, "5-digit correlation code"),
-        " shared between the AWS Account Name / Azure Subscription and the CMDB's correlation field, then hostname as a last resort."
+        " tab once CMDB is loaded. Ingestion correlation automatically evaluates ",
+        React.createElement("b", null, "IP Address"),
+        " first, followed by ",
+        React.createElement("b", null, "5-digit correlation codes"),
+        " (AWS Account / Azure Subscription), and falls back to ",
+        React.createElement("b", null, "Hostname"),
+        "."
       )
     );
   } else {
     ingestionSection = React.createElement(React.Fragment, null,
       React.createElement("div", { className: "tool-banner-note" },
-        React.createElement(Icon, { d: ICONS.alert, size: 22 }),
+        React.createElement(Icon, { d: ICONS.alert, size: 24 }),
         React.createElement("div", null,
           React.createElement("h4", null, `${currentToolObj.label} Dedicated Pipeline — Future Release`),
           React.createElement("p", null,
@@ -2152,7 +2499,7 @@ function UploadView({
             ` (${currentToolObj.desc}) for ${reportMode === "iasp" ? "IASP Upload" : "PowerBI"} reports is pre-architected and scheduled for upcoming integration. You can switch to `,
             React.createElement("a", {
               href: "#",
-              style: { color: "var(--accent)", textDecoration: "underline" },
+              style: { color: "var(--accent)", textDecoration: "underline", fontWeight: "700" },
               onClick: (e) => { e.preventDefault(); setSelectedTool("Qualys"); }
             }, "Qualys"),
             " to run live processing right now, or upload test batches below."
@@ -2163,10 +2510,11 @@ function UploadView({
         React.createElement(UploadCard, {
           stageNo: "1",
           title: `${currentToolObj.label} Raw Scan Finding Export`,
-          requirement: `Scanner report (${currentToolObj.format}) containing tool findings`,
+          requirement: `Scanner report (${currentToolObj.format}) containing security findings`,
           accept: ".xlsx,.csv,.json",
           fileData: files.generic,
-          onFile: d => setFile("generic", d)
+          onFile: d => setFile("generic", d),
+          onRemove: () => setFile("generic", null)
         }),
         React.createElement(UploadCard, {
           stageNo: "2",
@@ -2175,22 +2523,28 @@ function UploadView({
           accept: ".xlsx,.csv",
           fileData: files.cmdb,
           onFile: d => setFile("cmdb", d),
+          onRemove: () => setFile("cmdb", null),
           optional: true
         })
       )
     );
   }
 
-  const toolElements = SECURITY_TOOLS.map(function(t) {
+  const toolElements = filteredTools.map(function(t) {
+    const isSelected = selectedTool === t.id;
     return React.createElement("div", {
       key: t.id,
-      className: "tool-card" + (selectedTool === t.id ? " active" : ""),
+      className: "tool-card" + (isSelected ? " active" : ""),
       onClick: function() { setSelectedTool(t.id); }
     },
+      React.createElement("div", { className: "tool-icon-wrap" },
+        React.createElement(Icon, { d: ICONS[t.icon] || ICONS.shield, size: 20 })
+      ),
+      React.createElement("span", { className: "tool-name" }, t.label),
+      React.createElement("span", { className: "tool-format-tag" }, t.format),
       React.createElement("span", {
         className: "tool-status-tag " + (t.active ? "tool-status-active" : "tool-status-planned")
-      }, t.active ? "Active Pipeline" : "Future Integration"),
-      React.createElement("span", { className: "tool-name" }, t.label)
+      }, t.active ? "● LIVE PIPELINE" : "PLANNED")
     );
   });
 
@@ -2199,19 +2553,22 @@ function UploadView({
       React.createElement("div", null,
         React.createElement("span", { className: "eyebrow" }, "Stage 01 — Ingestion & Scope Configuration"),
         React.createElement("h1", null, "VulnOps Source Data Pipeline"),
-        React.createElement("p", null, "Select report objective, choose security assessment tool, and upload source files. Files are parsed 100% locally in your browser.")
+        React.createElement("p", null, "Select report objective, choose security assessment tool, and upload source files. All parsing and correlation occurs 100% locally in your browser.")
       ),
       hasAnyFile && React.createElement("button", {
         className: "btn btn-danger btn-sm",
         onClick: onReset,
         title: "Clear all uploaded files and start over"
-      }, React.createElement(Icon, { d: ICONS.trash, size: 14 }), " Reset all")
+      }, React.createElement(Icon, { d: ICONS.trash, size: 14 }), " Reset all files")
     ),
 
     React.createElement("div", { className: "mode-selector-container" },
       React.createElement("div", { className: "mode-selector-title" },
-        React.createElement(Icon, { d: ICONS.cog, size: 15 }),
-        "Step 1: Choose Reporting Objective / Output Format"
+        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "8px" } },
+          React.createElement(Icon, { d: ICONS.cog, size: 16 }),
+          "Step 1: Choose Reporting Objective / Output Format"
+        ),
+        React.createElement("span", { className: "step-badge" }, reportMode === "iasp" ? "IASP Mode Active" : "PowerBI Mode Active")
       ),
       React.createElement("div", { className: "mode-tabs" },
         React.createElement("div", {
@@ -2219,10 +2576,13 @@ function UploadView({
           onClick: function() { setReportMode("iasp"); }
         },
           React.createElement("div", { className: "mode-card-icon" },
-            React.createElement(Icon, { d: ICONS.upload, size: 18 })
+            React.createElement(Icon, { d: ICONS.upload, size: 20 })
           ),
           React.createElement("div", null,
-            React.createElement("div", { className: "mode-card-title" }, "IASP Upload Report Preparation"),
+            React.createElement("div", { className: "mode-card-title" },
+              "IASP Upload Report Preparation",
+              reportMode === "iasp" && React.createElement("span", { className: "badge badge-ok", style: { fontSize: "10px", padding: "1px 6px" } }, "Selected")
+            ),
             React.createElement("div", { className: "mode-card-desc" }, "Generates standard IASP compliant outcome sheets with enriched asset classification, correlation codes, and remediation tracking.")
           )
         ),
@@ -2231,10 +2591,13 @@ function UploadView({
           onClick: function() { setReportMode("powerbi"); }
         },
           React.createElement("div", { className: "mode-card-icon" },
-            React.createElement(Icon, { d: ICONS.chart, size: 18 })
+            React.createElement(Icon, { d: ICONS.chart, size: 20 })
           ),
           React.createElement("div", null,
-            React.createElement("div", { className: "mode-card-title" }, "PowerBI Reporting Engine"),
+            React.createElement("div", { className: "mode-card-title" },
+              "PowerBI Reporting Engine",
+              reportMode === "powerbi" && React.createElement("span", { className: "badge badge-ok", style: { fontSize: "10px", padding: "1px 6px" } }, "Selected")
+            ),
             React.createElement("div", { className: "mode-card-desc" }, "Prepares sanitized PowerBI data model matrices with SLA calculations, weekly deltas, and multi-scanner breakdown analytics.")
           )
         )
@@ -2243,10 +2606,43 @@ function UploadView({
 
     React.createElement("div", { className: "tool-selector-container" },
       React.createElement("div", { className: "mode-selector-title" },
-        React.createElement(Icon, { d: ICONS.spark, size: 15 }),
-        "Step 2: Choose Security Assessment Tool / Scanner"
+        React.createElement("div", { style: { display: "flex", alignItems: "center", gap: "8px" } },
+          React.createElement(Icon, { d: ICONS.spark, size: 16 }),
+          "Step 2: Choose Security Assessment Tool / Scanner"
+        ),
+        React.createElement("span", { className: "step-badge" }, `${SECURITY_TOOLS.length} Tools Available`)
       ),
-      React.createElement("div", { className: "tool-grid" }, toolElements)
+      React.createElement("div", { className: "tool-filter-bar" },
+        React.createElement("div", { className: "tool-category-pills" },
+          TOOL_CATEGORIES.map(function(cat) {
+            return React.createElement("button", {
+              key: cat,
+              type: "button",
+              className: "tool-pill" + (categoryFilter === cat ? " active" : ""),
+              onClick: function() { setCategoryFilter(cat); }
+            }, cat);
+          })
+        ),
+        React.createElement("div", { style: { fontSize: "12px", color: "var(--text-faint)", fontFamily: "var(--mono)" } },
+          `Showing ${filteredTools.length} tools`
+        )
+      ),
+      React.createElement("div", { className: "tool-grid" }, toolElements),
+      React.createElement("div", { className: "tool-info-strip" },
+        React.createElement("div", { className: "tool-info-strip-main" },
+          React.createElement(Icon, { d: ICONS[currentToolObj.icon] || ICONS.shield, size: 18 }),
+          React.createElement("div", null,
+            React.createElement("strong", { style: { color: "var(--text)", marginRight: "8px" } }, currentToolObj.label),
+            React.createElement("span", { className: "tool-info-desc" }, currentToolObj.desc)
+          )
+        ),
+        React.createElement("div", { className: "tool-info-chips" },
+          React.createElement("span", { className: "badge badge-neutral" }, "Format: " + currentToolObj.format),
+          React.createElement("span", { className: currentToolObj.active ? "badge badge-ok" : "badge badge-neutral" },
+            currentToolObj.active ? "Pipeline Ready" : "Roadmap"
+          )
+        )
+      )
     ),
 
     ingestionSection
