@@ -2047,6 +2047,24 @@ function FollowUpMailTemplateModal({ filteredRows, onClose, onToast }) {
     };
   }).sort((a,b) => b.count - a.count);
 
+  // Map unique Applications and their APM IDs for the table format
+  const appApmMap = {};
+  activeRows.forEach(r => {
+    const app = (r.appName || r.raw?.["Application Name"] || "Unknown Application").trim();
+    const apm = (r.apmId || r.raw?.["APM ID"] || "N/A").trim();
+    if (!appApmMap[app]) {
+      appApmMap[app] = new Set();
+    }
+    if (apm && apm !== "N/A") {
+      appApmMap[app].add(apm);
+    }
+  });
+
+  const appApmList = Object.keys(appApmMap).map(appName => ({
+    appName,
+    apmIds: Array.from(appApmMap[appName])
+  }));
+
   const rawAppNames = Array.from(new Set(activeRows.map(a => a.appName || a.raw?.["Application Name"]).filter(Boolean)));
   const appNames = rawAppNames.length > 0 ? rawAppNames.join(", ") : "<App names>";
 
@@ -2075,15 +2093,51 @@ function FollowUpMailTemplateModal({ filteredRows, onClose, onToast }) {
           </div>
           
           <div ref={contentRef} style={{ background: "#ffffff", color: "#111827", padding: "24px", borderRadius: 8, fontSize: 13, fontFamily: "Aptos, 'Aptos Display', Calibri, Arial, sans-serif", lineHeight: 1.6 }}>
-            <p style={{ margin: "0 0 16px 0", color: "#111827" }}>Hello Team,</p>
-            <p style={{ margin: "0 0 20px 0", color: "#111827" }}>
-              The latest vulnerability scan results for <strong>{appNames}</strong> have been shared for the following APM ID(s):&nbsp;
-              {apmIdsDisplay.map((id, idx) => (
-                <span key={idx} style={{ display: "inline-block", backgroundColor: "#fef3c7", color: "#92400e", padding: "3px 10px", borderRadius: 4, fontWeight: 700, border: "1px solid #fde68a", marginRight: 6, marginBottom: 4, fontFamily: "'Courier New', Courier, monospace" }}>
-                  {id}
-                </span>
-              ))}
+            <p style={{ margin: "0 0 14px 0", color: "#111827" }}>Hello Team,</p>
+            <p style={{ margin: "0 0 16px 0", color: "#111827" }}>
+              The latest vulnerability scan results have been refreshed. Please find the active findings and associated APM IDs below:
             </p>
+
+            {/* Application & APM ID Table in Aptos font */}
+            <table border="1" cellPadding="8" cellSpacing="0" style={{ borderCollapse: "collapse", width: "100%", marginBottom: 20, border: "1px solid #94a3b8", fontFamily: "Aptos, 'Aptos Display', Calibri, Arial, sans-serif" }}>
+              <thead>
+                <tr style={{ backgroundColor: headerColor }}>
+                  <th style={{ border: "1px solid #94a3b8", padding: "8px 12px", textAlign: "left", backgroundColor: headerColor, color: "#ffffff", fontWeight: 700, fontSize: 12.5, width: "55%" }}>
+                    Application Name
+                  </th>
+                  <th style={{ border: "1px solid #94a3b8", padding: "8px 12px", textAlign: "left", backgroundColor: headerColor, color: "#ffffff", fontWeight: 700, fontSize: 12.5, width: "45%" }}>
+                    APM ID(s)
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {appApmList.map((item, idx) => (
+                  <tr key={idx} style={{ backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
+                    <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", color: "#0f172a", fontWeight: 600, fontSize: 12.5, backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
+                      {item.appName}
+                    </td>
+                    <td style={{ border: "1px solid #cbd5e1", padding: "8px 12px", color: "#1e293b", fontSize: 12.5, backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
+                      {item.apmIds.length > 0 ? (
+                        item.apmIds.map((id, idIdx) => (
+                          <span key={idIdx} style={{ display: "inline-block", backgroundColor: "#fef3c7", color: "#92400e", padding: "2px 8px", borderRadius: 4, fontWeight: 700, border: "1px solid #fde68a", marginRight: 6, marginTop: 2, marginBottom: 2, fontSize: 12, fontFamily: "Aptos, 'Aptos Display', Calibri, Arial, sans-serif" }}>
+                            {id}
+                          </span>
+                        ))
+                      ) : (
+                        <span style={{ color: "#94a3b8" }}>N/A</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {appApmList.length === 0 && (
+                  <tr>
+                    <td colSpan="2" style={{ border: "1px solid #cbd5e1", padding: "10px 12px", textAlign: "center", color: "#64748b" }}>
+                      No application details available
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
 
             {/* Summary & Charts Container Table */}
             <table border="0" cellPadding="0" cellSpacing="0" style={{ width: "100%", marginBottom: 24, borderCollapse: "separate", fontFamily: "Aptos, 'Aptos Display', Calibri, Arial, sans-serif" }}>
@@ -3197,40 +3251,52 @@ function CustomDashboardPage({ rows, setRows, setAllRows }) {
         </Card>
       </div>
       
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 20, marginBottom: 20 }}>
-        <Card>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: 20, marginBottom: 20 }}>
+        <Card style={{ display: "flex", flexDirection: "column" }}>
           <SectionTitle icon={AlertTriangle}>Top 5 Vulnerabilities</SectionTitle>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
             {topVulns.map((v, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", background: C.surfaceHover, borderRadius: 6, border: `1px solid ${C.borderLight}` }}>
-                <div style={{ fontSize: 13, color: C.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200 }} title={v.title}>{v.title}</div>
-                <div style={{ fontSize: 13, fontWeight: "bold", color: C.accent }}>{v.count}</div>
+              <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 12px", background: C.surfaceHover, borderRadius: 6, border: `1px solid ${C.borderLight}`, gap: 12 }}>
+                <div style={{ fontSize: 12.5, color: C.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: 1, minWidth: 0, fontWeight: 500 }} title={v.title}>
+                  {v.title}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: "700", color: C.accent, fontFamily: "'JetBrains Mono', ui-monospace, monospace", flexShrink: 0 }}>
+                  {v.count}
+                </div>
               </div>
             ))}
             {topVulns.length === 0 && <div style={{ fontSize: 13, color: C.textMuted, padding: 8 }}>No data available</div>}
           </div>
         </Card>
 
-        <Card>
+        <Card style={{ display: "flex", flexDirection: "column" }}>
           <SectionTitle icon={Server}>Top 5 Impacted Assets</SectionTitle>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
             {topAssets.map((a, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", background: C.surfaceHover, borderRadius: 6, border: `1px solid ${C.borderLight}` }}>
-                <div style={{ fontSize: 13, color: C.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200 }} title={a.asset}>{a.asset}</div>
-                <div style={{ fontSize: 13, fontWeight: "bold", color: C.high }}>{a.count}</div>
+              <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 12px", background: C.surfaceHover, borderRadius: 6, border: `1px solid ${C.borderLight}`, gap: 12 }}>
+                <div style={{ fontSize: 12.5, color: C.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: 1, minWidth: 0, fontWeight: 500 }} title={a.asset}>
+                  {a.asset}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: "700", color: C.high, fontFamily: "'JetBrains Mono', ui-monospace, monospace", flexShrink: 0 }}>
+                  {a.count}
+                </div>
               </div>
             ))}
             {topAssets.length === 0 && <div style={{ fontSize: 13, color: C.textMuted, padding: 8 }}>No data available</div>}
           </div>
         </Card>
 
-        <Card>
+        <Card style={{ display: "flex", flexDirection: "column" }}>
           <SectionTitle icon={Clock}>Top 5 Oldest Vulnerabilities</SectionTitle>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: 1 }}>
             {oldestVulns.map((v, i) => (
-              <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", background: C.surfaceHover, borderRadius: 6, border: `1px solid ${C.borderLight}` }}>
-                <div style={{ fontSize: 13, color: C.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 200 }} title={v.vulnName || v.raw?.["Title"]}>{v.vulnName || v.raw?.["Title"] || "Unknown"}</div>
-                <div style={{ fontSize: 13, fontWeight: "bold", color: C.critical }}>{v.ageDays} days</div>
+              <div key={i} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "9px 12px", background: C.surfaceHover, borderRadius: 6, border: `1px solid ${C.borderLight}`, gap: 12 }}>
+                <div style={{ fontSize: 12.5, color: C.textPrimary, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", flex: 1, minWidth: 0, fontWeight: 500 }} title={v.vulnName || v.raw?.["Title"]}>
+                  {v.vulnName || v.raw?.["Title"] || "Unknown"}
+                </div>
+                <div style={{ fontSize: 12.5, fontWeight: "700", color: C.critical, fontFamily: "'JetBrains Mono', ui-monospace, monospace", flexShrink: 0 }}>
+                  {v.ageDays} days
+                </div>
               </div>
             ))}
             {oldestVulns.length === 0 && <div style={{ fontSize: 13, color: C.textMuted, padding: 8 }}>No data available</div>}
